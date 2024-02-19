@@ -39,14 +39,15 @@
 </template>
 
 <script lang="tsx" setup>
-import { provide, ref, TransitionProps, VNode } from 'vue'
-
-import type { RouteLocationNormalizedLoaded } from 'vue-router'
+import { onBeforeMount, onUnmounted, provide, ref,  watch } from 'vue'
+import type {TransitionProps, VNode} from 'vue'
+import { type RouteLocationNormalizedLoaded, useRouter } from 'vue-router'
 import { getMaxZIndex } from './utils/TabScrollHelper'
-import { DefaultTabData, TabScrollMode } from './model/TabModel'
+import { TabScrollMode } from './model/TabModel'
+import type {DefaultTabData} from './model/TabModel'
 import { ContainerType } from './model/TabContainerModel'
 import TabHeader from './components/TabHeader/index.vue'
-import useTabEvent from '~/components/common/VueStackTab/hooks/useTabEvent'
+import useTabEvent from '@/lib/hooks/useTabEvent'
 const { routerAlive, routerLeaved, caches, addTab, tabs: tabItems, clearTabData, addDefault } = useTabEvent()
 const emit = defineEmits(['tabSelect'])
 const props = withDefaults(

@@ -6,8 +6,8 @@ import VueEmttier from './utils/tabMitt'
 import './assets/style/index.scss'
 const i18n = createI18n({
   legacy: false,
-  locale: 'zh-CN', // 首选语言
-  fallbackLocale: 'en-US' // 备选语言
+  locale: 'zh-CN',
+  fallbackLocale: 'en-US'
 })
 
 export default {
