@@ -1,0 +1,391 @@
+@use 'sass:math';
+@import './common/var';
+@import './common/mixins';
+
+.stack-tab {
+  display: flex;
+  min-height: 300px;
+  background-color: $--stack-tab-background-color-base;
+  flex-direction: column;
+  grid-gap: 5px;
+  /*缓存页面wrapper*/
+  .cache-page-wrapper {
+    width: 100%;
+    height: 100%;
+  }
+  &__maximum {
+    width: 100vw !important;
+    height: 100vh !important;
+    top: 0;
+    left: 0;
+    position: fixed;
+  }
+
+  //蒙版按钮
+  &__mask-button {
+    height: 100%;
+    width: $--stack-tab-button-size;
+    background-color: $--stack-tab-text-color;
+    margin: 0 5px;
+    transition: $--stack-tab__trans;
+
+    .stack-tab__header-button[disabled] & {
+      cursor: not-allowed;
+      background-color: $--stack-tab-color-disabled;
+      transition: none;
+      //pointer-events: none;
+    }
+    &:hover {
+      background-color: $--stack-tab-color-primary;
+    }
+
+    &:active {
+      // cursor: pointer;
+      background-color: $--stack-tab-color-primary-activate;
+    }
+  }
+  &__button {
+    height: $--stack-tab-button-size;
+    width: $--stack-tab-button-size;
+    margin: 0 5px;
+  }
+
+  &__header {
+    position: relative;
+    display: flex;
+    width: 100%;
+    height: $--stack-tab-head-height;
+    border-bottom: 1px solid $--stack-tab-border-color;
+    box-sizing: border-box;
+    //user-select: none;
+
+    //tab header上面的按钮
+    &-button {
+      z-index: 2;
+      height: $--stack-tab-head-height;
+      width: fit-content;
+      overflow: hidden;
+      background-color: $--stack-tab-background-color-base;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+
+      //按钮禁用样式
+      &[disabled] {
+        background-color: $--stack-tab-background-color-inactive;
+        box-shadow: none;
+        cursor: not-allowed;
+      }
+    }
+  }
+  //tab header上的滚动条
+  &__scroll {
+    position: relative;
+    flex: 1 1 0;
+    height: $--stack-tab-head-height;
+    overflow: hidden;
+
+    &-container {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+
+      // 移动设备原生滚动
+      &.is-mobile {
+        overflow-x: auto;
+        overflow-y: hidden;
+      }
+    }
+  }
+  &__scrollbar {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    /*z-index: 2;*/
+    height: $--stack-tab-scroll-height;
+    background-color: rgb(0 0 0 / 10%);
+    border-radius: $--stack-tab-scroll-border-radius;
+    opacity: 0;
+    transition: $--stack-tab__trans;
+
+    .stack-tab__scroll:hover &,
+    &.is-dragging {
+      opacity: 1;
+    }
+  }
+  &__scrollbar-thumb {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.1);
+
+    border-radius: $--stack-tab-scroll-border-radius;
+    transition: background-color 0.3s ease-in-out;
+
+    &:hover {
+      cursor: grab;
+      &:active {
+        cursor: grabbing;
+      }
+    }
+
+    .stack-tab__scrollbar.is-dragging &,
+    &:hover {
+      background-color: $--stack-tab-color-primary !important;
+    }
+  }
+
+  /*
+  页签导航
+   */
+  &__nav {
+    position: relative;
+    display: inline-flex;
+    height: 100%;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+    flex-wrap: nowrap;
+    content-visibility: auto;
+  }
+
+  /*
+  页签项
+   */
+  &__item {
+    position: relative;
+    display: flex;
+    padding: 0 $--stack-tab-padding;
+    font-size: $--stack-tab-font-size;
+    color: $--stack-tab-text-color;
+    cursor: pointer;
+    background-color: $--stack-tab-background-color-inactive;
+    border: $--stack-tab-border;
+    border-left: none;
+    border-radius: 8px 8px 0 0;
+    transition: $--stack-tab__trans;
+    user-select: none;
+    flex: none;
+    align-items: center;
+    transform-origin: left bottom;
+    content-visibility: auto;
+    margin-top: 5px;
+    &:first-child {
+      border-left: $--stack-tab-border;
+    }
+
+    /*
+    激活右键菜单的页签
+     */
+    &.is-contextmenu {
+      color: #000;
+    }
+
+    /*
+    激活的页签
+     */
+    &.is-active {
+      z-index: 1;
+      background-color: $--stack-tab-background-color-base;
+      border-bottom-color: #fff;
+      box-shadow: $--stack-tab-shadow-left, $--stack-tab-shadow-right;
+      margin-top: unset;
+    }
+
+    &:hover,
+    &.is-active {
+      color: $--stack-tab-color-primary;
+
+      &.is-icon {
+        padding: 0
+          (
+            $--stack-tab-padding -
+              math.div($--stack-tab-button-size + $--stack-tab-icon-margin, 2)
+          );
+
+        .stack-tab__item-button {
+          width: $--stack-tab-button-size;
+          margin-left: $--stack-tab-icon-margin;
+        }
+      }
+    }
+
+    /*
+    页签标题
+     */
+    &-title {
+      flex: 1 1 0;
+      display: flex;
+
+      &-content {
+        max-width: 100px;
+        min-width: 30px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+    }
+
+    /*
+    页签图标
+     */
+    &-icon {
+      margin-right: 5px;
+      font-size: 16px;
+    }
+    /*
+    页答按钮
+     */
+    &-button {
+      height: 100%;
+      width: 0;
+      background-color: $--stack-tab-text-color;
+      transition: $--stack-tab__trans;
+
+      &:hover {
+        background-color: $--stack-tab-color-primary;
+      }
+
+      &:active {
+        /*
+        cursor: pointer;
+         */
+        background-color: $--stack-tab-color-primary-activate;
+      }
+    }
+  }
+  /*
+  角徽样式
+   */
+  &__badge {
+    position: relative;
+    display: inline-block;
+
+    &-content {
+      position: absolute;
+      top: 0.1rem;
+      right: 0.1rem;
+      min-width: 0.5rem;
+      min-height: 0.5rem;
+      padding: 0.3rem;
+      font-size: 0.5rem;
+      line-height: 0.4rem;
+      color: #fff;
+      text-align: center;
+      border: 1px solid $--stack-tab-background-color-base;
+      border-radius: 0.5rem;
+      transform: translateX(100%) translateY(-50%);
+      box-sizing: border-box;
+
+      &.default {
+        background: $--stack-tab-color-danger;
+      }
+
+      &.primary {
+        background: $--stack-tab-color-primary;
+      }
+    }
+  }
+
+  &__iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    /*
+    新浏览器使用这个来消除frame的边框
+     */
+    border: 0;
+  }
+  /*
+  右键菜单
+   */
+  &__contextmenu {
+    position: fixed;
+    z-index: 999;
+    min-width: 120px;
+    padding: 8px;
+    font-size: $--stack-tab-font-size;
+    background: #fff;
+    border: $--stack-tab-border;
+    border-radius: 10px 0;
+    box-shadow: $--stack-tab-shadow-context-menu;
+    transform-origin: left top;
+    transition: all 0.25s ease-in;
+
+    &-item {
+      display: flex;
+      position: relative;
+      align-items: center;
+      padding: 0 10px;
+      line-height: 30px;
+      color: $--stack-tab-text-color;
+      cursor: pointer;
+      border-radius: 10px 0;
+      transition: all 0.2s ease-in-out;
+      user-select: none;
+
+      &:hover,
+      &:active {
+        color: $--stack-tab-color-white;
+        background-color: $--stack-tab-color-primary;
+
+        .svg-mask {
+          background-color: $--stack-tab-color-white;
+        }
+      }
+
+      &[disabled] {
+        color: $--stack-tab-color-disabled;
+        pointer-events: none;
+        cursor: default;
+        background: none;
+
+        .svg-mask {
+          background-color: $--stack-tab-color-disabled;
+        }
+      }
+    }
+
+    &-icon {
+      width: $--stack-tab-font-size;
+      height: $--stack-tab-font-size;
+      transition: all 0.2s ease-in-out;
+
+      &.svg-mask {
+        width: $--stack-tab-font-size;
+        height: $--stack-tab-font-size;
+        background-color: $--stack-tab-text-color;
+      }
+    }
+  }
+}
+
+.stack-tab__shadow-left {
+  box-shadow: $--stack-tab-shadow-left;
+}
+
+.stack-tab__shadow-right {
+  box-shadow: $--stack-tab-shadow-right;
+}
+
+/**
+内阴影
+ */
+.stack-tab__shadow-inset {
+  &-left::after {
+    @include insetShadow();
+    box-shadow: $--stack-tab-shadow-left-inset;
+  }
+  &-right::after {
+    @include insetShadow();
+    box-shadow: $--stack-tab-shadow-right-inset;
+  }
+  &-all::after {
+    @include insetShadow();
+    box-shadow: $--stack-tab-shadow-left-inset, $--stack-tab-shadow-right-inset;
+  }
+}

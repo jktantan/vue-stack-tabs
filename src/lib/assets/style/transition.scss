@@ -1,0 +1,40 @@
+/*
+transition 过渡样式
+ */
+.stack-tab-zoom {
+  &-enter-active,
+  &-leave-active {
+    transition: all 0.3s;
+  }
+
+  &-enter-from,
+  &-leave-to {
+    transform: scale(0);
+    opacity: 0;
+  }
+}
+
+/*
+页面交换
+ */
+.stack-tab-swap {
+  $trans: 30px;
+
+  &-enter-active,
+  &-leave-active {
+    transition: all 0.3s;
+  }
+
+  &-enter-from,
+  &-leave-to {
+    opacity: 0;
+  }
+
+  &-enter-from {
+    transform: translateX(-$trans);
+  }
+
+  &-leave-to {
+    transform: translateX($trans);
+  }
+}

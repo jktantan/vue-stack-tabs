@@ -1,0 +1,93 @@
+@import './common/var';
+
+// 全屏
+.stack-tab__icon-fullscreen {
+  /* 类似一个到路径上做一个遮罩， 用法和background属性一样 */
+  mask: url('../image/fullscreen.svg') no-repeat center center;
+  mask-size: contain;
+}
+// 恢复
+.stack-tab__icon-restore {
+  /* 类似一个到路径上做一个遮罩， 用法和background属性一样 */
+  mask: url('../image/restore.svg') no-repeat center center;
+  mask-size: contain;
+}
+// 关闭
+.stack-tab__icon-close {
+  /* 类似一个到路径上做一个遮罩， 用法和background属性一样 */
+  mask: url('../image/close.svg') no-repeat center center;
+  mask-size: contain;
+}
+
+.stack-tab__icon-close-fill {
+  /* 类似一个到路径上做一个遮罩， 用法和background属性一样 */
+  mask: url('../image/close_fill.svg') no-repeat center center;
+  mask-size: contain;
+}
+
+.stack-tab__icon-close-lefts {
+  /* 类似一个到路径上做一个遮罩， 用法和background属性一样 */
+  mask: url('../image/close_lefts.svg') no-repeat center center;
+  mask-size: contain;
+}
+
+.stack-tab__icon-close-rights {
+  /* 类似一个到路径上做一个遮罩， 用法和background属性一样 */
+  mask: url('../image/close_rights.svg') no-repeat center center;
+  mask-size: contain;
+}
+
+.stack-tab__icon-close-others {
+  /* 类似一个到路径上做一个遮罩， 用法和background属性一样 */
+  mask: url('../image/close_other.svg') no-repeat center center;
+  mask-size: contain;
+}
+
+.stack-tab__icon-close-all {
+  /* 类似一个到路径上做一个遮罩， 用法和background属性一样 */
+  mask: url('../image/close_all.svg') no-repeat center center;
+  mask-size: contain;
+}
+
+/*
+刷新
+ */
+.stack-tab__icon-reload {
+  /* 类似一个到路径上做一个遮罩， 用法和background属性一样 */
+  mask: url('../image/loading.svg') no-repeat center center;
+  mask-size: contain;
+}
+
+.stack-tab__icon-reload-lefts {
+  /* 类似一个到路径上做一个遮罩， 用法和background属性一样 */
+  mask: url('../image/reload_lefts.svg') no-repeat center center;
+  mask-size: contain;
+}
+
+.stack-tab__icon-reload-rights {
+  /* 类似一个到路径上做一个遮罩， 用法和background属性一样 */
+  mask: url('../image/reload_rights.svg') no-repeat center center;
+  mask-size: contain;
+}
+
+.stack-tab__icon-reload-all {
+  /* 类似一个到路径上做一个遮罩， 用法和background属性一样 */
+  mask: url('../image/reload.svg') no-repeat center center;
+  mask-size: contain;
+}
+/*
+左箭头
+ */
+.stack-tab__icon-left-arrow {
+  /* 类似一个到路径上做一个遮罩， 用法和background属性一样 */
+  mask: url('../image/left_arrow.svg') no-repeat center center;
+  mask-size: contain;
+}
+/*
+右箭头
+ */
+.stack-tab__icon-right-arrow {
+  /* 类似一个到路径上做一个遮罩， 用法和background属性一样 */
+  mask: url('../image/right_arrow.svg') no-repeat center center;
+  mask-size: contain;
+}
