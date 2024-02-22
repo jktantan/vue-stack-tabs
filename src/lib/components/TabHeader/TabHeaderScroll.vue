@@ -18,7 +18,12 @@
     >
       <slot />
     </div>
-    <div v-show="hasScroller" ref="bar" class="stack-tab__scrollbar" :class="{ 'is-dragging': scrollDragging }">
+    <div
+      v-show="hasScroller"
+      ref="bar"
+      class="stack-tab__scrollbar"
+      :class="{ 'is-dragging': scrollDragging }"
+    >
       <div
         ref="thumb"
         class="stack-tab__scrollbar-thumb"
@@ -40,10 +45,10 @@
 </template>
 
 <script lang="ts" setup name="TabHeaderScroll">
-import { computed, ref, reactive, onMounted, watch } from 'vue'
+import { computed, ref, reactive, onMounted, watch, onUnmounted } from 'vue'
 import { ResizeObserver } from '@juggle/resize-observer'
-import { ScrollData, DragData } from '../../model/TabModel'
-import { _scrollTo, _scrollIntoView } from '../../utils/TabScrollHelper'
+import type { ScrollData, DragData } from '@/lib/model/TabModel'
+import { _scrollTo, _scrollIntoView } from '@/lib/utils/TabScrollHelper'
 import TabHeaderButton from './TabHeaderButton.vue'
 
 // ref
@@ -85,13 +90,14 @@ const dragData = reactive<DragData>({
 })
 
 // 监控滚动条数据用于启用/禁用按钮
-watch(scrollData, newValue => {
+watch(scrollData, (newValue) => {
   setScrollButton(newValue)
 })
 
 const setScrollButton = (scrollData: ScrollData) => {
   isDisabledLeftButton.value = scrollData.scrollLeft <= 10
-  isDisabledRightButton.value = scrollData.clientWidth + scrollData.scrollLeft - scrollData.scrollWidth >= -10
+  isDisabledRightButton.value =
+    scrollData.clientWidth + scrollData.scrollLeft - scrollData.scrollWidth >= -10
   isButtonVisibled.value = scrollData.scrollWidth !== scrollData.clientWidth
 }
 
@@ -204,10 +210,6 @@ onMounted(() => {
   resizeUpdate.observe(headerScroll.value as Element)
   const tabNav = container.value?.querySelector('.stack-tab__nav')
   tabsUpdate.observe(tabNav!)
-  // nextTick(() => {
-  //   update()
-  //   setScrollButton(scrollData)
-  // })
 })
 onUnmounted(() => {
   resizeUpdate.disconnect()
@@ -227,7 +229,10 @@ const isInView = (el: HTMLElement) => {
   const offsetLeft = el.offsetLeft
   const scrollLeft = container.value!.scrollLeft
 
-  return !(offsetLeft < scrollLeft || offsetLeft + el.clientWidth > scrollLeft + container.value!.clientWidth)
+  return !(
+    offsetLeft < scrollLeft ||
+    offsetLeft + el.clientWidth > scrollLeft + container.value!.clientWidth
+  )
 }
 
 defineExpose({ scrollIntoView, isInView })

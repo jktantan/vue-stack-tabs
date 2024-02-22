@@ -24,7 +24,7 @@ withDefaults(
     visible?: boolean
     shadow?: string | null
     iconClass?: string
-    title?: string | null | undefined
+    title?: string
   }>(),
   {
     disabled: false,

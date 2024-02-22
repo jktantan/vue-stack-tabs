@@ -6,9 +6,9 @@ import { TabItemData } from '../model/TabHeaderModel'
 import { Stack } from '../model/TabModel'
 import type { PageRouteLocationRaw, DefaultTabData } from '../model/TabModel'
 import { ContainerType } from '../model/TabContainerModel'
-import { decodeTabId, encodeTabid, getPageId } from '../utils/TabIdHelper'
+import { decodeTabId, encodeTabId, getPageId } from '../utils/TabIdHelper'
 import { useRouter } from 'vue-router'
-import { onActivated, onUnmounted, ref, unref } from 'vue'
+import { defineComponent, onActivated, onUnmounted, ref, unref } from 'vue'
 
 /**
  * 整个TAB的操控在这里进行
@@ -375,7 +375,7 @@ export default () => {
   const addDefaultTabs = (defaultTabDatas: DefaultTabData[]) => {
     for (const item of defaultTabDatas) {
       const id = item.id || ulid()
-      const __tab = encodeTabid({
+      const __tab = encodeTabId({
         id,
         name: item.name,
         closable: item.closable

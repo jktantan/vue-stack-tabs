@@ -1,22 +1,32 @@
 import { compressToEncodedURIComponent, decompressFromEncodedURIComponent } from 'lz-string'
-import { v5 as uuidv5 } from 'uuid'
-import type { TabData } from '@/lib/model/TabModel'
-export const encodeTabid = (tabData: TabData) => {
-  return compressToEncodedURIComponent(`${tabData.id}|${new Date().getTime()}|${tabData.name}|${tabData.closable ? 'Y' : 'N'}`)
+import { blake3 } from 'hash-wasm'
+import type { ITabBase, ITabData } from '@/lib/model/TabModel'
+
+/**
+ * compress tab info to string
+ * format:
+ * {tab id}{current timestamp}{tab name}{tab closable}
+ * @param tabData
+ */
+export const encodeTabInfo = (tabData: ITabBase): String => {
+  return compressToEncodedURIComponent(
+    `${tabData.id}|${tabData.title}|${tabData.iframe ? 'Y' : 'N'}|${tabData.closable ? 'Y' : 'N'}|${tabData.refreshable ? 'Y' : 'N'}`
+  )
 }
 
-export const decodeTabId = (tabId: string): TabData => {
-  const tabString = decompressFromEncodedURIComponent(tabId)
+export const decodeTabInfo = (tab: string): ITabBase => {
+  const tabString = decompressFromEncodedURIComponent(tab)
   const tabValues: string[] = tabString.split('|')
-  const tabInfo: TabData = {
+  return {
     id: tabValues[0],
-    name: tabValues[2],
-    closable: tabValues[3] === 'Y'
+    title: tabValues[2],
+    iframe: tabValues[3] === 'Y',
+    closable: tabValues[4] === 'Y',
+    refreshable: tabValues[5] === 'Y'
   }
-  return tabInfo
 }
 
-export const getPageId = (tabId: string, path: string, query: Object) => {
+export const createPageId = (tabId: string, path: string, query: Object): Promise<string> => {
   const queryArray = []
   console.log(query)
   type ObjectKey = keyof typeof query
@@ -37,5 +47,6 @@ export const getPageId = (tabId: string, path: string, query: Object) => {
     }
     return result
   })
-  return uuidv5(`${tabId}|${path}|${JSON.stringify(queryArray)}`, uuidv5.URL).replaceAll('-', '')
+  // return uuidv5(`${tabId}|${path}|${JSON.stringify(queryArray)}`, uuidv5.URL).replaceAll('-', '')
+  return blake3(`${tabId}|${path}|${JSON.stringify(queryArray)}`)
 }

@@ -8,8 +8,16 @@
       'z-index': getMaxZIndex('.stack-tab,.stack-tab *')
     }"
   >
-    <context-menu-item icon="stack-tab__icon-reload svg-mask" :title="t('VueStackTab.reload')" @click="refresh(tabItem)" />
-    <context-menu-item icon="stack-tab__icon-reload-all svg-mask" :title="t('VueStackTab.reloadAll')" @click="refreshAll" />
+    <context-menu-item
+      icon="stack-tab__icon-reload svg-mask"
+      :title="t('VueStackTab.reload')"
+      @click="refresh(tabItem)"
+    />
+    <context-menu-item
+      icon="stack-tab__icon-reload-all svg-mask"
+      :title="t('VueStackTab.reloadAll')"
+      @click="refreshAll"
+    />
     <context-menu-item
       icon="stack-tab__icon-close svg-mask"
       :title="t('VueStackTab.close')"
@@ -28,9 +36,20 @@
       :disabled="index >= max - 1 ? 'disabled' : null"
       @click="closeRight(tabItem)"
     />
-    <context-menu-item icon="stack-tab__icon-close-others svg-mask" :title="t('VueStackTab.closeOthers')" @click="closeOthers(tabItem)" />
-    <context-menu-item icon="stack-tab__icon-close-all svg-mask" :title="t('VueStackTab.closeAll')" @click="closeAll" />
-    <div v-if="contextMenu !== undefined && contextMenu.length > 0" class="divider div-transparent"></div>
+    <context-menu-item
+      icon="stack-tab__icon-close-others svg-mask"
+      :title="t('VueStackTab.closeOthers')"
+      @click="closeOthers(tabItem)"
+    />
+    <context-menu-item
+      icon="stack-tab__icon-close-all svg-mask"
+      :title="t('VueStackTab.closeAll')"
+      @click="closeAll"
+    />
+    <div
+      v-if="contextMenu !== undefined && contextMenu.length > 0"
+      class="divider div-transparent"
+    ></div>
     <context-menu-item
       v-for="(item, index) in contextMenu"
       :key="index"
@@ -44,11 +63,11 @@
 
 <script setup lang="ts" name="StackTabContextMenu">
 import { ref, onMounted, reactive } from 'vue'
-import { TabItemData } from '../../model/TabHeaderModel'
-import { ContextMenu } from '../../model/ContextMenuModel'
-import localeI18n from '../../i18n'
-import { getMaxZIndex } from '../../utils/TabScrollHelper'
-import useTabEvent from '../../hooks/useTabEvent'
+import { TabItemData } from '@/lib/model/TabHeaderModel'
+import type { ContextMenu } from '@/lib/model/ContextMenuModel'
+import localeI18n from '@/lib/i18n'
+import { getMaxZIndex } from '@/lib/utils/TabScrollHelper'
+import useTabEvent from '@/lib/hooks/useTabEvent'
 import ContextMenuItem from './ContextMenuItem.vue'
 // const emit = defineEmits(['close', 'closeAll', 'closeLeft', 'closeRight', 'refresh', 'refreshAll'])
 const props = withDefaults(

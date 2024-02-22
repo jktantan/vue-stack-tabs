@@ -8,7 +8,7 @@
     }"
     :class="{ 'stack-tab__maximum': maximum }"
   >
-    <tab-header :space="space" @active="onTabActive">
+    <tab-header :space="space" @active="onTabActive" :tab-transition="tabTransition" :max="max">
       <template #leftButton>
         <slot name="leftButton" />
       </template>
@@ -20,13 +20,17 @@
       <router-view v-slot="{ Component, route }">
         <transition :name="pageTransition" appear @after-leave="routerLeaved = true">
           <keep-alive :include="caches">
-            <component :is="wrap(route, Component)" v-if="routerAlive && routerLeaved" :key="route.fullPath" />
+            <component
+              :is="addTab(route, Component)"
+              v-if="routerAlive && routerLeaved"
+              :key="route.fullPath"
+            />
           </keep-alive>
         </transition>
       </router-view>
       <transition-group :name="pageTransition" appear>
         <iframe
-          v-for="frame of tabItems.filter(item => item.type === ContainerType.IFRAME)"
+          v-for="frame of tabItems.filter((item) => item.type === ContainerType.IFRAME)"
           v-show="frame.active && routerAlive && routerLeaved"
           :key="frame.id"
           class="stack-tab__iframe"
@@ -39,21 +43,28 @@
 </template>
 
 <script lang="tsx" setup>
-import { onBeforeMount, onUnmounted, provide, ref,  watch } from 'vue'
-import type {TransitionProps, VNode} from 'vue'
+import { onBeforeMount, onUnmounted, provide, ref, watch } from 'vue'
+import type { TransitionProps, VNode } from 'vue'
 import { type RouteLocationNormalizedLoaded, useRouter } from 'vue-router'
 import { getMaxZIndex } from './utils/TabScrollHelper'
-import { TabScrollMode } from './model/TabModel'
-import type {DefaultTabData} from './model/TabModel'
+import { type ITabData, TabScrollMode } from './model/TabModel'
 import { ContainerType } from './model/TabContainerModel'
 import TabHeader from './components/TabHeader/index.vue'
-import useTabEvent from '@/lib/hooks/useTabEvent'
-const { routerAlive, routerLeaved, caches, addTab, tabs: tabItems, clearTabData, addDefault } = useTabEvent()
+import useTabEvent from './hooks/useTabEvent'
+const {
+  routerAlive,
+  routerLeaved,
+  caches,
+  addTab,
+  tabs: tabItems,
+  clearTabData,
+  addDefault
+} = useTabEvent()
 const emit = defineEmits(['tabSelect'])
 const props = withDefaults(
   defineProps<{
     // 初始页签数据
-    defaultTabs?: DefaultTabData[]
+    defaultTabs?: ITabData[]
     // 最大打开数量
     max?: number
     // 新页加入哪个位置
@@ -73,12 +84,14 @@ const props = withDefaults(
     reloadable?: boolean
     closable?: boolean
     space?: number
+    iframePath: string
   }>(),
   {
     defaultTabs: () => [],
     max: 20,
     append: 'last',
     contextmenu: true,
+    tabTransition: 'stack-tab-zoom',
     pageTransition: 'stack-tab-swap',
     tabScrollMode: TabScrollMode.BOTH,
     width: '100%',
@@ -98,11 +111,6 @@ onBeforeMount(() => {
   console.log('on Before mount')
   addDefault(props.defaultTabs)
 })
-const wrap = (route: RouteLocationNormalizedLoaded, component: VNode) => {
-  console.log('on Add tab', route)
-  // currentRoute.value = route
-  return addTab(route, component)
-}
 const onTabActive = (id: string) => {
   emit('tabSelect', id)
 }

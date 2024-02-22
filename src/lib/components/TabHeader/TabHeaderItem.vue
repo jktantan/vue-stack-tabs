@@ -14,14 +14,19 @@
         {{ title }}
       </div>
     </div>
-    <div v-if="item.closable" class="stack-tab__icon-close-fill stack-tab__item-button" :title="t('VueStackTab.close')" @click.stop="closeTab" />
+    <div
+      v-if="item.closable"
+      class="stack-tab__icon-close-fill stack-tab__item-button"
+      :title="t('VueStackTab.close')"
+      @click.stop="closeTab"
+    />
   </li>
 </template>
 
 <script setup lang="ts" name="TabHeaderItem">
-import { computed, ref } from 'vue'
-import { TabItemData } from '../../model/TabHeaderModel'
-import localeI18n from '../../i18n'
+import { computed, ref, watch } from 'vue'
+import { TabItemData } from '@/lib/model/TabHeaderModel'
+import localeI18n from '@/lib/i18n'
 // 消息
 const emit = defineEmits(['close', 'active'])
 
@@ -35,7 +40,7 @@ const props = defineProps<{
  */
 watch(
   () => props.item.active,
-  val => {
+  (val) => {
     if (val) {
       activeTab()
     }

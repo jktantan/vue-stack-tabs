@@ -1,15 +1,26 @@
 <template>
   <div class="stack-tab__header">
     <slot name="leftButton" />
-    <tab-header-scroll ref="scroll" :space="space" :is-scroll-wheel="isScrollWheel" :is-scroll-button="isScrollButton">
+    <tab-header-scroll
+      ref="scroll"
+      :space="space"
+      :is-scroll-wheel="isScrollWheel"
+      :is-scroll-button="isScrollButton"
+    >
       <template #default>
-        <transition-group key="tabItemTrans" tag="ul" class="stack-tab__nav" v-bind="tabTrans" appear>
+        <transition-group
+          key="tabItemTrans"
+          tag="ul"
+          class="stack-tab__nav"
+          v-bind="tabTrans"
+          appear
+        >
           <tab-header-item
             v-for="(item, index) in tabs"
             :key="item.id"
             :contextmenu="contextmenu"
             :item="item"
-            @contextmenu.prevent="e => showContextMenu(e, item, index, tabs.length)"
+            @contextmenu.prevent="(e) => showContextMenu(e, item, index, tabs.length)"
             @click.middle.prevent="closeTab(item)"
             @close="closeTab"
             @active="activeTab"
@@ -38,13 +49,13 @@
 </template>
 
 <script lang="ts" setup name="TabHeader">
-import { inject, computed, TransitionProps, ref, Ref } from 'vue'
-import { TabScrollMode } from '../../model/TabModel'
+import { inject, computed, ref } from 'vue'
+import type { TransitionProps, Ref } from 'vue'
+import { TabScrollMode } from '@/lib/model/TabModel'
 import ContextMenu from '../ContextMenu/index.vue'
-import { TabItemData } from '../../model/TabHeaderModel'
-import useContextMenu from '../../hooks/useContextMenu'
-import localeI18n from '../../i18n'
-import useTabEvent from '../../hooks/useTabEvent'
+import useContextMenu from '@/lib/hooks/useContextMenu'
+import localeI18n from '@/lib/i18n'
+import useTabEvent from '@/lib/hooks/useTabEvent'
 import TabHeaderItem from './TabHeaderItem.vue'
 import TabHeaderScroll from './TabHeaderScroll.vue'
 import TabHeaderButton from './TabHeaderButton.vue'
@@ -71,7 +82,6 @@ const props = withDefaults(
       }
     },
     tabScrollMode: TabScrollMode.BOTH,
-    draggable: true,
     contextmenu: true,
     max: 20
   }
@@ -92,7 +102,8 @@ const isScrollButton = computed<boolean>(() => {
   return props.tabScrollMode === TabScrollMode.BOTH || props.tabScrollMode === TabScrollMode.BUTTON
 })
 // 判断是否可以使用滚轮
-const isScrollWheel = props.tabScrollMode === TabScrollMode.BOTH || props.tabScrollMode === TabScrollMode.WHEEL
+const isScrollWheel =
+  props.tabScrollMode === TabScrollMode.BOTH || props.tabScrollMode === TabScrollMode.WHEEL
 // 关闭前，先判断是不最先中状态
 const closeTab = (item: TabItemData) => {
   // emit('close', item)
