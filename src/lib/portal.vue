@@ -30,11 +30,11 @@
       </router-view>
       <transition-group :name="pageTransition" appear>
         <iframe
-          v-for="frame of tabItems.filter((item) => item.type === ContainerType.IFRAME)"
+          v-for="frame of tabs.filter((item) => item.iframe)"
           v-show="frame.active && routerAlive && routerLeaved"
           :key="frame.id"
           class="stack-tab__iframe"
-          :src="/^(javascript|data):/i.test(frame.url) ? 'about:blank' : frame.url"
+          :src="/^(javascript|data):/i.test(frame.url ?? '') ? 'about:blank' : frame.url"
           frameborder="0"
         />
       </transition-group>
@@ -44,12 +44,12 @@
 
 <script lang="tsx" setup>
 import { onBeforeMount, onUnmounted, provide, ref, watch } from 'vue'
-import type { TransitionProps, VNode } from 'vue'
-import { type RouteLocationNormalizedLoaded, useRouter } from 'vue-router'
+import type { TransitionProps } from 'vue'
+import { useRouter } from 'vue-router'
 import { getMaxZIndex } from './utils/TabScrollHelper'
 import { type ITabData, TabScrollMode } from './model/TabModel'
-import { ContainerType } from './model/TabContainerModel'
 import TabHeader from './components/TabHeader/index.vue'
+import useTabpanel from '@/lib/hooks/useTabpanel'
 import useTabEvent from './hooks/useTabEvent'
 const {
   routerAlive,
@@ -60,6 +60,7 @@ const {
   clearTabData,
   addDefault
 } = useTabEvent()
+const { tabs } = useTabpanel()
 const emit = defineEmits(['tabSelect'])
 const props = withDefaults(
   defineProps<{

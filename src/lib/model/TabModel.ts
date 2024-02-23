@@ -52,6 +52,7 @@ interface ITabItem extends ITabBase {
   closable: boolean
   refreshable: boolean
   iframe: boolean
+  url?: string
   active: boolean
   pages: Stack<ITabPage>
 }
