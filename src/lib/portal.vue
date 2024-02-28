@@ -18,7 +18,7 @@
     </tab-header>
     <div class="flex-auto overflow-hidden relative">
       <router-view v-slot="{ Component, route }">
-        <transition :name="pageTransition" appear @after-leave="routerLeaved = true">
+        <transition :name="pageTransition" appear @after-leave="pageShown = true">
           <keep-alive :include="caches">
             <component
               :is="addTab(route, Component)"
@@ -50,18 +50,8 @@ import { getMaxZIndex } from './utils/TabScrollHelper'
 import { type ITabData, TabScrollMode } from './model/TabModel'
 import TabHeader from './components/TabHeader/index.vue'
 import useTabpanel from '@/lib/hooks/useTabpanel'
-import useTabEvent from './hooks/useTabEvent'
-const {
-  routerAlive,
-  routerLeaved,
-  caches,
-  addTab,
-  tabs: tabItems,
-  clearTabData,
-  addDefault
-} = useTabEvent()
-const { tabs } = useTabpanel()
-const emit = defineEmits(['tabSelect'])
+const { tabs, pageShown, destroy, initial } = useTabpanel()
+const emit = defineEmits(['onActive'])
 const props = withDefaults(
   defineProps<{
     // 初始页签数据
@@ -110,13 +100,13 @@ provide('maximum', maximum)
 
 onBeforeMount(() => {
   console.log('on Before mount')
-  addDefault(props.defaultTabs)
+  initial(props.defaultTabs)
 })
 const onTabActive = (id: string) => {
-  emit('tabSelect', id)
+  emit('onActive', id)
 }
 onUnmounted(() => {
-  clearTabData()
+  destroy()
 })
 /**
  * 路由真正转换的时候才切换页面
@@ -126,7 +116,7 @@ const router = useRouter()
 watch(
   () => router.currentRoute.value.fullPath,
   () => {
-    routerAlive.value = true
+    pageShown.value = true
     // routerLeaved.value = true
     console.log('route change')
   }
