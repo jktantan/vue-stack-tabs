@@ -15,20 +15,17 @@
   </div>
 </template>
 
-<script lang="ts" setup name="TabHeaderButton">
+<script lang="ts" setup>
 withDefaults(
   defineProps<{
     // 是否禁用
     disabled?: boolean
-    // 是否可显示
-    visible?: boolean
     shadow?: string | null
     iconClass?: string
     title?: string
   }>(),
   {
     disabled: false,
-    visible: true,
     shadow: null,
     iconClass: ''
   }

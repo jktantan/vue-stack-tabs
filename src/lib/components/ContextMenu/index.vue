@@ -11,40 +11,40 @@
     <context-menu-item
       icon="stack-tab__icon-reload svg-mask"
       :title="t('VueStackTab.reload')"
-      @click="refresh(tabItem)"
+      @click="refreshTab(tabItem.id)"
     />
     <context-menu-item
       icon="stack-tab__icon-reload-all svg-mask"
       :title="t('VueStackTab.reloadAll')"
-      @click="refreshAll"
+      @click="refreshAllTabs"
     />
     <context-menu-item
       icon="stack-tab__icon-close svg-mask"
       :title="t('VueStackTab.close')"
       :disabled="!tabItem.closable ? 'disabled' : null"
-      @click="close(tabItem)"
+      @click="removeTab(tabItem.id)"
     />
     <context-menu-item
       icon="stack-tab__icon-close-lefts svg-mask"
       :title="t('VueStackTab.closeLefts')"
       :disabled="index <= 0 ? 'disabled' : null"
-      @click="closeLeft(tabItem)"
+      @click="removeLeftTabs(tabItem.id)"
     />
     <context-menu-item
       icon="stack-tab__icon-close-rights svg-mask"
       :title="t('VueStackTab.closeRights')"
       :disabled="index >= max - 1 ? 'disabled' : null"
-      @click="closeRight(tabItem)"
+      @click="removeRightTabs(tabItem.id)"
     />
     <context-menu-item
       icon="stack-tab__icon-close-others svg-mask"
       :title="t('VueStackTab.closeOthers')"
-      @click="closeOthers(tabItem)"
+      @click="removeOtherTabs(tabItem.id)"
     />
     <context-menu-item
       icon="stack-tab__icon-close-all svg-mask"
       :title="t('VueStackTab.closeAll')"
-      @click="closeAll"
+      @click="removeAllTabs"
     />
     <div
       v-if="contextMenu !== undefined && contextMenu.length > 0"
@@ -63,11 +63,10 @@
 
 <script setup lang="ts" name="StackTabContextMenu">
 import { ref, onMounted, reactive } from 'vue'
-import { TabItemData } from '@/lib/model/TabHeaderModel'
-import type { ContextMenu } from '@/lib/model/ContextMenuModel'
+import type { ITabItem, IContextMenu } from '@/lib/model/TabModel'
 import localeI18n from '@/lib/i18n'
 import { getMaxZIndex } from '@/lib/utils/TabScrollHelper'
-import useTabEvent from '@/lib/hooks/useTabEvent'
+import useTabpanel from '@/lib/hooks/useTabpanel'
 import ContextMenuItem from './ContextMenuItem.vue'
 // const emit = defineEmits(['close', 'closeAll', 'closeLeft', 'closeRight', 'refresh', 'refreshAll'])
 const props = withDefaults(
@@ -75,8 +74,8 @@ const props = withDefaults(
     index: number
     left: number
     top: number
-    contextMenu?: Array<ContextMenu>
-    tabItem: TabItemData
+    contextMenu?: Array<IContextMenu>
+    tabItem: ITabItem
     max: number
   }>(),
   {
@@ -91,7 +90,15 @@ const modifyData = reactive({
   left: props.left,
   top: props.top
 })
-const { close, closeAll, closeLeft, closeRight, refresh, refreshAll, closeOthers } = useTabEvent()
+const {
+  removeTab,
+  removeAllTabs,
+  removeLeftTabs,
+  removeRightTabs,
+  refreshTab,
+  refreshAllTabs,
+  removeOtherTabs
+} = useTabpanel()
 onMounted(() => {
   const clientWidth = contextmenu.value ? contextmenu.value.clientWidth : 0
   const winWidth = window.innerWidth

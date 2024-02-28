@@ -1,5 +1,5 @@
 import { useRouter } from 'vue-router'
-import useTabEvent from '@/lib/hooks/useTabEvent'
+import useTabpanel from '@/lib/hooks/useTabpanel'
 import { throttle } from 'lodash-es'
 import type { ITabData } from '@/lib/model/TabModel'
 import { defu } from 'defu'
@@ -8,7 +8,7 @@ import * as path from 'path'
 
 export default () => {
   const router = useRouter()
-  const { active, routerAlive, routerLeaved, reset } = useTabEvent()
+  const { active, hasTab, pageShown, reset } = useTabpanel()
   let iframePath: string
 
   /**
@@ -17,7 +17,7 @@ export default () => {
    * @param to
    */
   const openNewTab = throttle((tab: ITabData) => {
-    if (!(routerAlive.value && routerLeaved.value)) {
+    if (!pageShown.value) {
       return
     }
     const tabInfo = defu(tab, { refreshable: true, closable: true, iframe: false })
@@ -25,7 +25,7 @@ export default () => {
     /**
      * In the function of openNewTab, if the tab already 'ACTIVE' then do nothing.
      */
-    if (active(tabInfo.id!)) {
+    if (hasTab(tabInfo.id!)) {
       return
     }
     const __tab = encodeTabInfo(tabInfo)

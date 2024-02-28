@@ -44,7 +44,7 @@
   />
 </template>
 
-<script lang="ts" setup name="TabHeaderScroll">
+<script lang="ts" setup>
 import { computed, ref, reactive, onMounted, watch, onUnmounted } from 'vue'
 import { ResizeObserver } from '@juggle/resize-observer'
 import type { ScrollData, DragData } from '@/lib/model/TabModel'
@@ -60,7 +60,6 @@ const isDisabledLeftButton = ref<boolean>(false)
 const isDisabledRightButton = ref<boolean>(false)
 const isButtonVisibled = ref<boolean>(true)
 const headerScroll = ref<HTMLElement>()
-const containerScroll = ref<HTMLElement>()
 const props = withDefaults(
   defineProps<{
     // 每次移动距离
@@ -138,7 +137,7 @@ const update = () => {
 const resizeUpdate = new ResizeObserver(() => {
   update()
   const cur = container.value?.querySelector('.stack-tab__item.is-active')
-  if (cur !== null && cur !== undefined) {
+  if (cur) {
     if (!isInView(cur as HTMLElement)) {
       scrollIntoView(cur as HTMLElement)
     }
@@ -147,7 +146,7 @@ const resizeUpdate = new ResizeObserver(() => {
 const tabsUpdate = new ResizeObserver(() => {
   if (!hasScroller.value) {
     const cur = container.value?.querySelector('.stack-tab__item.is-active')
-    if (cur !== null && cur !== undefined) {
+    if (cur) {
       if (!isInView(cur as HTMLElement)) {
         scrollIntoView(cur as HTMLElement)
       }

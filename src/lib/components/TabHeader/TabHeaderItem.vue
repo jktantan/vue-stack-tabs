@@ -25,7 +25,7 @@
 
 <script setup lang="ts" name="TabHeaderItem">
 import { computed, ref, watch } from 'vue'
-import { TabItemData } from '@/lib/model/TabHeaderModel'
+import type { ITabItem } from '@/lib/model/TabModel'
 import localeI18n from '@/lib/i18n'
 // 消息
 const emit = defineEmits(['close', 'active'])
@@ -33,7 +33,7 @@ const emit = defineEmits(['close', 'active'])
 const { t } = localeI18n().getI18n()
 const curtab = ref<HTMLElement>()
 const props = defineProps<{
-  item: TabItemData
+  item: ITabItem
 }>()
 /**
  * 如果Active为true，就看看

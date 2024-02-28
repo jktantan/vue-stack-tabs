@@ -9,9 +9,15 @@ enum TabScrollMode {
 }
 
 enum EventType {
-  LOCALES,
-  MAXIMUM,
-  ACTIVE
+  I18N_LOCALES = 'I18N_LOCALES',
+  PANEL_MAXIMUM = 'PANEL_MAXIMUM',
+  TAB_ACTIVE = 'TAB_ACTIVE',
+  TAB_CLOSE = 'TAB_CLOSE',
+  TAB_CLOSE_ALL = 'TAB_CLOSE_ALL',
+  TAB_CLOSE_RIGHT = 'TAB_CLOSE_RIGHT',
+  TAB_CLOSE_LEFT = 'TAB_CLOSE_LEFT',
+  TAB_REFRESH = 'TAB_REFRESH',
+  TAB_REFRESH_ALL = 'TAB_REFRESH_ALL'
 }
 // 拖拽数据接口
 interface DragData {
@@ -161,9 +167,8 @@ class Stack<T> {
     return result
   }
 }
-export { TabScrollMode, Stack }
+export { TabScrollMode, Stack, EventType }
 export type {
-  EventType,
   ScrollData,
   ScrollEvents,
   DragData,

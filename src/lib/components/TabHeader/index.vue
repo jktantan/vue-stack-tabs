@@ -48,14 +48,14 @@
   </div>
 </template>
 
-<script lang="ts" setup name="TabHeader">
+<script lang="ts" setup>
 import { inject, computed, ref } from 'vue'
 import type { TransitionProps, Ref } from 'vue'
-import { TabScrollMode } from '@/lib/model/TabModel'
+import { type ITabItem, TabScrollMode } from '@/lib/model/TabModel'
 import ContextMenu from '../ContextMenu/index.vue'
 import useContextMenu from '@/lib/hooks/useContextMenu'
 import localeI18n from '@/lib/i18n'
-import useTabEvent from '@/lib/hooks/useTabEvent'
+import useTabpanel from '@/lib/hooks/useTabpanel'
 import TabHeaderItem from './TabHeaderItem.vue'
 import TabHeaderScroll from './TabHeaderScroll.vue'
 import TabHeaderButton from './TabHeaderButton.vue'
@@ -86,7 +86,7 @@ const props = withDefaults(
     max: 20
   }
 )
-const { close, active, tabs } = useTabEvent()
+const { removeTab, active, tabs } = useTabpanel()
 
 // 转换tab动画
 const tabTrans = computed<TransitionProps>(() => {
@@ -104,17 +104,18 @@ const isScrollButton = computed<boolean>(() => {
 // 判断是否可以使用滚轮
 const isScrollWheel =
   props.tabScrollMode === TabScrollMode.BOTH || props.tabScrollMode === TabScrollMode.WHEEL
+
 // 关闭前，先判断是不最先中状态
-const closeTab = (item: TabItemData) => {
+const closeTab = (item: ITabItem) => {
   // emit('close', item)
   if (item.closable) {
-    const activeId = close(item)
+    const activeId = removeTab(item.id)
     emit('active', activeId)
   }
   contextMenuShown.value = false
 }
 
-const activeTab = (item: TabItemData, curActiveTab: Ref<HTMLElement>) => {
+const activeTab = (item: ITabItem, curActiveTab: Ref<HTMLElement>) => {
   if (scroll.value) {
     if (!scroll.value!.isInView(curActiveTab.value)) {
       scroll.value!.scrollIntoView(curActiveTab.value)

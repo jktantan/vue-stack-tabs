@@ -134,10 +134,10 @@ export default () => {
 
       // 增加tab
       let activeTab: ITabItem | null = null
-      for (const tab of tabs.value) {
+      for (const tab of unref(tabs)) {
         tab.active = false
         if (tab.id === tabInfo.id) {
-          activeTab = tab
+          activeTab = tab as ITabItem
         }
       }
       const page: ITabPage = {
@@ -184,17 +184,31 @@ export default () => {
    * if id is null , then remove all tab that deleted is true
    * @param id
    */
-  const removeTab = (id: string) => {
+  const removeTab = (id: string): string => {
+    let activeTabId = ''
     for (let i = tabs.value.length - 1; i >= 0; i--) {
       if (id === unref(tabs)[i].id) {
+        if (!unref(tabs)[i].closable) {
+          break
+        }
         for (const item of unref(tabs)[i].pages.list()) {
           removeComponent(item.id)
           markDeletableCache(item.id)
         }
         unref(tabs)[i].pages.clear()
+        if (tabs.value.length > 1) {
+          if (i === 0) {
+            activeTabId = unref(tabs)[1].id
+          } else {
+            activeTabId = unref(tabs)[i - 1].id
+          }
+        }
         unref(tabs).splice(i, 1)
+
+        break
       }
     }
+    return activeTabId
   }
 
   const removeAllTabs = () => {
@@ -380,6 +394,7 @@ export default () => {
   /**
    * active the tab,
    * @param id
+   * @param route
    * @return true if already actived
    */
   const active = (id: string, route = true) => {

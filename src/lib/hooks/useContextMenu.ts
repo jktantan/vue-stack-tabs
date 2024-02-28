@@ -1,8 +1,7 @@
 import { onUnmounted, onMounted, ref, reactive, nextTick } from 'vue'
-import { TabItemData } from '../model/TabHeaderModel'
+import type { ITabItem } from '@/lib/model/TabModel'
 export default () => {
   const contextMenuData = reactive({
-    item: TabItemData,
     index: -1,
     left: 0,
     top: 0,
@@ -17,7 +16,7 @@ export default () => {
     document.removeEventListener('click', clickOutSide)
   })
 
-  const showContextMenu = async (e: MouseEvent, item: TabItemData, index: number, max: number) => {
+  const showContextMenu = async (e: MouseEvent, item: ITabItem, index: number, max: number) => {
     // 关闭已打开的菜单
     shown.value = false
 
