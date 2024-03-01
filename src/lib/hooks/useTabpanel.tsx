@@ -14,7 +14,7 @@ const defaultTabs: ITabItem[] = []
 // cache
 const caches = ref<string[]>([])
 // Dynamic components
-const components = new Map<string, DefineComponent>()
+const components = new Map<string, any>()
 const deletableCache = new Set<String>()
 const pageShown = ref<boolean>(true)
 const SESSION_TAB_NAME = 'stacktab-active-tab'
@@ -89,6 +89,14 @@ export default () => {
   }
   const addTab = (tab: ITabItem) => {
     tabs.value.push(tab)
+  }
+  const getTab = (id: string) => {
+    for (const tab of tabs.value) {
+      if (tab.id === id) {
+        return tab
+      }
+    }
+    return null
   }
   const addPage = async (
     route: RouteLocationNormalizedLoaded,
@@ -358,6 +366,9 @@ export default () => {
   const addComponent = (id: string, comp: DefineComponent) => {
     components.set(id, comp)
   }
+  const getComponent = (id: string) => {
+    return components.get(id)
+  }
   const removeComponent = (id: string) => {
     components.delete(id)
   }
@@ -451,6 +462,7 @@ export default () => {
     reset,
     addCache,
     removeCache,
+    getTab,
     addTab,
     removeTab,
     removeAllTabs,
@@ -460,6 +472,7 @@ export default () => {
     hasTab,
     addPage,
     addComponent,
+    getComponent,
     removeComponent,
     markDeletableCache,
     removeDeletableCache,

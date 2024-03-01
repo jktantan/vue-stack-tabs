@@ -20,18 +20,14 @@
       <router-view v-slot="{ Component, route }">
         <transition :name="pageTransition" appear @after-leave="pageShown = true">
           <keep-alive :include="caches">
-            <component
-              :is="addTab(route, Component)"
-              v-if="routerAlive && routerLeaved"
-              :key="route.fullPath"
-            />
+            <component :is="tabWrapper(route, Component)" v-if="pageShown" :key="route.fullPath" />
           </keep-alive>
         </transition>
       </router-view>
       <transition-group :name="pageTransition" appear>
         <iframe
           v-for="frame of tabs.filter((item) => item.iframe)"
-          v-show="frame.active && routerAlive && routerLeaved"
+          v-show="frame.active && pageShown"
           :key="frame.id"
           class="stack-tab__iframe"
           :src="/^(javascript|data):/i.test(frame.url ?? '') ? 'about:blank' : frame.url"
@@ -43,14 +39,23 @@
 </template>
 
 <script lang="tsx" setup>
-import { onBeforeMount, onUnmounted, provide, ref, watch } from 'vue'
+import {
+  defineAsyncComponent,
+  type DefineComponent,
+  onBeforeMount,
+  onUnmounted,
+  provide,
+  ref,
+  type VNode,
+  watch
+} from 'vue'
 import type { TransitionProps } from 'vue'
-import { useRouter } from 'vue-router'
+import { type RouteLocationNormalizedLoaded, useRouter } from 'vue-router'
 import { getMaxZIndex } from './utils/TabScrollHelper'
 import { type ITabData, TabScrollMode } from './model/TabModel'
 import TabHeader from './components/TabHeader/index.vue'
 import useTabpanel from '@/lib/hooks/useTabpanel'
-const { tabs, pageShown, destroy, initial } = useTabpanel()
+const { tabs, pageShown, caches, addPage, destroy, initial } = useTabpanel()
 const emit = defineEmits(['onActive'])
 const props = withDefaults(
   defineProps<{
@@ -102,6 +107,9 @@ onBeforeMount(() => {
   console.log('on Before mount')
   initial(props.defaultTabs)
 })
+const tabWrapper = (route: RouteLocationNormalizedLoaded, component: VNode): DefineComponent => {
+  return defineAsyncComponent(() => addPage(route, component))
+}
 const onTabActive = (id: string) => {
   emit('onActive', id)
 }

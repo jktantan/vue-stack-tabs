@@ -20,8 +20,10 @@
             :key="item.id"
             :contextmenu="contextmenu"
             :item="item"
-            @contextmenu.prevent="(e) => showContextMenu(e, item, index, tabs.length)"
-            @click.middle.prevent="closeTab(item)"
+            @contextmenu.prevent="
+              (e: MouseEvent) => showContextMenu(e, item as ITabItem, index, tabs.length)
+            "
+            @click.middle.prevent="closeTab(item as ITabItem)"
             @close="closeTab"
             @active="activeTab"
           />
@@ -40,7 +42,7 @@
         key="tabMenuTrans"
         :left="contextMenuData.left"
         :top="contextMenuData.top"
-        :tab-item="contextMenuData.item"
+        :tab-item="contextMenuData.item as ITabItem"
         :max="contextMenuData.max"
         :index="contextMenuData.index"
       />
@@ -51,7 +53,8 @@
 <script lang="ts" setup>
 import { inject, computed, ref } from 'vue'
 import type { TransitionProps, Ref } from 'vue'
-import { type ITabItem, TabScrollMode } from '@/lib/model/TabModel'
+import { TabScrollMode } from '@/lib/model/TabModel'
+import type { ITabItem } from '@/lib/model/TabModel'
 import ContextMenu from '../ContextMenu/index.vue'
 import useContextMenu from '@/lib/hooks/useContextMenu'
 import localeI18n from '@/lib/i18n'

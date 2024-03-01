@@ -149,7 +149,7 @@ class Stack<T> {
   }
 
   list() {
-    return this.items.values()
+    return Array.from(this.items.values())
   }
 
   /**

@@ -2,6 +2,7 @@ import { onUnmounted, onMounted, ref, reactive, nextTick } from 'vue'
 import type { ITabItem } from '@/lib/model/TabModel'
 export default () => {
   const contextMenuData = reactive({
+    item: {},
     index: -1,
     left: 0,
     top: 0,

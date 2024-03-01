@@ -4,7 +4,7 @@ import { throttle } from 'lodash-es'
 import type { ITabData } from '@/lib/model/TabModel'
 import { defu } from 'defu'
 import { encodeTabInfo } from '@/lib/utils/TabIdHelper'
-import * as path from 'path'
+import { uriDecode } from '@/lib/utils/UriHelper'
 
 export default () => {
   const router = useRouter()
@@ -29,15 +29,17 @@ export default () => {
       return
     }
     const __tab = encodeTabInfo(tabInfo)
-    const query = defu(
+    let query = defu(
       {
         __tab
       },
       tab.query
     ) as Record<string, string>
     let path
-    if (tab.iframe) {
-      path = tab.path
+    if (!tab.iframe) {
+      const url = uriDecode(tab.path)
+      path = url.path
+      query = defu(url.query, query)
     } else {
       const __src = encodeURIComponent(tab.path as string)
       path = iframePath
