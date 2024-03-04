@@ -4,7 +4,7 @@
   <el-container style="height: 100vh; width: 100vw">
     <el-header style="display: flex; align-items: center"
       ><div style="display: flex; align-items: center; gap: 10px">
-        <img src="@/assets/logo.svg" height="25" width="25" />
+        <img src="@/assets/logo.svg" height="40"  />
         <h2>Vue Stack Tabs</h2>
       </div>
       <div style="flex: 1 1 0; display: flex; justify-content: flex-end; gap: 10px">
