@@ -40,7 +40,6 @@
 
 <script lang="tsx" setup>
 import {
-  defineAsyncComponent,
   type DefineComponent,
   onBeforeMount,
   onUnmounted,

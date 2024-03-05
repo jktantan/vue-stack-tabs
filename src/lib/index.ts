@@ -2,7 +2,7 @@ import type { App } from 'vue'
 import { createI18n } from 'vue-i18n'
 import StackTab from './StackTabs.vue'
 // import VueEmttier from './hooks/useMitt'
-
+import tabVersion from './banner'
 import './assets/style/index.scss'
 const i18n = createI18n({
   legacy: false,
@@ -12,6 +12,7 @@ const i18n = createI18n({
 
 export default {
   install(app: App): void {
+    tabVersion(import.meta.env.PACKAGE_VERSION)
     app.component('VueStackTabs', StackTab).use(i18n)
   }
 }
