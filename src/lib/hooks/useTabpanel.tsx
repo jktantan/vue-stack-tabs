@@ -66,7 +66,7 @@ export default () => {
     const tempTab = window.sessionStorage.getItem(SESSION_TAB_NAME)
     if (tempTab !== null && tempTab !== undefined) {
       // const tempItems = JSON.parse(window.sessionStorage.getItem('tabItems')!)
-      const temp = defu({ pages: new Stack<ITabPage>() }, JSON.parse(tempTab))
+      const temp = defu({ pages: new Stack<ITabPage>() }, JSON.parse(tempTab)) as ITabItem
       let hasTab = false
       for (const tab of tabs.value) {
         if (tab.id === temp.id) {
@@ -214,6 +214,7 @@ export default () => {
         break
       }
     }
+    active(activeTabId)
     return activeTabId
   }
 
@@ -408,7 +409,7 @@ export default () => {
    */
   const active = (id: string, route = true) => {
     for (let i = tabs.value.length - 1; i >= 0; i--) {
-      const tab = tabs.value[i]
+      const tab = tabs.value[i] as ITabItem
       if (tab.id === id) {
         if (tab.active) {
           break

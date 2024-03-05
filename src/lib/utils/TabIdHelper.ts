@@ -1,11 +1,14 @@
 // import { compressToEncodedURIComponent, decompressFromEncodedURIComponent } from 'lz-string'
 // import { blake3 } from 'hash-wasm'
 // import { compress, decompress } from 'brotli-compress'
-// import { fromUint8Array, toUint8Array } from 'js-base64'
+// import { fromUint8Array } from 'js-base64'
 // import { compress, decompress } from 'lzw-compressor'
 import type { ITabBase } from '@/lib/model/TabModel'
 import { compressToEncodedURIComponent, decompressFromEncodedURIComponent } from 'lz-string'
-import { v5 as uuidv5 } from 'uuid'
+// import { v5 as uuidv5 } from 'uuid'
+import Hex from 'hex-encoding'
+import { blake3 } from '@noble/hashes/blake3'
+
 /**
  * compress tab info to string
  * format:
@@ -66,6 +69,8 @@ export const createPageId = (tabId: string, path: string, query: Object): string
     }
     return result
   })
-  return uuidv5(`${tabId}|${path}|${JSON.stringify(queryArray)}`, uuidv5.URL).replaceAll('-', '')
+  const hash = blake3(`${tabId}|${path}|${JSON.stringify(queryArray)}`)
+  return Hex.encode(hash)
+  // return uuidv5(`${tabId}|${path}|${JSON.stringify(queryArray)}`, uuidv5.URL).replaceAll('-', '')
   // return await blake3(`${tabId}|${path}|${JSON.stringify(queryArray)}`)
 }
