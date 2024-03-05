@@ -64,6 +64,10 @@ export default defineConfig({
   title: 'Vue Stack Tabs',
   description: 'Vue Stack Tabs',
   themeConfig: {
+    footer: {
+      message: 'Released under the Apache License.',
+      copyright: 'Copyright © 2024-present tantan'
+    },
     search: {
       provider: 'local',
       options: {
