@@ -1,5 +1,5 @@
 import type { ITabData, ITabItem, ITabPage } from '@/lib/model/TabModel'
-import { defineComponent, onActivated, onUnmounted, ref, unref } from 'vue'
+import { defineComponent, onActivated, h, onUnmounted, ref, unref } from 'vue'
 import type { DefineComponent, VNode } from 'vue'
 import { useRouter } from 'vue-router'
 import type { RouteLocationNormalizedLoaded } from 'vue-router'
@@ -26,19 +26,19 @@ export default () => {
   /**
    * Init the Tab list
    */
-  const initial = async (staticTabs: ITabData[]) => {
+  const initial = (staticTabs: ITabData[]) => {
     // add default tabs
     defaultTabs.splice(0)
     for (const item of staticTabs) {
       const id = ulid()
-      const __tab = await encodeTabInfo(defu(item, { id }))
+      const __tab = encodeTabInfo(defu(item, { id }))
       const uri = uriDecode(item.path)
       const config = defu(item, {
         closable: true,
         refreshable: true,
         iframe: false
       })
-      const cacheName = await createPageId(id, uri.path, uri.query)
+      const cacheName = createPageId(id, uri.path, uri.query)
       const page: ITabPage = {
         id: cacheName,
         tabId: id,
@@ -98,15 +98,12 @@ export default () => {
     }
     return null
   }
-  const addPage = async (
-    route: RouteLocationNormalizedLoaded,
-    component: VNode
-  ): Promise<DefineComponent> => {
+  const addPage = (route: RouteLocationNormalizedLoaded, component: VNode): DefineComponent => {
     let cacheComponent: DefineComponent
-    const tabInfo = await decodeTabInfo(route.query.__tab as string)
-    const cacheName = await createPageId(tabInfo.id!, route.path, route.query.valueOf())
+    const tabInfo = decodeTabInfo(route.query.__tab as string)
+    const cacheName = createPageId(tabInfo.id!, route.path, route.query.valueOf())
     const src = route.query.__src
-    const cacheSet = new Set(caches.value)
+    // const cacheSet = new Set(caches.value)
     if (components.has(cacheName)) {
       cacheComponent = components.get(cacheName)!
     } else {
@@ -118,7 +115,7 @@ export default () => {
         },
         setup() {
           // onMounted(() => {
-          //   removeCache()
+          //   addCache(cacheName)
           // })
           onActivated(() => {
             removeDeletableCache()
@@ -182,10 +179,11 @@ export default () => {
     // 加入缓存
     // const cacheSet = new Set(caches.value)
     // if (routerAlive.value) {
-    if (!cacheSet.has(cacheName)) {
-      caches.value.push(cacheName)
-    }
+    // if (!cacheSet.has(cacheName)) {
+    //   caches.value.push(cacheName)
     // }
+    // }
+    addCache(cacheName)
     return cacheComponent
   }
   /**

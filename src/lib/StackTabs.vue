@@ -110,8 +110,8 @@ onBeforeMount(() => {
   initial(props.defaultTabs)
 })
 const tabWrapper = (route: RouteLocationNormalizedLoaded, component: VNode): DefineComponent => {
-  return defineAsyncComponent(() => addPage(route, component))
-  // return await addPage(route, component)
+  // return defineAsyncComponent(() => addPage(route, component))
+  return addPage(route, component)
 }
 const onTabActive = (id: string) => {
   emit('onActive', id)

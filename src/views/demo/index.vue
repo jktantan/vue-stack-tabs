@@ -10,7 +10,11 @@ onMounted(() => {
   console.log('on Demo Index mount')
 })
 </script>
-
+<script lang="ts">
+export default {
+  name: 'demoIndex'
+}
+</script>
 <template>
   <div><el-input v-model="iTest" /></div>
 </template>
