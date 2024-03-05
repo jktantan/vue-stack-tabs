@@ -42,7 +42,7 @@ const printVersion = (version: string) => {
     Math.floor(height / 2) +
     'px;'
   // Logging part
-  console.log(
+  window.console.log(
     '%c' + '+',
     style +
       `background-image: url(${image64});background-size: ${width}px ${height}px;background-repeat: norepeat; color: transparent;`

@@ -9,10 +9,11 @@ export default () => {
       loadingInstance = $loading.show({
         canCancel: false,
         isFullPage: false,
-        height: 64,
-        width: 64,
+        height: 85,
+        width: 85,
         loader: 'spinner',
         color: '#007bff',
+
         container: document.getElementsByClassName('cache-page-wrapper')[0]
       })
     }

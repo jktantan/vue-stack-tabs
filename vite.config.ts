@@ -8,7 +8,7 @@ import Components from 'unplugin-vue-components/vite'
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
 import loadVersion from 'vite-plugin-package-version'
 // https://vitejs.dev/config/
-export default defineConfig({
+export default defineConfig(({  mode }) => ({
   plugins: [
     vue(),
     vueJsx(),
@@ -24,5 +24,9 @@ export default defineConfig({
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))
     }
-  }
-})
+  },
+  esbuild: {
+    drop: mode === 'production' ? ['console', 'debugger'] : [],
+    // drop: ['console','debugger']
+  },
+}))
