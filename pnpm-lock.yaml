@@ -29,6 +29,9 @@ dependencies:
   lz-string:
     specifier: ^1.5.0
     version: 1.5.0
+  lzw-compressor:
+    specifier: ^21.6.5
+    version: 21.6.5
   mitt:
     specifier: ^3.0.1
     version: 3.0.1
@@ -2560,6 +2563,12 @@ packages:
     hasBin: true
     dev: false
 
+  /lzw-compressor@21.6.5:
+    resolution: {integrity: sha512-drs5iEwJpNrCMPavK8L0H4igW7HSV022J/X5sGxU9B9mZL5gSI3T+0fE2Lgak6S3DWZNKn3svuJkSHifnFCXGw==}
+    dependencies:
+      uint: 21.6.2
+    dev: false
+
   /magic-string@0.30.7:
     resolution: {integrity: sha512-8vBuFF/I/+OSLRmdf2wwFCJCz+nSn0m6DPvGH1fS/KiQoSaR+sETbov0eIk9KhEKy8CYqIkIAnbohxT/4H0kuA==}
     engines: {node: '>=12'}
@@ -3119,6 +3128,10 @@ packages:
   /ufo@1.4.0:
     resolution: {integrity: sha512-Hhy+BhRBleFjpJ2vchUNN40qgkh0366FWJGqVLYBHev0vpHTrXSA0ryT+74UiW6KWsldNurQMKGqCm1M2zBciQ==}
     dev: true
+
+  /uint@21.6.2:
+    resolution: {integrity: sha512-2kdYektVZzHjg8Rhs4YgSnGZQkBnOa8/Xkt67YRhBMo8T36cjxbb3MnQrEgqAMSh36RAvxJWiiSOI9ySLbtwpA==}
+    dev: false
 
   /ulidx@2.3.0:
     resolution: {integrity: sha512-36piWNqcdp9hKlQewyeehCaALy4lyx3FodsCxHuV6i0YdexSkjDOubwxEVr2yi4kh62L/0MgyrxqG4K+qtovnw==}

@@ -16,7 +16,7 @@
         <slot name="rightButton" />
       </template>
     </tab-header>
-    <div class="flex-auto overflow-hidden relative">
+    <div class="stack-tab__container">
       <router-view v-slot="{ Component, route }">
         <transition :name="pageTransition" appear @after-leave="pageShown = true">
           <keep-alive :include="caches">
@@ -55,6 +55,7 @@ import { getMaxZIndex } from './utils/TabScrollHelper'
 import { type ITabData, TabScrollMode } from './model/TabModel'
 import TabHeader from './components/TabHeader/index.vue'
 import useTabpanel from '@/lib/hooks/useTabpanel'
+import useStackTab from '@/lib/hooks/useStackTab'
 const { tabs, pageShown, caches, addPage, destroy, initial } = useTabpanel()
 const emit = defineEmits(['onActive'])
 const props = withDefaults(
@@ -102,13 +103,15 @@ provide('locales', { ...props.i18n })
 // 最大化,并向下传递
 const maximum = ref<boolean>(false)
 provide('maximum', maximum)
-
+const { setIFramePath } = useStackTab()
+setIFramePath(props.iframePath)
 onBeforeMount(() => {
   console.log('on Before mount')
   initial(props.defaultTabs)
 })
 const tabWrapper = (route: RouteLocationNormalizedLoaded, component: VNode): DefineComponent => {
   return defineAsyncComponent(() => addPage(route, component))
+  // return await addPage(route, component)
 }
 const onTabActive = (id: string) => {
   emit('onActive', id)

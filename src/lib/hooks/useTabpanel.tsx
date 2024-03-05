@@ -66,16 +66,16 @@ export default () => {
     const tempTab = window.sessionStorage.getItem(SESSION_TAB_NAME)
     if (tempTab !== null && tempTab !== undefined) {
       // const tempItems = JSON.parse(window.sessionStorage.getItem('tabItems')!)
-      const temp = JSON.parse(tempTab)
+      const temp = defu({ pages: new Stack<ITabPage>() }, JSON.parse(tempTab))
       let hasTab = false
       for (const tab of tabs.value) {
-        if (tab.id === temp.tab.id) {
+        if (tab.id === temp.id) {
           hasTab = true
           break
         }
       }
       if (!hasTab) {
-        tabs.value.push(temp.tab)
+        tabs.value.push(temp)
       }
     }
   }
@@ -171,7 +171,7 @@ export default () => {
         tabs.value.push(activeTab!)
       } else {
         activeTab.active = true
-        if (activeTab.pages.peek()!.id !== page.id) {
+        if (activeTab.pages.isEmpty() || activeTab.pages.peek()!.id !== page.id) {
           activeTab.pages.push(page)
         }
       }
@@ -327,16 +327,16 @@ export default () => {
    * 刷新
    */
   const refreshTab = (id: string) => {
-    const uTabs = unref(tabs)
-    for (let i = 0; i < uTabs.length; i++) {
-      if (uTabs[i].id === id) {
-        const currentPageId = uTabs[i].pages.peek()?.id
+    // const uTabs = unref(tabs)
+    for (const uTabs of unref(tabs)) {
+      if (uTabs.id === id) {
+        const currentPageId = uTabs.pages.peek()?.id
         for (let i = caches.value.length - 1; i >= 0; i--) {
           const cacheId = caches.value[i]
           if (cacheId === currentPageId) {
             caches.value.splice(i, 1)
             // 如果要刷新的是显示的TAB
-            if (uTabs[i].active) {
+            if (uTabs.active) {
               pageShown.value = false
             }
             break
@@ -417,6 +417,7 @@ export default () => {
         } else {
           tab.active = true
           pageShown.value = false
+          updateSession(tab)
           if (route) {
             const top = tab.pages.peek()
             router.push({

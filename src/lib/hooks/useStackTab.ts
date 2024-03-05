@@ -5,18 +5,18 @@ import type { ITabData } from '@/lib/model/TabModel'
 import { defu } from 'defu'
 import { encodeTabInfo } from '@/lib/utils/TabIdHelper'
 import { uriDecode } from '@/lib/utils/UriHelper'
-
+import { ulid } from 'ulidx'
+let iframePath: string
 export default () => {
   const router = useRouter()
   const { active, hasTab, pageShown, reset } = useTabpanel()
-  let iframePath: string
 
   /**
    * 打开新的TAB页面
    * @param tab
    * @param to
    */
-  const openNewTab = throttle((tab: ITabData) => {
+  const openNewTab = throttle(async (tab: ITabData) => {
     if (!pageShown.value) {
       return
     }
@@ -26,9 +26,13 @@ export default () => {
      * In the function of openNewTab, if the tab already 'ACTIVE' then do nothing.
      */
     if (hasTab(tabInfo.id!)) {
+      active(tabInfo.id!)
       return
     }
-    const __tab = encodeTabInfo(tabInfo)
+    if (!tabInfo.id) {
+      tabInfo.id = ulid()
+    }
+    const __tab = await encodeTabInfo(tabInfo)
     let query = defu(
       {
         __tab
@@ -50,6 +54,7 @@ export default () => {
       path,
       query
     })
+    return tabInfo.id
   }, 500)
 
   const setIFramePath = (path: string) => {

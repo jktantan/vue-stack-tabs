@@ -1,10 +1,37 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import useStackTab from '@/lib/hooks/useStackTab'
+const { openNewTab } = useStackTab()
+const openframe = (id: string | number) => {
+  openNewTab({
+    id,
+    title: '面试',
+    path: 'https://cn.vuejs.org/',
+    iframe: true
+  })
+}
+const openDashboard = (id: string) => {
+  openNewTab({
+    id,
+    title: '首页',
+    path: '/demo',
+    closable: true
+  })
+}
+const openTest2 = (id: string) => {
+  openNewTab({
+    id,
+    title: '测试2',
+    path: '/demo/test2',
+    closable: true
+  })
+}
+</script>
 
 <template>
   <el-container style="height: 100vh; width: 100vw">
     <el-header style="display: flex; align-items: center"
       ><div style="display: flex; align-items: center; gap: 10px">
-        <img src="@/assets/logo.svg" height="40"  />
+        <img src="@/assets/logo.svg" height="40" />
         <h2>Vue Stack Tabs</h2>
       </div>
       <div style="flex: 1 1 0; display: flex; justify-content: flex-end; gap: 10px">
@@ -17,7 +44,7 @@
         ><el-menu default-active="2" class="el-menu-vertical-demo">
           <el-sub-menu index="1" title="Navigator One">
             <template #title>
-              <span>Navigator One</span>
+              <span>样例</span>
             </template>
             <el-menu-item-group title="Group One">
               <el-menu-item index="1-1">item one</el-menu-item>
@@ -31,21 +58,23 @@
               <el-menu-item index="1-4-1">item one</el-menu-item>
             </el-sub-menu>
           </el-sub-menu>
-          <el-menu-item index="2">
-            <span>页面1</span>
+          <el-menu-item index="2" @click="openDashboard('01HR6764M0NN996S2P510E5642')">
+            <span>首页</span>
           </el-menu-item>
-          <el-menu-item index="3">
+          <el-menu-item index="3" @click="openTest2('test2')">
             <span>页面2</span>
           </el-menu-item>
           <el-menu-item index="4">
             <span>页面3</span>
           </el-menu-item>
-          <el-menu-item index="5">
+          <el-menu-item index="5" @click="openframe('01HR6764M0X9CZKNT15QH82TXY')">
             <span>IFrame页面</span>
           </el-menu-item>
         </el-menu></el-aside
       >
-      <el-main style="padding: 5px"><router-view /></el-main>
+      <el-main style="padding: 5px">
+        <router-view />
+      </el-main>
     </el-container>
   </el-container>
 </template>

@@ -8,6 +8,12 @@
   background-color: $--stack-tab-background-color-base;
   flex-direction: column;
   grid-gap: 5px;
+
+  &__container {
+    flex: 1 1 0;
+    position: relative;
+    overflow: hidden;
+  }
   /*缓存页面wrapper*/
   .cache-page-wrapper {
     width: 100%;
