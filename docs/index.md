@@ -2,10 +2,10 @@
 layout: home
 
 hero:
-  name: Vue Router Tab
+  name: Vue Stack Tab
   tagline: 基于 Vue Router 的路由页签组件。
-  image: 
-    src: /demo/img/logo.png
+  image:
+    src: '/img/logo.svg',
   actions:
     - text: 快速上手 →
       link: ./guide/

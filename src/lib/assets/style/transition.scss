@@ -4,7 +4,7 @@ transition 过渡样式
 .stack-tab-zoom {
   &-enter-active,
   &-leave-active {
-    transition: all 0.3s;
+    transition: all 0.3s ease-in-out;
   }
 
   &-enter-from,
@@ -22,7 +22,7 @@ transition 过渡样式
 
   &-enter-active,
   &-leave-active {
-    transition: all 0.3s;
+    transition: all 0.3s ease-in-out;
   }
 
   &-enter-from,

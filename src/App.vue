@@ -14,7 +14,7 @@ const openDashboard = (id: string) => {
     id,
     title: '首页',
     path: '/demo',
-    closable: true
+    closable: false
   })
 }
 const openTest2 = (id: string) => {

@@ -5,7 +5,7 @@ hero:
   name: Vue Router Tab
   tagline: 基于 Vue Router 的路由页签组件。
   image:
-    src: /demo/img/logo.png
+    src: /img/logo.svg
   actions:
     - text: 快速上手 →
       link: ./guide/

@@ -1,5 +1,11 @@
 import { defineConfig } from 'vitepress'
+import { tasklist } from '@mdit/plugin-tasklist'
 export default defineConfig({
+  markdown: {
+    config(md) {
+      md.use(tasklist)
+    }
+  },
   locales: {
     root: {
       label: 'English',
@@ -25,10 +31,7 @@ export default defineConfig({
         sidebar: [
           {
             text: '开始',
-            items: [
-              { text: '简介', link: '/zh/guide/' },
-              { text: '快速上手', link: '/getting-started' }
-            ]
+            items: [{ text: '简介', link: '/zh/guide/' }]
           },
           {
             text: '基础',
@@ -63,7 +66,9 @@ export default defineConfig({
   lang: 'zh-CN',
   title: 'Vue Stack Tabs',
   description: 'Vue Stack Tabs',
+  head: [['link', { rel: 'icon', href: '/img/logo.svg' }]],
   themeConfig: {
+    logo: '/img/logo.svg',
     footer: {
       message: 'Released under the Apache License.',
       copyright: 'Copyright © 2024-present tantan'

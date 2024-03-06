@@ -215,6 +215,10 @@ export default () => {
       }
     }
     active(activeTabId)
+    // if remove inactive tab,then we need remove the cache manually.
+    if (activeTabId !== id) {
+      removeDeletableCache()
+    }
     return activeTabId
   }
 
@@ -232,6 +236,7 @@ export default () => {
     }
     for (const stay of uTabs) {
       if (stay.active) {
+        removeDeletableCache()
         return
       }
     }
@@ -242,7 +247,9 @@ export default () => {
     const uTabs = unref(tabs)
     let activeTab
     for (let i = uTabs.length - 1; i >= 0; i--) {
-      if (uTabs[i].closable && uTabs[i].id !== id) {
+      if (uTabs[i].id === id) {
+        activeTab = uTabs[i]
+      } else if (uTabs[i].closable && uTabs[i].id !== id) {
         for (const item of uTabs[i].pages.list()) {
           removeComponent(item.id)
           markDeletableCache(item.id)
@@ -250,13 +257,11 @@ export default () => {
         unref(tabs)[i].pages.clear()
         unref(tabs).splice(i, 1)
       }
-
-      if (uTabs[i].id === id) {
-        activeTab = uTabs[i]
-      }
     }
     if (!activeTab!.active) {
       active(id)
+    } else {
+      removeDeletableCache()
     }
   }
   /**
@@ -284,6 +289,7 @@ export default () => {
     }
     for (const stay of uTabs) {
       if (stay.active) {
+        removeDeletableCache()
         return
       }
     }
@@ -316,6 +322,7 @@ export default () => {
     }
     for (const stay of uTabs) {
       if (stay.active) {
+        removeDeletableCache()
         return
       }
     }

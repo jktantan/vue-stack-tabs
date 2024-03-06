@@ -178,6 +178,7 @@
     transform-origin: left bottom;
     content-visibility: auto;
     margin-top: 5px;
+
     &:first-child {
       border-left: $--stack-tab-border;
     }
@@ -198,6 +199,7 @@
       border-bottom-color: #fff;
       box-shadow: $--stack-tab-shadow-left, $--stack-tab-shadow-right;
       margin-top: unset;
+
     }
 
     &:hover,
