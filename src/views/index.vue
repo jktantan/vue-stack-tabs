@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import useStackTab from '@/lib/hooks/useStackTab'
+import { useStackTab } from 'vue-stack-tabs'
 const { openNewTab } = useStackTab()
 openNewTab({
   id: '01HR6764M0NN996S2P510E5642',

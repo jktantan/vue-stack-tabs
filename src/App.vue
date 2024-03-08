@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useStackTab } from '@/lib'
+import { useStackTab } from 'vue-stack-tabs'
 const { openNewTab } = useStackTab()
 const openframe = (id: string | number) => {
   openNewTab({

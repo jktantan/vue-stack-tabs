@@ -39,7 +39,6 @@
 </template>
 
 <script lang="tsx" setup>
-import 'vue-loading-overlay/dist/css/index.css'
 import { onBeforeMount, onUnmounted, provide, ref, watch } from 'vue'
 import type { TransitionProps, DefineComponent, VNode } from 'vue'
 import { type RouteLocationNormalizedLoaded, useRouter } from 'vue-router'
