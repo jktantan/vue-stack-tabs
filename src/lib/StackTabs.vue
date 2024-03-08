@@ -1,44 +1,4 @@
-<template>
-  <div
-    class="stack-tab"
-    :style="{
-      width: width,
-      height: height,
-      'z-index': maximum ? getMaxZIndex('body *:not(.stack-tab,.stack-tab *)') : undefined
-    }"
-    :class="{ 'stack-tab__maximum': maximum }"
-  >
-    <tab-header :space="space" @active="onTabActive" :tab-transition="tabTransition" :max="max">
-      <template #leftButton>
-        <slot name="leftButton" />
-      </template>
-      <template #rightButton>
-        <slot name="rightButton" />
-      </template>
-    </tab-header>
-    <div class="stack-tab__container">
-      <router-view v-slot="{ Component, route }">
-        <transition :name="pageTransition" appear @after-leave="pageShown = true">
-          <keep-alive :include="caches">
-            <component :is="tabWrapper(route, Component)" v-if="pageShown" :key="route.fullPath" />
-          </keep-alive>
-        </transition>
-      </router-view>
-      <transition-group :name="pageTransition" appear>
-        <iframe
-          v-for="frame of tabs.filter((item) => item.iframe)"
-          v-show="frame.active && pageShown"
-          :key="frame.id"
-          class="stack-tab__iframe"
-          :src="/^(javascript|data):/i.test(frame.url ?? '') ? 'about:blank' : frame.url"
-          frameborder="0"
-        />
-      </transition-group>
-    </div>
-  </div>
-</template>
-
-<script lang="tsx" setup>
+<script lang="ts" setup>
 import { onBeforeMount, onUnmounted, provide, ref, watch } from 'vue'
 import type { TransitionProps, DefineComponent, VNode } from 'vue'
 import { type RouteLocationNormalizedLoaded, useRouter } from 'vue-router'
@@ -124,4 +84,43 @@ watch(
   }
 )
 </script>
+<template>
+  <div
+    class="stack-tab"
+    :style="{
+      width: width,
+      height: height,
+      'z-index': maximum ? getMaxZIndex('body *:not(.stack-tab,.stack-tab *)') : undefined
+    }"
+    :class="{ 'stack-tab__maximum': maximum }"
+  >
+    <tab-header :space="space" @active="onTabActive" :tab-transition="tabTransition" :max="max">
+      <template #leftButton>
+        <slot name="leftButton" />
+      </template>
+      <template #rightButton>
+        <slot name="rightButton" />
+      </template>
+    </tab-header>
+    <div class="stack-tab__container">
+      <router-view v-slot="{ Component, route }">
+        <transition :name="pageTransition" appear @after-leave="pageShown = true">
+          <keep-alive :include="caches">
+            <component :is="tabWrapper(route, Component)" v-if="pageShown" :key="route.fullPath" />
+          </keep-alive>
+        </transition>
+      </router-view>
+      <transition-group :name="pageTransition" appear>
+        <iframe
+          v-for="frame of tabs.filter((item) => item.iframe)"
+          v-show="frame.active && pageShown"
+          :key="frame.id"
+          class="stack-tab__iframe"
+          :src="/^(javascript|data):/i.test(frame.url ?? '') ? 'about:blank' : frame.url"
+          frameborder="0"
+        />
+      </transition-group>
+    </div>
+  </div>
+</template>
 <style scoped></style>

@@ -8,7 +8,7 @@ import Components from 'unplugin-vue-components/vite'
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
 import loadVersion from 'vite-plugin-package-version'
 // https://vitejs.dev/config/
-export default defineConfig(({  mode }) => ({
+export default defineConfig(({ mode }) => ({
   plugins: [
     vue(),
     vueJsx(),
@@ -22,11 +22,12 @@ export default defineConfig(({  mode }) => ({
   ],
   resolve: {
     alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url))
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
+      vue: 'vue/dist/vue.esm-bundler.js'
     }
   },
   esbuild: {
-    drop: mode === 'production' ? ['console', 'debugger'] : [],
+    drop: mode === 'production' ? ['console', 'debugger'] : []
     // drop: ['console','debugger']
-  },
+  }
 }))
