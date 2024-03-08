@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useStackTab } from '@/lib'
 const { openNewTab } = useStackTab()
-const openframe = (id: string | number) => {
+const openframe = (id: string) => {
   openNewTab({
     id,
     title: '面试',

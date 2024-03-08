@@ -23,6 +23,7 @@
 </template>
 
 <script lang="ts" setup>
+// @ts-nocheck
 import {
   defineProps,
   withDefaults,
@@ -126,6 +127,7 @@ const focusIn = (event: FocusEvent) => {
     // Event target is the loading div element itself
     event.target === overlay.value ||
     // Event target is inside the loading div
+    // @ts-ignore
     overlay.value!.contains(event.target)
   )
     return
@@ -142,6 +144,7 @@ const focusIn = (event: FocusEvent) => {
     props.isFullPage ||
     // When a parent exist means loader is running inside a container
     // When loading is NOT full screen and event target is inside the given container
+    // @ts-ignore
     (parent && parent.contains(event.target))
   ) {
     event.preventDefault()

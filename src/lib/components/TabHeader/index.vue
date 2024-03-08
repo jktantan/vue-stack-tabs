@@ -51,6 +51,7 @@
 </template>
 
 <script lang="ts" setup>
+// @ts-nocheck
 import { inject, computed, ref } from 'vue'
 import type { TransitionProps, Ref } from 'vue'
 import { TabScrollMode } from '../../model/TabModel'

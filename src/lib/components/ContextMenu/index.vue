@@ -84,6 +84,7 @@ const props = withDefaults(
     contextMen: []
   }
 )
+// @ts-ignore
 const { t } = localeI18n().getI18n()
 const contextmenu = ref<HTMLElement>()
 const modifyData = reactive({

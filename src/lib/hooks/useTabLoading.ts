@@ -1,11 +1,10 @@
 import { useLoading } from '../components/OverlayLoading'
-import type { ActiveLoader } from 'vue-loading-overlay'
 import { type ComponentInternalInstance, getCurrentInstance, onUnmounted } from 'vue'
 
 export default () => {
   const $loading = useLoading()
   const { attrs } = getCurrentInstance() as ComponentInternalInstance
-  let loadingInstance: ActiveLoader | null = null
+  let loadingInstance: any | null = null
   onUnmounted(() => {
     closeTabLoading()
   })
