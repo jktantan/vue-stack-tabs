@@ -1,6 +1,6 @@
 {
   "name": "vue-stack-tabs",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "description": "Vue.js component for router tab.",
   "private": false,
   "type": "module",
@@ -11,7 +11,7 @@
   ],
   "main": "dist/vue-stack-tabs.umd.js",
   "module": "dist/vue-stack-tabs.es.js",
-  "types": "types/index.d.ts",
+  "typings": "types/index.d.ts",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/jktantan/vue-stack-tabs.git"
@@ -86,8 +86,8 @@
     "vite-plugin-package-version": "^1.1.0",
     "vite-plugin-require-transform": "^1.0.21",
     "vitepress": "1.0.0-rc.44",
-    "vue-tsc": "^1.8.27",
+    "vue": "^3.4.21",
     "vue-router": "^4.3.0",
-    "vue": "^3.4.21"
+    "vue-tsc": "^1.8.27"
   }
 }

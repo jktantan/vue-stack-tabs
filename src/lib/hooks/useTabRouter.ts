@@ -2,9 +2,8 @@ import { defu } from 'defu'
 
 import { getCurrentInstance } from 'vue'
 import type { ComponentInternalInstance } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { type RouteLocationPathRaw, useRoute, useRouter } from 'vue-router'
 
-import type { TabRouteLocationRaw } from '@/lib/model/TabModel'
 import useTabpanel from '@/lib/hooks/useTabpanel'
 import { uriDecode } from '@/lib/utils/UriHelper'
 export default () => {
@@ -20,7 +19,7 @@ export default () => {
   // currentPageId = attrs.pId as string
   currentTab = route.query.__tab as string
 
-  const forward = (to: TabRouteLocationRaw) => {
+  const forward = (to: RouteLocationPathRaw) => {
     pageShown.value = false
     const query = defu(
       {

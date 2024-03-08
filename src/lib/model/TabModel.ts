@@ -8,17 +8,17 @@ export enum TabScrollMode {
   BOTH = 'both'
 }
 
-export enum EventType {
-  I18N_LOCALES = 'I18N_LOCALES',
-  PANEL_MAXIMUM = 'PANEL_MAXIMUM',
-  TAB_ACTIVE = 'TAB_ACTIVE',
-  TAB_CLOSE = 'TAB_CLOSE',
-  TAB_CLOSE_ALL = 'TAB_CLOSE_ALL',
-  TAB_CLOSE_RIGHT = 'TAB_CLOSE_RIGHT',
-  TAB_CLOSE_LEFT = 'TAB_CLOSE_LEFT',
-  TAB_REFRESH = 'TAB_REFRESH',
-  TAB_REFRESH_ALL = 'TAB_REFRESH_ALL'
-}
+// export enum EventType {
+//   I18N_LOCALES = 'I18N_LOCALES',
+//   PANEL_MAXIMUM = 'PANEL_MAXIMUM',
+//   TAB_ACTIVE = 'TAB_ACTIVE',
+//   TAB_CLOSE = 'TAB_CLOSE',
+//   TAB_CLOSE_ALL = 'TAB_CLOSE_ALL',
+//   TAB_CLOSE_RIGHT = 'TAB_CLOSE_RIGHT',
+//   TAB_CLOSE_LEFT = 'TAB_CLOSE_LEFT',
+//   TAB_REFRESH = 'TAB_REFRESH',
+//   TAB_REFRESH_ALL = 'TAB_REFRESH_ALL'
+// }
 // 拖拽数据接口
 export interface DragData {
   thumbLeft: number
@@ -75,15 +75,15 @@ export interface IContextMenu {
   callback(id: string): void
   disabled: (tabData: ITabBase) => boolean
 }
-export interface TabRouteLocationRaw {
-  path: string
-  query?: any
-}
-export interface PageRouteLocationRaw {
-  pId: string
-  path: string
-  query: any
-}
+// export interface TabRouteLocationRaw {
+//   path: string
+//   query?: any
+// }
+// export interface PageRouteLocationRaw {
+//   pId: string
+//   path: string
+//   query: any
+// }
 export class Stack<T> {
   // 存储的Map
   private items: Map<number, T>
@@ -167,16 +167,3 @@ export class Stack<T> {
     return result
   }
 }
-// export { TabScrollMode, Stack, EventType }
-// export type {
-//   ScrollData,
-//   ScrollEvents,
-//   DragData,
-//   ITabData,
-//   ITabItem,
-//   ITabPage,
-//   ITabBase,
-//   IContextMenu,
-//   TabRouteLocationRaw,
-//   PageRouteLocationRaw
-// }
