@@ -12,8 +12,9 @@ export const useLoading = (globalProps = {}, globalSlots = {}) => {
       }
 
       const propsData = { ...globalProps, ...props, ...forceProps }
+      // @ts-ignore
       let container = propsData.container
-
+      // @ts-ignore
       if (!propsData.container) {
         container = document.body
         propsData.isFullPage = true
@@ -23,7 +24,7 @@ export const useLoading = (globalProps = {}, globalSlots = {}) => {
       const instance = createComponent(LoadingComponent, propsData, container, mergedSlots)
 
       return {
-        hide: instance.ctx.hide
+        hide: instance!.exposed!.hide
       }
     }
   }

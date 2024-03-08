@@ -1,6 +1,6 @@
 import { h, render } from 'vue'
 
-export const removeElement = (el) => {
+export const removeElement = (el: HTMLElement) => {
   if (typeof el.remove !== 'undefined') {
     el.remove()
   } else {
@@ -9,7 +9,12 @@ export const removeElement = (el) => {
 }
 
 // Taken from https://github.com/moyoujun/vue3-loading-overlay/blob/master/src/index.ts
-export function createComponent(component, props, parentContainer, slots = {}) {
+export function createComponent(
+  component: any,
+  props: any,
+  parentContainer: HTMLElement,
+  slots = {}
+) {
   const vNode = h(component, props, slots)
   const container = document.createElement('div')
   container.classList.add('vld-container')

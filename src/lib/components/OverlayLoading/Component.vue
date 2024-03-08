@@ -34,7 +34,7 @@ import {
   watch
 } from 'vue'
 import { removeElement } from './helpers'
-import Loaders from '../loaders'
+import Loaders from './loaders'
 
 const props = withDefaults(
   defineProps<{
@@ -42,7 +42,7 @@ const props = withDefaults(
     programmatic: boolean
     container: HTMLElement | Object | Function
     isFullPage: boolean
-    enforceFocus: boolean
+    enforceFocus?: boolean
     lockScroll: boolean
     transition: string
     /**
@@ -181,5 +181,8 @@ onMounted(() => {
 onBeforeUnmount(() => {
   document.removeEventListener('keyup', keyPress)
   document.removeEventListener('focusin', focusIn)
+})
+defineExpose({
+  hide
 })
 </script>

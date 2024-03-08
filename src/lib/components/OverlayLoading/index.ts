@@ -1,5 +1,5 @@
-import { useLoading } from './js/api'
-import Component from './js/Component.vue'
+import { useLoading } from './api'
+import Component from './Component.vue'
 import type { App } from 'vue'
 
 const LoadingPlugin = (app: App, props = {}, slots = {}) => {

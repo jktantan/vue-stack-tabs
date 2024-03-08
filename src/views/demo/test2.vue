@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { nextTick, onMounted, onUnmounted, ref } from 'vue'
-import { useTabLoading } from 'vue-stack-tabs'
+import { useTabLoading } from '@/lib'
 const t = ref()
 const { openTabLoading, closeTabLoading } = useTabLoading()
 onMounted(() => {

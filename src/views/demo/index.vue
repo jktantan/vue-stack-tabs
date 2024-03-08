@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useTabRouter } from 'vue-stack-tabs'
+import { useTabRouter } from '@/lib'
 import { onActivated, onMounted, ref } from 'vue'
 useTabRouter()
 const iTest = ref<string>('')
