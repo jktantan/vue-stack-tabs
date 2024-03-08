@@ -1,4 +1,4 @@
-import { useLoading } from 'vue-loading-overlay'
+import { useLoading } from '../components/OverlayLoading'
 import type { ActiveLoader } from 'vue-loading-overlay'
 import { type ComponentInternalInstance, getCurrentInstance, onUnmounted } from 'vue'
 
@@ -11,19 +11,6 @@ export default () => {
   })
   const openTabLoading = () => {
     const container = document.querySelector(`#${attrs.tId}`)
-    // const wrappers = document.getElementsByClassName('cache-page-wrapper')
-    // for(const wrapper of wrappers){
-    //   const childs = wrapper.children
-    //   for(const child of childs){
-    //     if(child.getAttribute("tId")===attrs.tId){
-    //       container=wrapper
-    //       break;
-    //     }
-    //   }
-    //   if(container!==null){
-    //     break;
-    //   }
-    // }
     if (loadingInstance === null) {
       loadingInstance = $loading.show({
         canCancel: false,

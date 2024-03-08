@@ -32,7 +32,7 @@ export default () => {
     if (!tabInfo.id) {
       tabInfo.id = ulid()
     }
-    const __tab = await encodeTabInfo(tabInfo)
+    const __tab = encodeTabInfo(tabInfo)
     let query = defu(
       {
         __tab
