@@ -194,17 +194,18 @@ export default () => {
     let activeTabId = ''
     for (let i = tabs.value.length - 1; i >= 0; i--) {
       if (id === unref(tabs)[i].id) {
+        //if it's not closable then return
         if (!unref(tabs)[i].closable) {
-          break
+          return id
         }
         for (const item of unref(tabs)[i].pages.list()) {
           removeComponent(item.id)
           markDeletableCache(item.id)
         }
         unref(tabs)[i].pages.clear()
-        if (tabs.value.length > 1) {
+        if (tabs.value.length > 1 && unref(tabs)[i].active) {
           if (i === 0) {
-            activeTabId = unref(tabs)[1].id
+            activeTabId = unref(tabs)[i + 1].id
           } else {
             activeTabId = unref(tabs)[i - 1].id
           }
@@ -214,11 +215,11 @@ export default () => {
         break
       }
     }
-    active(activeTabId)
-    // if remove inactive tab,then we need remove the cache manually.
-    if (activeTabId !== id) {
-      removeDeletableCache()
+    if (activeTabId !== '') {
+      active(activeTabId)
     }
+    // if remove inactive tab,then we need remove the cache manually.
+    removeDeletableCache()
     return activeTabId
   }
 
