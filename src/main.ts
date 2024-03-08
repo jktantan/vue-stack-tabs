@@ -1,13 +1,11 @@
 import { createApp } from 'vue'
-import { createPinia } from 'pinia'
 import 'normalize.css/normalize.css'
 import App from './App.vue'
 import router from './router'
-import VueStackTabs from './lib'
-import './lib/assets/style/index.scss'
+import VueStackTabs from 'vue-stack-tabs'
+import 'vue-stack-tabs/dist/style.css'
 const app = createApp(App)
 
-app.use(createPinia())
 app.use(router)
 app.use(VueStackTabs)
 

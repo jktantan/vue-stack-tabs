@@ -40,16 +40,8 @@
 
 <script lang="tsx" setup>
 import 'vue-loading-overlay/dist/css/index.css'
-import {
-  type DefineComponent,
-  onBeforeMount,
-  onUnmounted,
-  provide,
-  ref,
-  type VNode,
-  watch
-} from 'vue'
-import type { TransitionProps } from 'vue'
+import { onBeforeMount, onUnmounted, provide, ref, watch } from 'vue'
+import type { TransitionProps, DefineComponent, VNode } from 'vue'
 import { type RouteLocationNormalizedLoaded, useRouter } from 'vue-router'
 import { getMaxZIndex } from '@/lib/utils/TabScrollHelper'
 import { type ITabData, TabScrollMode } from '@/lib/model/TabModel'
