@@ -2,7 +2,7 @@
   "name": "vue-stack-tabs",
   "version": "0.1.0",
   "description": "Vue.js component for router tab.",
-  "private": true,
+  "private": false,
   "type": "module",
   "files": [
     "src/lib",
