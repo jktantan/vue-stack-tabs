@@ -16,6 +16,7 @@ const i18n = createI18n({
   fallbackLocale: 'en-US'
 })
 export { IFrame, useTabLoading, useTabRouter, useStackTab }
+export * from './model/TabModel'
 export default {
   install(app: App): void {
     tabVersion(import.meta.env.PACKAGE_VERSION)

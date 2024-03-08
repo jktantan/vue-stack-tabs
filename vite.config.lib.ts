@@ -7,12 +7,7 @@ import loadVersion from 'vite-plugin-package-version'
 import { resolve } from 'path'
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
-  plugins: [
-    vue(),
-    vueJsx(),
-    loadVersion(),
-    dts({ outDir: 'types', staticImport: true, declarationOnly: true })
-  ],
+  plugins: [vue(), vueJsx(), loadVersion(), dts({ outDir: 'types', staticImport: true })],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))

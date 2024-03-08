@@ -9,6 +9,8 @@
     "dist",
     "types"
   ],
+  "main": "dist/vue-stack-tabs.es.js",
+  "types": "types/index.d.ts",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/jktantan/vue-stack-tabs.git"
