@@ -7,7 +7,7 @@ import { useRoute, useRouter } from 'vue-router'
 import type { TabRouteLocationRaw } from '@/lib/model/TabModel'
 import useTabpanel from '@/lib/hooks/useTabpanel'
 import { uriDecode } from '@/lib/utils/UriHelper'
-export const useTabRouter = () => {
+export default () => {
   const { attrs } = getCurrentInstance() as ComponentInternalInstance
   const { pageShown, getTab, markDeletableCache, removeComponent, getComponent } = useTabpanel()
   const route = useRoute()

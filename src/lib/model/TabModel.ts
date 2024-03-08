@@ -1,5 +1,5 @@
 // Tab的滚动方式
-enum TabScrollMode {
+export enum TabScrollMode {
   // 使用滚轮
   WHEEL = 'wheel',
   // 使用按钮
@@ -8,7 +8,7 @@ enum TabScrollMode {
   BOTH = 'both'
 }
 
-enum EventType {
+export enum EventType {
   I18N_LOCALES = 'I18N_LOCALES',
   PANEL_MAXIMUM = 'PANEL_MAXIMUM',
   TAB_ACTIVE = 'TAB_ACTIVE',
@@ -20,40 +20,40 @@ enum EventType {
   TAB_REFRESH_ALL = 'TAB_REFRESH_ALL'
 }
 // 拖拽数据接口
-interface DragData {
+export interface DragData {
   thumbLeft: number
   startScrollLeft: number
   startThumbLeft: number
   startPageX: number
 }
 // 滑块数据接口
-interface ScrollData {
+export interface ScrollData {
   clientWidth: number
   scrollWidth: number
   scrollLeft: number
 }
 // 滚动条事件类型
-type ScrollEvents = {
+export type ScrollEvents = {
   ScrollUpdate: void
 }
 
 /**
  * Tab data for open
  */
-interface ITabData extends ITabBase {
+export interface ITabData extends ITabBase {
   // tab name
   title: string
   path: string
   query?: Record<string, string>
 }
-interface ITabBase {
+export interface ITabBase {
   id?: string
   title: string
   closable?: boolean
   refreshable?: boolean
   iframe?: boolean
 }
-interface ITabItem extends ITabBase {
+export interface ITabItem extends ITabBase {
   id: string
   closable: boolean
   refreshable: boolean
@@ -63,28 +63,28 @@ interface ITabItem extends ITabBase {
   pages: Stack<ITabPage>
 }
 
-interface ITabPage {
+export interface ITabPage {
   id: string
   tabId: string
   path: string
   query?: Record<string, string>
 }
-interface IContextMenu {
+export interface IContextMenu {
   icon?: string
   title: string
   callback(id: string): void
   disabled: (tabData: ITabBase) => boolean
 }
-interface TabRouteLocationRaw {
+export interface TabRouteLocationRaw {
   path: string
   query?: any
 }
-interface PageRouteLocationRaw {
+export interface PageRouteLocationRaw {
   pId: string
   path: string
   query: any
 }
-class Stack<T> {
+export class Stack<T> {
   // 存储的Map
   private items: Map<number, T>
 
@@ -167,16 +167,16 @@ class Stack<T> {
     return result
   }
 }
-export { TabScrollMode, Stack, EventType }
-export type {
-  ScrollData,
-  ScrollEvents,
-  DragData,
-  ITabData,
-  ITabItem,
-  ITabPage,
-  ITabBase,
-  IContextMenu,
-  TabRouteLocationRaw,
-  PageRouteLocationRaw
-}
+// export { TabScrollMode, Stack, EventType }
+// export type {
+//   ScrollData,
+//   ScrollEvents,
+//   DragData,
+//   ITabData,
+//   ITabItem,
+//   ITabPage,
+//   ITabBase,
+//   IContextMenu,
+//   TabRouteLocationRaw,
+//   PageRouteLocationRaw
+// }

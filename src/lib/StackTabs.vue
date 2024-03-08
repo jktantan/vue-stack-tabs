@@ -39,6 +39,7 @@
 </template>
 
 <script lang="tsx" setup>
+import 'vue-loading-overlay/dist/css/index.css'
 import {
   type DefineComponent,
   onBeforeMount,
@@ -50,9 +51,9 @@ import {
 } from 'vue'
 import type { TransitionProps } from 'vue'
 import { type RouteLocationNormalizedLoaded, useRouter } from 'vue-router'
-import { getMaxZIndex } from './utils/TabScrollHelper'
-import { type ITabData, TabScrollMode } from './model/TabModel'
-import TabHeader from './components/TabHeader/index.vue'
+import { getMaxZIndex } from '@/lib/utils/TabScrollHelper'
+import { type ITabData, TabScrollMode } from '@/lib/model/TabModel'
+import TabHeader from '@/lib/components/TabHeader/index.vue'
 import useTabpanel from '@/lib/hooks/useTabpanel'
 import useStackTab from '@/lib/hooks/useStackTab'
 const { tabs, pageShown, caches, addPage, destroy, initial } = useTabpanel()

@@ -20,11 +20,7 @@ $--stack-tab-color-disabled: #aaa !default;
 /*
 ICON点击颜色
  */
-$--stack-tab-color-primary-activate: mix(
-  $--stack-tab-color-primary,
-  #000,
-  80%
-) !default;
+$--stack-tab-color-primary-activate: mix($--stack-tab-color-primary, #000, 80%) !default;
 /*
 背景颜色
  */

@@ -1,5 +1,5 @@
 import type { ITabData, ITabItem, ITabPage } from '@/lib/model/TabModel'
-import { defineComponent, onActivated, h, onUnmounted, ref, unref } from 'vue'
+import { defineComponent, onActivated, onUnmounted, ref, unref } from 'vue'
 import type { DefineComponent, VNode } from 'vue'
 import { useRouter } from 'vue-router'
 import type { RouteLocationNormalizedLoaded } from 'vue-router'

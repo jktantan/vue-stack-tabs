@@ -199,7 +199,6 @@
       border-bottom-color: #fff;
       box-shadow: $--stack-tab-shadow-left, $--stack-tab-shadow-right;
       margin-top: unset;
-
     }
 
     &:hover,
@@ -208,10 +207,7 @@
 
       &.is-icon {
         padding: 0
-          (
-            $--stack-tab-padding -
-              math.div($--stack-tab-button-size + $--stack-tab-icon-margin, 2)
-          );
+          ($--stack-tab-padding - math.div($--stack-tab-button-size + $--stack-tab-icon-margin, 2));
 
         .stack-tab__item-button {
           width: $--stack-tab-button-size;

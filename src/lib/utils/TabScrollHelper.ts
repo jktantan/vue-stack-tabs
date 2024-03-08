@@ -5,7 +5,17 @@
  * @param {number} [left=0]
  * @param {number} [top=0]
  */
-export const _scrollTo = ({ wrap, left = 0, top = 0, smooth = true }: { wrap: HTMLElement | null; left?: number; top?: number; smooth?: boolean }) => {
+export const _scrollTo = ({
+  wrap,
+  left = 0,
+  top = 0,
+  smooth = true
+}: {
+  wrap: HTMLElement | null
+  left?: number
+  top?: number
+  smooth?: boolean
+}) => {
   if (!wrap) return
 
   if (wrap.scrollTo) {
@@ -28,7 +38,17 @@ export const _scrollTo = ({ wrap, left = 0, top = 0, smooth = true }: { wrap: HT
  * @param {String} block 垂直方向的对齐，可选：'start', 'center', 'end', 或 'nearest'
  * @param {String} inline 水平方向的对齐，可选值同上
  */
-export function _scrollIntoView({ el, wrap, block = 'start', inline = 'nearest' }: { el: HTMLElement; wrap: any; block?: any; inline?: any }) {
+export function _scrollIntoView({
+  el,
+  wrap,
+  block = 'start',
+  inline = 'nearest'
+}: {
+  el: HTMLElement
+  wrap: any
+  block?: any
+  inline?: any
+}) {
   if (!el || !wrap) return
 
   if (el.scrollIntoView) {
@@ -76,7 +96,9 @@ export const getScrollbarWidth = (function () {
  * @returns 最大z-index的值
  */
 export const getMaxZIndex = (key = '.stack-tab__container *'): number => {
-  const allZIndex = Array.from(document.querySelectorAll(key)).map(e => +window.getComputedStyle(e).zIndex || 0)
+  const allZIndex = Array.from(document.querySelectorAll(key)).map(
+    (e) => +window.getComputedStyle(e).zIndex || 0
+  )
   // 特殊处理，不高于90000的才行
-  return allZIndex.length ? Math.max(...allZIndex.filter(item => item < 90000)) + 1 : 1
+  return allZIndex.length ? Math.max(...allZIndex.filter((item) => item < 90000)) + 1 : 1
 }

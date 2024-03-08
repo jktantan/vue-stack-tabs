@@ -49,7 +49,7 @@ import { computed, ref, reactive, onMounted, watch, onUnmounted } from 'vue'
 import { ResizeObserver } from '@juggle/resize-observer'
 import type { ScrollData, DragData } from '@/lib/model/TabModel'
 import { _scrollTo, _scrollIntoView } from '@/lib/utils/TabScrollHelper'
-import TabHeaderButton from './TabHeaderButton.vue'
+import TabHeaderButton from '@/lib/components/TabHeader/TabHeaderButton.vue'
 
 // ref
 const container = ref<HTMLElement | null>(null)

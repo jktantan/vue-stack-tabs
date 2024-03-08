@@ -14,7 +14,9 @@ icon按钮特效
     cursor: pointer;
     background-color: $--stack-tab-color-primary;
     animation: rotate-center 0.3s ease-in-out both;
-    mask: url($icon-url), url('./image/mask.svg') no-repeat center center;
+    mask:
+      url($icon-url),
+      url('./image/mask.svg') no-repeat center center;
     mask-size: contain;
     mask-composite: xor;
   }
@@ -24,7 +26,9 @@ icon按钮特效
     cursor: pointer;
      */
     background-color: $--stack-tab-color-primary-activate;
-    mask: url($icon-url), url('./image/mask.svg') no-repeat center center;
+    mask:
+      url($icon-url),
+      url('./image/mask.svg') no-repeat center center;
     mask-size: contain;
     mask-composite: xor;
   }

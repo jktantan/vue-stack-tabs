@@ -2,9 +2,9 @@
 import { nextTick, onMounted, onUnmounted, ref } from 'vue'
 import useTabLoading from '@/lib/hooks/useTabLoading'
 const t = ref()
-const { openTabLoading,closeTabLoading} = useTabLoading()
-onMounted(()=>{
-  nextTick(()=>{
+const { openTabLoading, closeTabLoading } = useTabLoading()
+onMounted(() => {
+  nextTick(() => {
     openTabLoading()
   })
 
@@ -12,7 +12,7 @@ onMounted(()=>{
   //   closeTabLoading()
   // },10000)
 })
-onUnmounted(()=>{
+onUnmounted(() => {
   closeTabLoading()
 })
 </script>

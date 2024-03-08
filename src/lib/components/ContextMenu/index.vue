@@ -67,7 +67,7 @@ import type { ITabItem, IContextMenu } from '@/lib/model/TabModel'
 import localeI18n from '@/lib/i18n'
 import { getMaxZIndex } from '@/lib/utils/TabScrollHelper'
 import useTabpanel from '@/lib/hooks/useTabpanel'
-import ContextMenuItem from './ContextMenuItem.vue'
+import ContextMenuItem from '@/lib/components/ContextMenu/ContextMenuItem.vue'
 // const emit = defineEmits(['close', 'closeAll', 'closeLeft', 'closeRight', 'refresh', 'refreshAll'])
 const props = withDefaults(
   defineProps<{
