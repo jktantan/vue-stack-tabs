@@ -6,7 +6,7 @@ import IFrame from './iframe.vue'
 import useTabLoading from './hooks/useTabLoading'
 import useTabRouter from './hooks/useTabRouter'
 import useStackTab from './hooks/useStackTab'
-
+import './assets/style/index.scss'
 const i18n = createI18n({
   legacy: false,
   locale: 'zh-CN',
