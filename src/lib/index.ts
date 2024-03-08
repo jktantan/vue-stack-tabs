@@ -8,6 +8,7 @@ import useTabRouter from './hooks/useTabRouter'
 import useStackTab from './hooks/useStackTab'
 import TabHeaderButton from '@/lib/components/TabHeader/TabHeaderButton.vue'
 import './assets/style/index.scss'
+
 const i18n = createI18n({
   legacy: false,
   locale: 'zh-CN',
@@ -15,6 +16,13 @@ const i18n = createI18n({
 })
 
 export * from './model/TabModel'
+// Cutsom type
+declare module '@vue/runtime-core' {
+  export interface GlobalComponents {
+    VueStackTabs:typeof StackTab
+  }
+}
+
 export { IFrame, useTabLoading, useTabRouter, useStackTab,TabHeaderButton,StackTab }
 export default {
   install(Vue: App): void {
