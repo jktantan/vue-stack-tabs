@@ -6,6 +6,7 @@ import IFrame from './iframe.vue'
 import useTabLoading from './hooks/useTabLoading'
 import useTabRouter from './hooks/useTabRouter'
 import useStackTab from './hooks/useStackTab'
+import TabHeaderButton from '@/lib/components/TabHeader/TabHeaderButton.vue'
 import './assets/style/index.scss'
 const i18n = createI18n({
   legacy: false,
@@ -14,7 +15,7 @@ const i18n = createI18n({
 })
 
 export * from './model/TabModel'
-export { IFrame, useTabLoading, useTabRouter, useStackTab,StackTab }
+export { IFrame, useTabLoading, useTabRouter, useStackTab,TabHeaderButton,StackTab }
 export default {
   install(Vue: App): void {
     tabVersion(import.meta.env.PACKAGE_VERSION)
