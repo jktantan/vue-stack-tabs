@@ -61,13 +61,13 @@
   </div>
 </template>
 
-<script setup lang="ts" name="StackTabContextMenu">
+<script setup lang="ts">
 import { ref, onMounted, reactive } from 'vue'
-import type { ITabItem, IContextMenu } from '@/lib/model/TabModel'
-import localeI18n from '@/lib/i18n'
-import { getMaxZIndex } from '@/lib/utils/TabScrollHelper'
-import useTabpanel from '@/lib/hooks/useTabpanel'
-import ContextMenuItem from '@/lib/components/ContextMenu/ContextMenuItem.vue'
+import type { ITabItem, IContextMenu } from '../../model/TabModel'
+import localeI18n from '../../i18n'
+import { getMaxZIndex } from '../../utils/TabScrollHelper'
+import useTabpanel from '../../hooks/useTabpanel'
+import ContextMenuItem from './ContextMenuItem.vue'
 // const emit = defineEmits(['close', 'closeAll', 'closeLeft', 'closeRight', 'refresh', 'refreshAll'])
 const props = withDefaults(
   defineProps<{

@@ -1,13 +1,13 @@
-import type { ITabData, ITabItem, ITabPage } from '@/lib/model/TabModel'
+import type { ITabData, ITabItem, ITabPage } from '../model/TabModel'
 import { defineComponent, onActivated, onUnmounted, ref, unref } from 'vue'
 import type { DefineComponent, VNode } from 'vue'
 import { useRouter } from 'vue-router'
 import type { RouteLocationNormalizedLoaded } from 'vue-router'
 import { ulid } from 'ulidx'
-import { encodeTabInfo, createPageId, decodeTabInfo } from '@/lib/utils/TabIdHelper'
+import { encodeTabInfo, createPageId, decodeTabInfo } from '../utils/TabIdHelper'
 import { defu } from 'defu'
-import { Stack } from '@/lib/model/TabModel'
-import { uriDecode } from '@/lib/utils/UriHelper'
+import { Stack } from '../model/TabModel'
+import { uriDecode } from '../utils/UriHelper'
 
 const tabs = ref<ITabItem[]>([])
 const defaultTabs: ITabItem[] = []

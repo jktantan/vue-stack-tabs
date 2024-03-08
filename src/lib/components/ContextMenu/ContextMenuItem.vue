@@ -5,7 +5,7 @@
   </div>
 </template>
 
-<script setup lang="ts" name="StackTabContextMenuItem">
+<script setup lang="ts">
 defineProps<{
   icon?: string
   title: string

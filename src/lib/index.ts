@@ -12,10 +12,12 @@ const i18n = createI18n({
   locale: 'zh-CN',
   fallbackLocale: 'en-US'
 })
-const install = (app: App): void => {
-  tabVersion(import.meta.env.PACKAGE_VERSION)
-  app.component('VueStackTabs', StackTab).use(i18n)
-}
 
 export * from './model/TabModel'
-export { IFrame, useTabLoading, useTabRouter, useStackTab, install }
+export { IFrame, useTabLoading, useTabRouter, useStackTab }
+export default {
+  install(app: App): void {
+    tabVersion(import.meta.env.PACKAGE_VERSION)
+    app.component('VueStackTabs', StackTab).use(i18n)
+  }
+}

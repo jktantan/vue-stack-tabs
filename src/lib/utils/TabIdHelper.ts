@@ -1,11 +1,5 @@
-// import { compressToEncodedURIComponent, decompressFromEncodedURIComponent } from 'lz-string'
-// import { blake3 } from 'hash-wasm'
-// import { compress, decompress } from 'brotli-compress'
-// import { fromUint8Array } from 'js-base64'
-// import { compress, decompress } from 'lzw-compressor'
-import type { ITabBase } from '@/lib/model/TabModel'
+import type { ITabBase } from '../model/TabModel'
 import { compressToEncodedURIComponent, decompressFromEncodedURIComponent } from 'lz-string'
-// import { v5 as uuidv5 } from 'uuid'
 import Hex from 'hex-encoding'
 import { blake3 } from '@noble/hashes/blake3'
 

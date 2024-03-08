@@ -1,10 +1,10 @@
 import { useRouter } from 'vue-router'
-import useTabpanel from '@/lib/hooks/useTabpanel'
+import useTabpanel from '../hooks/useTabpanel'
 import { throttle } from 'lodash-es'
-import type { ITabData } from '@/lib/model/TabModel'
+import type { ITabData } from '../model/TabModel'
 import { defu } from 'defu'
-import { encodeTabInfo } from '@/lib/utils/TabIdHelper'
-import { uriDecode } from '@/lib/utils/UriHelper'
+import { encodeTabInfo } from '../utils/TabIdHelper'
+import { uriDecode } from '../utils/UriHelper'
 import { ulid } from 'ulidx'
 let iframePath: string
 export default () => {

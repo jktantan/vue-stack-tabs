@@ -53,15 +53,15 @@
 <script lang="ts" setup>
 import { inject, computed, ref } from 'vue'
 import type { TransitionProps, Ref } from 'vue'
-import { TabScrollMode } from '@/lib/model/TabModel'
-import type { ITabItem } from '@/lib/model/TabModel'
-import ContextMenu from '@/lib/components/ContextMenu/index.vue'
-import useContextMenu from '@/lib/hooks/useContextMenu'
-import localeI18n from '@/lib/i18n'
-import useTabpanel from '@/lib/hooks/useTabpanel'
-import TabHeaderItem from '@/lib/components/TabHeader/TabHeaderItem.vue'
-import TabHeaderScroll from '@/lib/components/TabHeader/TabHeaderScroll.vue'
-import TabHeaderButton from '@/lib/components/TabHeader/TabHeaderButton.vue'
+import { TabScrollMode } from '../../model/TabModel'
+import type { ITabItem } from '../../model/TabModel'
+import ContextMenu from './index.vue'
+import useContextMenu from '../../hooks/useContextMenu'
+import localeI18n from '../../i18n'
+import useTabpanel from '../../hooks/useTabpanel'
+import TabHeaderItem from './TabHeaderItem.vue'
+import TabHeaderScroll from './TabHeaderScroll.vue'
+import TabHeaderButton from './TabHeaderButton.vue'
 // @ts-ignore
 const { t } = localeI18n().getI18n()
 const maximum = inject<boolean>('maximum')

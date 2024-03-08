@@ -1,5 +1,5 @@
 import { onUnmounted, onMounted, ref, reactive, nextTick } from 'vue'
-import type { ITabItem } from '@/lib/model/TabModel'
+import type { ITabItem } from '../model/TabModel'
 export default () => {
   const contextMenuData = reactive({
     item: {},
