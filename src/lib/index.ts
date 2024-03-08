@@ -14,7 +14,7 @@ const i18n = createI18n({
 })
 
 export * from './model/TabModel'
-export { IFrame, useTabLoading, useTabRouter, useStackTab }
+export { IFrame, useTabLoading, useTabRouter, useStackTab,StackTab }
 export default {
   install(Vue: App): void {
     tabVersion(import.meta.env.PACKAGE_VERSION)

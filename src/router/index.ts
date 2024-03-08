@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Frame from '@/components/layout/Frame.vue'
-import { IFrame } from 'vue-stack-tabs'
+import { IFrame } from '@/lib'
 const router = createRouter({
   // history: createWebHistory(import.meta.env.BASE_URL),
   history: createWebHistory(),

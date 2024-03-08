@@ -30,25 +30,26 @@ export default () => {
     // add default tabs
     defaultTabs.splice(0)
     for (const item of staticTabs) {
-      const id = ulid()
-      const __tab = encodeTabInfo(defu(item, { id }))
-      const uri = uriDecode(item.path)
-      const config = defu(item, {
+      // const id = ulid()
+      const fullItem = defu(item, { id:ulid() })
+      const __tab = encodeTabInfo(fullItem)
+      const uri = uriDecode(fullItem.path)
+      const config = defu(fullItem, {
         closable: true,
         refreshable: true,
         iframe: false
       })
-      const cacheName = createPageId(id, uri.path, uri.query)
+      const cacheName = createPageId(fullItem.id, uri.path, uri.query)
       const page: ITabPage = {
         id: cacheName,
-        tabId: id,
+        tabId: fullItem.id,
         path: uri.path,
         query: defu(uri.query, { __tab })
       }
       const pages = new Stack<ITabPage>()
       pages.push(page)
       const tab: ITabItem = {
-        id,
+        id:fullItem.id,
         title: config.title,
         closable: config.closable,
         refreshable: config.refreshable,

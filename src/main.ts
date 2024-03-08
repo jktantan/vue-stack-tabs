@@ -3,7 +3,6 @@ import 'normalize.css/normalize.css'
 import App from './App.vue'
 import router from './router'
 import VueStackTabs from '@/lib'
-import 'vue-stack-tabs/dist/style.css'
 const app = createApp(App)
 
 app.use(router)
