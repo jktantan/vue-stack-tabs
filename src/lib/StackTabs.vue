@@ -7,7 +7,7 @@ import { type ITabData, TabScrollMode } from './model/TabModel'
 import TabHeader from './components/TabHeader/index.vue'
 import useTabpanel from './hooks/useTabpanel'
 import useStackTab from './hooks/useStackTab'
-const { tabs, pageShown, caches, addPage, destroy, initial } = useTabpanel()
+const { tabs, pageShown, caches, addPage, destroy, initial,setMaxSize } = useTabpanel()
 const emit = defineEmits(['onActive'])
 const props = withDefaults(
   defineProps<{
@@ -67,6 +67,7 @@ const tabWrapper = (route: RouteLocationNormalizedLoaded, component: VNode): Def
 const onTabActive = (id: string) => {
   emit('onActive', id)
 }
+setMaxSize(props.max)
 onUnmounted(() => {
   destroy()
 })
@@ -106,7 +107,16 @@ watch(
       <router-view v-slot="{ Component, route }">
         <transition :name="pageTransition" appear @after-leave="pageShown = true">
           <keep-alive :include="caches">
-            <component :is="tabWrapper(route, Component)" v-if="pageShown" :key="route.fullPath" />
+            <suspense>
+              <template #default>
+                <component
+                  :is="tabWrapper(route, Component)"
+                  v-if="pageShown"
+                  :key="route.fullPath"
+                />
+              </template>
+              <template #fallback> Loading.... </template>
+            </suspense>
           </keep-alive>
         </transition>
       </router-view>

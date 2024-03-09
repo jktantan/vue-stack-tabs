@@ -19,11 +19,11 @@ export * from './model/TabModel'
 // Cutsom type
 declare module '@vue/runtime-core' {
   export interface GlobalComponents {
-    VueStackTabs:typeof StackTab
+    VueStackTabs: typeof StackTab
   }
 }
 
-export { IFrame, useTabLoading, useTabRouter, useStackTab,TabHeaderButton,StackTab }
+export { IFrame, useTabLoading, useTabRouter, useStackTab, TabHeaderButton, StackTab }
 export default {
   install(Vue: App): void {
     tabVersion(import.meta.env.PACKAGE_VERSION)

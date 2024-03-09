@@ -89,8 +89,13 @@ export class Stack<T> {
   private items: Map<number, T>
 
   //
-  constructor() {
+  constructor(items?:T[]) {
     this.items = new Map()
+    if(items) {
+      for (const item of items) {
+        this.push(item)
+      }
+    }
   }
 
   /**
@@ -165,5 +170,9 @@ export class Stack<T> {
       result = `${result}${key === 0 ? '' : ', '}${value}`
     })
     return result
+  }
+  toJSON() {
+    // return Object.fromEntries(this.items)
+    return Array.from(this.items.values())
   }
 }

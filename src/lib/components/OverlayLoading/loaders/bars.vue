@@ -63,7 +63,7 @@
   </svg>
 </template>
 <script lang="ts" setup>
-import { defineProps, withDefaults } from 'vue'
+import { withDefaults } from 'vue'
 withDefaults(
   defineProps<{
     color?: string

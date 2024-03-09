@@ -24,16 +24,7 @@
 
 <script lang="ts" setup>
 // @ts-nocheck
-import {
-  defineProps,
-  withDefaults,
-  render,
-  ref,
-  onMounted,
-  onBeforeUnmount,
-  computed,
-  watch
-} from 'vue'
+import { withDefaults, render, ref, onMounted, onBeforeUnmount, computed, watch } from 'vue'
 import { removeElement } from './helpers'
 import Loaders from './loaders'
 

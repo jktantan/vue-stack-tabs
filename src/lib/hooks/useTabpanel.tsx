@@ -18,6 +18,7 @@ const components = new Map<string, any>()
 const deletableCache = new Set<String>()
 const pageShown = ref<boolean>(true)
 const SESSION_TAB_NAME = 'stacktab-active-tab'
+let max =0;
 export default () => {
   const router = useRouter()
   const size = (): number => {
@@ -31,7 +32,7 @@ export default () => {
     defaultTabs.splice(0)
     for (const item of staticTabs) {
       // const id = ulid()
-      const fullItem = defu(item, { id:ulid() })
+      const fullItem = defu(item, { id: ulid() })
       const __tab = encodeTabInfo(fullItem)
       const uri = uriDecode(fullItem.path)
       const config = defu(fullItem, {
@@ -49,7 +50,7 @@ export default () => {
       const pages = new Stack<ITabPage>()
       pages.push(page)
       const tab: ITabItem = {
-        id:fullItem.id,
+        id: fullItem.id,
         title: config.title,
         closable: config.closable,
         refreshable: config.refreshable,
@@ -67,7 +68,14 @@ export default () => {
     const tempTab = window.sessionStorage.getItem(SESSION_TAB_NAME)
     if (tempTab !== null && tempTab !== undefined) {
       // const tempItems = JSON.parse(window.sessionStorage.getItem('tabItems')!)
-      const temp = defu({ pages: new Stack<ITabPage>() }, JSON.parse(tempTab)) as ITabItem
+      const temp= JSON.parse(tempTab,(k,v)=>{
+        if(k==='pages'){
+          return  new Stack<ITabPage>(v)
+        }else{
+          return v;
+        }
+      })
+      // const temp = defu({ pages: new Stack<ITabPage>() }, tempItems) as ITabItem
       let hasTab = false
       for (const tab of tabs.value) {
         if (tab.id === temp.id) {
@@ -88,8 +96,15 @@ export default () => {
     }
     return false
   }
+  const canAddTab = ()=>{
+    return (max<=0||(max>0 && max> tabs.value.length))
+  }
   const addTab = (tab: ITabItem) => {
-    tabs.value.push(tab)
+    return new Promise((resolve)=>{
+      tabs.value.push(tab)
+      resolve(true)
+    })
+
   }
   const getTab = (id: string) => {
     for (const tab of tabs.value) {
@@ -108,6 +123,43 @@ export default () => {
     if (components.has(cacheName)) {
       cacheComponent = components.get(cacheName)!
     } else {
+      // 增加tab
+      let activeTab: ITabItem | null = null
+      for (const tab of unref(tabs)) {
+        tab.active = false
+        if (tab.id === tabInfo.id) {
+          activeTab = tab as ITabItem
+        }
+      }
+      const page: ITabPage = {
+        id: cacheName,
+        tabId: tabInfo.id!,
+        path: route.path,
+        query: route.query as Record<string, string>
+      }
+
+      if (activeTab === null) {
+        const pages = new Stack<ITabPage>()
+        pages.push(page)
+        activeTab = {
+          id: tabInfo.id!,
+          title: tabInfo.title,
+          closable: tabInfo.closable!,
+          refreshable: tabInfo.refreshable!,
+          iframe: tabInfo.iframe!,
+          url: decodeURIComponent(src as string),
+          active: true,
+          pages
+        }
+        addTab(activeTab)
+      } else {
+        activeTab.active = true
+        if (activeTab.pages.isEmpty() || activeTab.pages.peek()!.id !== page.id) {
+          activeTab.pages.push(page)
+        }
+      }
+      updateSession(activeTab)
+
       // 增加控件
       cacheComponent = defineComponent({
         name: cacheName!,
@@ -138,42 +190,7 @@ export default () => {
       })
       components.set(cacheName, cacheComponent)
 
-      // 增加tab
-      let activeTab: ITabItem | null = null
-      for (const tab of unref(tabs)) {
-        tab.active = false
-        if (tab.id === tabInfo.id) {
-          activeTab = tab as ITabItem
-        }
-      }
-      const page: ITabPage = {
-        id: cacheName,
-        tabId: tabInfo.id!,
-        path: route.path,
-        query: route.query as Record<string, string>
-      }
 
-      if (activeTab === null) {
-        const pages = new Stack<ITabPage>()
-        pages.push(page)
-        activeTab = {
-          id: tabInfo.id!,
-          title: tabInfo.title,
-          closable: tabInfo.closable!,
-          refreshable: tabInfo.refreshable!,
-          iframe: tabInfo.iframe!,
-          url: decodeURIComponent(src as string),
-          active: true,
-          pages
-        }
-        tabs.value.push(activeTab!)
-      } else {
-        activeTab.active = true
-        if (activeTab.pages.isEmpty() || activeTab.pages.peek()!.id !== page.id) {
-          activeTab.pages.push(page)
-        }
-      }
-      updateSession(activeTab)
       //
     }
 
@@ -417,27 +434,31 @@ export default () => {
    * @return true if already actived
    */
   const active = (id: string, route = true) => {
-    for (let i = tabs.value.length - 1; i >= 0; i--) {
-      const tab = tabs.value[i] as ITabItem
-      if (tab.id === id) {
-        if (tab.active) {
-          break
-        } else {
-          tab.active = true
-          pageShown.value = false
-          updateSession(tab)
-          if (route) {
-            const top = tab.pages.peek()
-            router.push({
-              path: top!.path,
-              query: top!.query
-            })
+    return new Promise((resolve)=>{
+      for (let i = tabs.value.length - 1; i >= 0; i--) {
+        const tab = tabs.value[i] as ITabItem
+        if (tab.id === id) {
+          if (tab.active) {
+            break
+          } else {
+            tab.active = true
+            pageShown.value = false
+            updateSession(tab)
+            if (route) {
+              const top = tab.pages.peek()
+              router.push({
+                path: top!.path,
+                query: top!.query
+              })
+            }
           }
+        } else {
+          tabs.value[i].active = false
         }
-      } else {
-        tabs.value[i].active = false
       }
-    }
+      resolve(true)
+    })
+
   }
   /**
    * save current tab info into Browser's session
@@ -459,11 +480,16 @@ export default () => {
     unref(caches).splice(0)
     pageShown.value = true
   }
+  const setMaxSize=(size:number)=>{
+    max =size
+  }
 
   return {
     tabs,
     caches,
     pageShown,
+    setMaxSize,
+    canAddTab,
     initial,
     size,
     active,
