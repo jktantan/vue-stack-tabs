@@ -6,12 +6,11 @@
   "type": "module",
   "files": [
     "src/lib",
-    "dist",
-    "types"
+    "dist"
   ],
   "main": "dist/vue-stack-tabs.umd.js",
   "module": "dist/vue-stack-tabs.es.js",
-  "typings": "types/index.d.ts",
+  "typings": "dist/index.d.ts",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/jktantan/vue-stack-tabs.git"
