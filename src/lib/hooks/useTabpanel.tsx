@@ -119,47 +119,46 @@ export default () => {
     const tabInfo = decodeTabInfo(route.query.__tab as string)
     const cacheName = createPageId(tabInfo.id!, route.path, route.query.valueOf())
     const src = route.query.__src
+    // 增加tab
+    let activeTab: ITabItem | null = null
+    for (const tab of unref(tabs)) {
+      tab.active = false
+      if (tab.id === tabInfo.id) {
+        activeTab = tab as ITabItem
+      }
+    }
+    const page: ITabPage = {
+      id: cacheName,
+      tabId: tabInfo.id!,
+      path: route.path,
+      query: route.query as Record<string, string>
+    }
+
+    if (activeTab === null) {
+      const pages = new Stack<ITabPage>()
+      pages.push(page)
+      activeTab = {
+        id: tabInfo.id!,
+        title: tabInfo.title,
+        closable: tabInfo.closable!,
+        refreshable: tabInfo.refreshable!,
+        iframe: tabInfo.iframe!,
+        url: decodeURIComponent(src as string),
+        active: true,
+        pages
+      }
+      addTab(activeTab)
+    } else {
+      activeTab.active = true
+      if (activeTab.pages.isEmpty() || activeTab.pages.peek()!.id !== page.id) {
+        activeTab.pages.push(page)
+      }
+    }
+    updateSession(activeTab)
     // const cacheSet = new Set(caches.value)
     if (components.has(cacheName)) {
       cacheComponent = components.get(cacheName)!
     } else {
-      // 增加tab
-      let activeTab: ITabItem | null = null
-      for (const tab of unref(tabs)) {
-        tab.active = false
-        if (tab.id === tabInfo.id) {
-          activeTab = tab as ITabItem
-        }
-      }
-      const page: ITabPage = {
-        id: cacheName,
-        tabId: tabInfo.id!,
-        path: route.path,
-        query: route.query as Record<string, string>
-      }
-
-      if (activeTab === null) {
-        const pages = new Stack<ITabPage>()
-        pages.push(page)
-        activeTab = {
-          id: tabInfo.id!,
-          title: tabInfo.title,
-          closable: tabInfo.closable!,
-          refreshable: tabInfo.refreshable!,
-          iframe: tabInfo.iframe!,
-          url: decodeURIComponent(src as string),
-          active: true,
-          pages
-        }
-        addTab(activeTab)
-      } else {
-        activeTab.active = true
-        if (activeTab.pages.isEmpty() || activeTab.pages.peek()!.id !== page.id) {
-          activeTab.pages.push(page)
-        }
-      }
-      updateSession(activeTab)
-
       // 增加控件
       cacheComponent = defineComponent({
         name: cacheName!,

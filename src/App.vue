@@ -18,12 +18,13 @@ const openDashboard = (id: string) => {
   })
 }
 const openTest2 = (id: string) => {
-  openNewTab({
+  const tabId = openNewTab({
     id,
     title: '测试2',
     path: '/demo/test2',
     closable: true
   })
+  console.log("TEST2",tabId)
 }
 </script>
 
