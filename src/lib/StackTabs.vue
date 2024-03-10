@@ -1,7 +1,7 @@
 <script lang="ts" setup>
-import { onBeforeMount, onUnmounted, provide, ref, watch } from 'vue'
+import { onBeforeMount, onUnmounted, provide, ref } from 'vue'
 import type { TransitionProps, DefineComponent, VNode } from 'vue'
-import { type RouteLocationNormalizedLoaded, useRouter } from 'vue-router'
+import { type RouteLocationNormalizedLoaded } from 'vue-router'
 import { getMaxZIndex } from './utils/TabScrollHelper'
 import { type ITabData, TabScrollMode } from './model/TabModel'
 import TabHeader from './components/TabHeader/index.vue'
@@ -71,19 +71,7 @@ setMaxSize(props.max)
 onUnmounted(() => {
   destroy()
 })
-/**
- * 路由真正转换的时候才切换页面
- * 有keepalive或组装过Component的都会多次加载
- */
-const router = useRouter()
-watch(
-  () => router.currentRoute.value.fullPath,
-  () => {
-    pageShown.value = true
-    // routerLeaved.value = true
-    console.log('route change')
-  }
-)
+
 </script>
 <template>
   <div
@@ -105,7 +93,7 @@ watch(
     </tab-header>
     <div class="stack-tab__container">
       <router-view v-slot="{ Component, route }">
-        <transition :name="pageTransition" appear @after-leave="pageShown = true">
+        <transition :name="pageTransition" @after-leave="pageShown=true" mode="out-in">
           <keep-alive :include="caches">
             <suspense>
               <template #default>
