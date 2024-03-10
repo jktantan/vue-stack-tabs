@@ -1,40 +1,46 @@
-.vl-shown {
-  overflow: hidden;
-}
-
-.vl-overlay {
-  bottom: 0;
-  left: 0;
+.stack-tab-loading-mask {
+  width: 100%;
+  height: 100%;
   position: absolute;
-  right: 0;
-  top: 0;
-  align-items: center;
-  display: none;
-  justify-content: center;
-  overflow: hidden;
-  z-index: 9999;
-}
-
-.vl-overlay.vl-active {
   display: flex;
-}
-
-.vl-overlay.vl-full-page {
-  z-index: 9999;
-  position: fixed;
-}
-
-.vl-overlay .vl-background {
-  bottom: 0;
-  left: 0;
-  position: absolute;
-  right: 0;
+  background: white;
+  opacity: 0.8;
+  align-items: center;
+  justify-content: center;
   top: 0;
-  background: #fff;
-  opacity: 0.5;
+  left: 0;
+}
+.stack-tab-loading--spin {
+  align-self: center;
+  z-index: auto;
+  width: 60px;
+  height: 60px;
+  mask: url('../image/loading.svg');
+  mask-size: contain;
+  background-color: #007bff;
+  animation: turn 1.5s linear infinite;
 }
 
-.vl-overlay .vl-icon,
-.vl-parent {
-  position: relative;
+/*
+      turn : 定义的动画名称
+      1s : 动画时间
+      linear : 动画以何种运行轨迹完成一个周期
+      infinite :规定动画应该无限次播放
+     */
+@keyframes turn {
+  0% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-90deg);
+  }
+  50% {
+    transform: rotate(-180deg);
+  }
+  75% {
+    transform: rotate(-270deg);
+  }
+  100% {
+    transform: rotate(-360deg);
+  }
 }

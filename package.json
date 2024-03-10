@@ -1,6 +1,6 @@
 {
   "name": "vue-stack-tabs",
-  "version": "0.1.15",
+  "version": "0.1.16",
   "description": "Vue.js component for router tab.",
   "private": false,
   "type": "module",
@@ -48,6 +48,7 @@
     "hex-encoding": "^2.0.2",
     "lodash-es": "^4.17.21",
     "lz-string": "^1.5.0",
+    "mitt": "^3.0.1",
     "ulidx": "^2.3.0",
     "uuid": "^9.0.1",
     "vue-i18n": "^9.10.1"

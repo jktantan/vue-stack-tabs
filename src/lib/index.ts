@@ -7,6 +7,7 @@ import useTabLoading from './hooks/useTabLoading'
 import useTabRouter from './hooks/useTabRouter'
 import useStackTab from './hooks/useStackTab'
 import TabHeaderButton from '@/lib/components/TabHeader/TabHeaderButton.vue'
+import useTabMitt from '@/lib/hooks/useTabMitt'
 import './assets/style/index.scss'
 
 const i18n = createI18n({
@@ -27,6 +28,6 @@ export { IFrame, useTabLoading, useTabRouter, useStackTab, TabHeaderButton, Stac
 export default {
   install(Vue: App): void {
     tabVersion(import.meta.env.PACKAGE_VERSION)
-    Vue.component('VueStackTabs', StackTab).use(i18n)
+    Vue.component('VueStackTabs', StackTab).use(useTabMitt).use(i18n)
   }
 }

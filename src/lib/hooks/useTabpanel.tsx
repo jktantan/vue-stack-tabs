@@ -8,7 +8,7 @@ import { encodeTabInfo, createPageId, decodeTabInfo } from '../utils/TabIdHelper
 import { defu } from 'defu'
 import { Stack } from '../model/TabModel'
 import { uriDecode } from '../utils/UriHelper'
-
+import PageLoading from '@/lib/components/PageLoading.vue'
 const tabs = ref<ITabItem[]>([])
 const defaultTabs: ITabItem[] = []
 // cache
@@ -183,6 +183,7 @@ export default () => {
           return () => (
             <div class="cache-page-wrapper" id={'W-'+tabInfo.id}>
               <dynamic-component tId={tabInfo.id} pId={cacheName} />
+              <PageLoading tId={tabInfo.id}/>
             </div>
           )
         }
