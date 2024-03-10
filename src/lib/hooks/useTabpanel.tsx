@@ -181,7 +181,7 @@ export default () => {
             // }, 500)
           })
           return () => (
-            <div class="cache-page-wrapper" id={tabInfo.id}>
+            <div class="cache-page-wrapper" id={'W-'+tabInfo.id}>
               <dynamic-component tId={tabInfo.id} pId={cacheName} />
             </div>
           )

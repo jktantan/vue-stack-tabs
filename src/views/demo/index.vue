@@ -2,12 +2,17 @@
 import { useTabRouter } from '@/lib'
 import { onActivated, onMounted, ref } from 'vue'
 useTabRouter()
+const props = defineProps<{
+  tId:string,
+  pId:string,
+}>()
 const iTest = ref<string>('')
 onActivated(() => {
   console.log('on Demo Index activate')
 })
 onMounted(() => {
   console.log('on Demo Index mount')
+  console.log(props)
 })
 </script>
 <script lang="ts">

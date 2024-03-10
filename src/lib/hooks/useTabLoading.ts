@@ -9,7 +9,7 @@ export default () => {
     closeTabLoading()
   })
   const openTabLoading = () => {
-    const container = document.querySelector(`#${attrs.tId}`)
+    const container = document.querySelector(`#${'W-'+attrs.tId}`)
     if (loadingInstance === null) {
       loadingInstance = $loading.show({
         canCancel: false,

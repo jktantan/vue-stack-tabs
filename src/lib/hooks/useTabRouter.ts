@@ -18,7 +18,6 @@ export default () => {
   currentId = attrs.tId as string
   // currentPageId = attrs.pId as string
   currentTab = route.query.__tab as string
-
   const forward = (to: RouteLocationPathRaw) => {
     pageShown.value = false
     const query = defu(

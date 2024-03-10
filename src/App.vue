@@ -21,7 +21,7 @@ const openTest2 = (id: string) => {
   const tabId = openNewTab({
     id,
     title: '测试2',
-    path: '/demo/test2',
+    path: '/demo/test2?saa=234234',
     closable: true
   })
   console.log("TEST2",tabId)
