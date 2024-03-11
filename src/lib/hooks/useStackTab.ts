@@ -12,7 +12,7 @@ import { Stack } from '../model/TabModel'
 let iframePath: string
 export default () => {
   const router = useRouter()
-  const { active, hasTab, pageShown, reset, canAddTab, tabs, addTab,initialed } = useTabpanel()
+  const { active, hasTab, pageShown, reset, canAddTab, tabs, addTab, initialed } = useTabpanel()
   const emitter = useEmitter()
   /**
    * 打开新的TAB页面
@@ -44,7 +44,7 @@ export default () => {
         return
       }
 
-      if(initialed) {
+      if (initialed) {
         // 增加tab
         let activeTab: ITabItem | null = null
         for (const tab of unref(tabs)) {
@@ -64,15 +64,13 @@ export default () => {
           toPage(tab, tabInfo)
           resolve(tabInfo.id)
         })
-      }else {
-
+      } else {
         toPage(tab, tabInfo)
         resolve(tabInfo.id)
       }
-
     })
   }, 500)
-  const toPage =(tab: ITabData,tabInfo:any)=>{
+  const toPage = (tab: ITabData, tabInfo: any) => {
     const __tab = encodeTabInfo(tabInfo)
     let query = defu(
       {
