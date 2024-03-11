@@ -6,7 +6,7 @@
       'is-active': item.active,
       'is-icon': item.closable
     }"
-    @click="activeTab"
+    @click="activeTab(true)"
   >
     <!--    <div v-if="!!icon" class="stack-tab__item-icon" :class="icon"></div>-->
     <div class="stack-tab__item-title">
