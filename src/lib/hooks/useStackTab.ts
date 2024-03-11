@@ -6,7 +6,7 @@ import { defu } from 'defu'
 import { encodeTabInfo } from '../utils/TabIdHelper'
 import { uriDecode } from '../utils/UriHelper'
 import { ulid } from 'ulidx'
-import { useEmitter } from '@/lib/hooks/useTabMitt'
+import { MittType, useEmitter } from './useTabMitt'
 let iframePath: string
 export default () => {
   const router = useRouter()
@@ -29,7 +29,7 @@ export default () => {
        * In the function of openNewTab, if the tab already 'ACTIVE' then do nothing.
        */
       if (hasTab(tabInfo.id!)) {
-        emitter.emit('tabActive', { id: tabInfo.id! })
+        emitter.emit(MittType.TAB_ACTIVE, { id: tabInfo.id! })
         // active(tabInfo.id!)
         resolve(tabInfo.id)
         return
