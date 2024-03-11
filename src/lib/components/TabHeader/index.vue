@@ -52,7 +52,7 @@
 
 <script lang="ts" setup>
 // @ts-nocheck
-import { inject, computed, ref } from 'vue'
+import { inject, computed, ref, nextTick } from 'vue'
 import type { TransitionProps, Ref } from 'vue'
 import { TabScrollMode } from '../../model/TabModel'
 import type { ITabItem } from '../../model/TabModel'
@@ -120,13 +120,15 @@ const closeTab = (item: ITabItem) => {
   contextMenuShown.value = false
 }
 
-const activeTab = (item: ITabItem, curActiveTab: Ref<HTMLElement>) => {
+const activeTab = (item: ITabItem, curActiveTab: Ref<HTMLElement>, isRoute: boolean) => {
   if (scroll.value) {
-    if (!scroll.value!.isInView(curActiveTab.value)) {
-      scroll.value!.scrollIntoView(curActiveTab.value)
-    }
+    nextTick(() => {
+      if (!scroll.value!.isInView(curActiveTab.value)) {
+        scroll.value!.scrollIntoView(curActiveTab.value)
+      }
+    })
 
-    active(item.id)
+    active(item.id, isRoute)
     emit('active', item.id)
   }
 }

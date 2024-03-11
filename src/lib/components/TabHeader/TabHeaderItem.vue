@@ -23,13 +23,14 @@
   </li>
 </template>
 
-<script setup lang="ts" name="TabHeaderItem">
-import { computed, ref, watch } from 'vue'
-import type { ITabItem } from '@/lib/model/TabModel'
-import localeI18n from '@/lib/i18n'
+<script setup lang="ts">
+import { computed, ref } from 'vue'
+import type { ITabItem } from '../../model/TabModel'
+import { MittType, useEmitter } from '../../hooks/useTabMitt'
+import localeI18n from '../../i18n'
 // 消息
 const emit = defineEmits(['close', 'active'])
-
+const emitter = useEmitter()
 const { t } = localeI18n().getI18n()
 const curtab = ref<HTMLElement>()
 const props = defineProps<{
@@ -38,14 +39,19 @@ const props = defineProps<{
 /**
  * 如果Active为true，就看看
  */
-watch(
-  () => props.item.active,
-  (val) => {
-    if (val) {
-      activeTab()
-    }
+// watch(
+//   () => props.item.active,
+//   (val) => {
+//     if (val) {
+//       activeTab()
+//     }
+//   }
+// )
+emitter.on(MittType.TAB_ACTIVE, ({ id, isRoute }: any) => {
+  if (props.item.id === id) {
+    activeTab(isRoute)
   }
-)
+})
 const title = computed<string>(() => {
   return props.item.title || t('undefined')
 })
@@ -53,9 +59,9 @@ const title = computed<string>(() => {
 const closeTab = () => {
   emit('close', props.item)
 }
-const activeTab = () => {
+const activeTab = (isRoute: boolean = true) => {
   // if (!props.active) {
-  emit('active', props.item, curtab)
+  emit('active', props.item, curtab, isRoute)
   // }
 }
 </script>

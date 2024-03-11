@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useStackTab } from '@/lib'
+import { ulid } from 'ulidx'
 const { openNewTab } = useStackTab()
 const openframe = (id: string) => {
   openNewTab({
@@ -24,7 +25,16 @@ const openTest2 = (id: string) => {
     path: '/demo/test2?saa=234234',
     closable: true
   })
-  console.log("TEST2",tabId)
+  console.log('TEST2', tabId)
+}
+const openTest3 = () => {
+  const tabId = openNewTab({
+    id: ulid(),
+    title: '测试2',
+    path: '/demo/test2?saa=234234',
+    closable: true
+  })
+  console.log('TEST2', tabId)
 }
 </script>
 
@@ -65,7 +75,7 @@ const openTest2 = (id: string) => {
           <el-menu-item index="3" @click="openTest2('test2')">
             <span>页面2</span>
           </el-menu-item>
-          <el-menu-item index="4">
+          <el-menu-item index="4" @click="openTest3">
             <span>页面3</span>
           </el-menu-item>
           <el-menu-item index="5" @click="openframe('01HR6764M0X9CZKNT15QH82TXY')">
