@@ -8,7 +8,8 @@ import { encodeTabInfo, createPageId, decodeTabInfo } from '../utils/TabIdHelper
 import { defu } from 'defu'
 import { Stack } from '../model/TabModel'
 import { uriDecode } from '../utils/UriHelper'
-import PageLoading from '@/lib/components/PageLoading.vue'
+import PageLoading from '../components/PageLoading.vue'
+import { MittType, useEmitter } from './useTabMitt'
 const tabs = ref<ITabItem[]>([])
 const defaultTabs: ITabItem[] = []
 // cache
@@ -18,9 +19,11 @@ const components = new Map<string, any>()
 const deletableCache = new Set<String>()
 const pageShown = ref<boolean>(true)
 const SESSION_TAB_NAME = 'stacktab-active-tab'
-let max =0;
+
+let max = 0
 export default () => {
   const router = useRouter()
+  const emitter = useEmitter()
   const size = (): number => {
     return tabs.value.length
   }
@@ -68,11 +71,11 @@ export default () => {
     const tempTab = window.sessionStorage.getItem(SESSION_TAB_NAME)
     if (tempTab !== null && tempTab !== undefined) {
       // const tempItems = JSON.parse(window.sessionStorage.getItem('tabItems')!)
-      const temp= JSON.parse(tempTab,(k,v)=>{
-        if(k==='pages'){
-          return  new Stack<ITabPage>(v)
-        }else{
-          return v;
+      const temp = JSON.parse(tempTab, (k, v) => {
+        if (k === 'pages') {
+          return new Stack<ITabPage>(v)
+        } else {
+          return v
         }
       })
       // const temp = defu({ pages: new Stack<ITabPage>() }, tempItems) as ITabItem
@@ -96,15 +99,14 @@ export default () => {
     }
     return false
   }
-  const canAddTab = ()=>{
-    return (max<=0||(max>0 && max> tabs.value.length))
+  const canAddTab = () => {
+    return max <= 0 || (max > 0 && max > tabs.value.length)
   }
   const addTab = (tab: ITabItem) => {
-    return new Promise((resolve)=>{
+    return new Promise((resolve) => {
       tabs.value.push(tab)
       resolve(true)
     })
-
   }
   const getTab = (id: string) => {
     for (const tab of tabs.value) {
@@ -147,7 +149,9 @@ export default () => {
         active: true,
         pages
       }
-      addTab(activeTab)
+      addTab(activeTab).then(() => {
+        emitter.emit(MittType.TAB_ACTIVE, { id: tabInfo.id!, isRoute: false })
+      })
     } else {
       activeTab.active = true
       if (activeTab.pages.isEmpty() || activeTab.pages.peek()!.id !== page.id) {
@@ -181,15 +185,14 @@ export default () => {
             // }, 500)
           })
           return () => (
-            <div class="cache-page-wrapper" id={'W-'+tabInfo.id}>
+            <div class="cache-page-wrapper" id={'W-' + tabInfo.id}>
               <dynamic-component tId={tabInfo.id} pId={cacheName} />
-              <PageLoading tId={tabInfo.id}/>
+              <PageLoading tId={tabInfo.id!} />
             </div>
           )
         }
       })
       components.set(cacheName, cacheComponent)
-
 
       //
     }
@@ -234,7 +237,8 @@ export default () => {
       }
     }
     if (activeTabId !== '') {
-      active(activeTabId)
+      emitter.emit(MittType.TAB_ACTIVE, { id: activeTabId })
+      // active(activeTabId)
     }
     // if remove inactive tab,then we need remove the cache manually.
     removeDeletableCache()
@@ -260,7 +264,8 @@ export default () => {
       }
     }
     // 如果都是非Active状态，就把最后一个active
-    active(uTabs[uTabs.length - 1].id)
+    emitter.emit(MittType.TAB_ACTIVE, { id: uTabs[uTabs.length - 1].id })
+    // active(uTabs[uTabs.length - 1].id)
   }
   const removeOtherTabs = (id: string) => {
     const uTabs = unref(tabs)
@@ -278,7 +283,8 @@ export default () => {
       }
     }
     if (!activeTab!.active) {
-      active(id)
+      emitter.emit(MittType.TAB_ACTIVE, { id })
+      // active(id)
     } else {
       removeDeletableCache()
     }
@@ -313,7 +319,8 @@ export default () => {
       }
     }
     // 如果都是非Active状态，就把最后一个active
-    active(uTabs[0].id)
+    emitter.emit(MittType.TAB_ACTIVE, { id: uTabs[0].id })
+    // active(uTabs[0].id)
   }
 
   /**
@@ -345,7 +352,8 @@ export default () => {
         return
       }
     }
-    active(uTabs[uTabs.length - 1].id)
+    emitter.emit(MittType.TAB_ACTIVE, { id: uTabs[uTabs.length - 1].id })
+    // active(uTabs[uTabs.length - 1].id)
   }
 
   /**
@@ -434,7 +442,7 @@ export default () => {
    * @return true if already actived
    */
   const active = (id: string, route = true) => {
-    return new Promise((resolve)=>{
+    return new Promise((resolve) => {
       for (let i = tabs.value.length - 1; i >= 0; i--) {
         const tab = tabs.value[i] as ITabItem
         if (tab.id === id) {
@@ -458,7 +466,6 @@ export default () => {
       }
       resolve(true)
     })
-
   }
   /**
    * save current tab info into Browser's session
@@ -471,7 +478,8 @@ export default () => {
   const reset = () => {
     destroy()
     unref(tabs).push(...defaultTabs)
-    active(defaultTabs[0].id)
+    emitter.emit(MittType.TAB_ACTIVE, { id: defaultTabs[0].id! })
+    // active(defaultTabs[0].id)
   }
   const destroy = () => {
     unref(tabs).splice(0)
@@ -480,8 +488,8 @@ export default () => {
     unref(caches).splice(0)
     pageShown.value = true
   }
-  const setMaxSize=(size:number)=>{
-    max =size
+  const setMaxSize = (size: number) => {
+    max = size
   }
 
   return {

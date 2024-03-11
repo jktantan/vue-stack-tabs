@@ -23,5 +23,8 @@ const plugin = {
 export const useEmitter = <T extends Record<EventType, unknown>>(): Emitter<T> => {
   return inject('tabEmitter')!
 }
-
+export enum MittType {
+  PAGE_LOADING = 'PAGE_LOADING',
+  TAB_ACTIVE = 'TAB_ACTIVE'
+}
 export default plugin

@@ -1,5 +1,5 @@
 import { type ComponentInternalInstance, getCurrentInstance, onUnmounted } from 'vue'
-import {useEmitter} from '@/lib/hooks/useTabMitt'
+import { MittType, useEmitter } from '../hooks/useTabMitt'
 
 export default () => {
   const emitter = useEmitter()
@@ -8,11 +8,11 @@ export default () => {
     closeTabLoading()
   })
   const openTabLoading = () => {
-    emitter.emit("loading", { tId:attrs.tId,value:true })
+    emitter.emit(MittType.PAGE_LOADING, { tId: attrs.tId, value: true })
   }
 
   const closeTabLoading = () => {
-    emitter.emit("loading",{ tId:attrs.tId,value:false })
+    emitter.emit(MittType.PAGE_LOADING, { tId: attrs.tId, value: false })
   }
   return { openTabLoading, closeTabLoading }
 }

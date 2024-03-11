@@ -6,22 +6,19 @@ import { defu } from 'defu'
 import { encodeTabInfo } from '../utils/TabIdHelper'
 import { uriDecode } from '../utils/UriHelper'
 import { ulid } from 'ulidx'
+import { MittType, useEmitter } from './useTabMitt'
 let iframePath: string
 export default () => {
   const router = useRouter()
-  const { active, hasTab, pageShown, reset,canAddTab } = useTabpanel()
-
+  const { active, hasTab, pageShown, reset, canAddTab } = useTabpanel()
+  const emitter = useEmitter()
   /**
    * 打开新的TAB页面
    * @param tab
    * @param to
    */
   const openNewTab = throttle((tab: ITabData) => {
-    return new Promise((resolve, reject)=>{
-      if(!canAddTab()){
-        reject()
-        return
-      }
+    return new Promise((resolve, reject) => {
       if (!pageShown.value) {
         reject()
         return
@@ -32,12 +29,17 @@ export default () => {
        * In the function of openNewTab, if the tab already 'ACTIVE' then do nothing.
        */
       if (hasTab(tabInfo.id!)) {
-        active(tabInfo.id!)
+        emitter.emit(MittType.TAB_ACTIVE, { id: tabInfo.id! })
+        // active(tabInfo.id!)
         resolve(tabInfo.id)
         return
       }
       if (!tabInfo.id) {
         tabInfo.id = ulid()
+      }
+      if (!canAddTab()) {
+        reject('Max Size')
+        return
       }
       const __tab = encodeTabInfo(tabInfo)
       let query = defu(
@@ -57,14 +59,12 @@ export default () => {
         query['__src'] = __src
       }
 
-
       router.push({
         path,
         query
       })
       resolve(tabInfo.id)
     })
-
   }, 500)
 
   const setIFramePath = (path: string) => {

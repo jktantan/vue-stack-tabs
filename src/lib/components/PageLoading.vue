@@ -1,22 +1,20 @@
 <template>
-  <div v-if='loading' class="stack-tab-loading-mask">
+  <div v-if="loading" class="stack-tab-loading-mask">
     <div class="stack-tab-loading--spin turn" />
   </div>
 </template>
 <script setup lang="ts">
-import {ref} from 'vue'
-import {useEmitter} from '@/lib/hooks/useTabMitt'
+import { ref } from 'vue'
+import { MittType, useEmitter } from '../hooks/useTabMitt'
 const props = defineProps<{
-  tId:string
+  tId: string
 }>()
 const emitter = useEmitter()
 const loading = ref<boolean>(false)
-emitter.on("loading",({tId,value}:any)=> {
-  if(tId===props.tId){
-    loading.value=value
+emitter.on(MittType.PAGE_LOADING, ({ tId, value }: any) => {
+  if (tId === props.tId) {
+    loading.value = value
   }
 })
 </script>
-<style scoped>
-
-</style>
+<style scoped></style>
