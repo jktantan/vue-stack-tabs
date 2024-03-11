@@ -27,7 +27,10 @@ declare module '@vue/runtime-core' {
 
 export { IFrame, useTabLoading, useTabRouter, useStackTab, TabHeaderButton, StackTab }
 export default {
-  install(Vue: App,options: { locale:string,messages: any }={locale:'zh-CN',messages:{}}): void {
+  install(
+    Vue: App,
+    options: { locale: string; messages: any } = { locale: 'zh-CN', messages: {} }
+  ): void {
     tabVersion(import.meta.env.PACKAGE_VERSION)
     Vue.component('VueStackTabs', StackTab).use(useTabMitt).use(i18n().getI18n(options))
   }

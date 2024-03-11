@@ -7,7 +7,7 @@ import { type ITabData, TabScrollMode } from './model/TabModel'
 import TabHeader from './components/TabHeader/index.vue'
 import useTabpanel from './hooks/useTabpanel'
 import useStackTab from './hooks/useStackTab'
-const { tabs, pageShown, caches, addPage, destroy, initial,setMaxSize } = useTabpanel()
+const { tabs, pageShown, caches, addPage, destroy, initial, setMaxSize } = useTabpanel()
 const emit = defineEmits(['onActive'])
 const props = withDefaults(
   defineProps<{
@@ -56,6 +56,7 @@ const maximum = ref<boolean>(false)
 provide('maximum', maximum)
 const { setIFramePath } = useStackTab()
 setIFramePath(props.iframePath)
+
 onBeforeMount(() => {
   console.log('on Before mount')
   initial(props.defaultTabs)
@@ -71,7 +72,6 @@ setMaxSize(props.max)
 onUnmounted(() => {
   destroy()
 })
-
 </script>
 <template>
   <div
@@ -93,7 +93,7 @@ onUnmounted(() => {
     </tab-header>
     <div class="stack-tab__container">
       <router-view v-slot="{ Component, route }">
-        <transition :name="pageTransition" @after-leave="pageShown=true" mode="out-in">
+        <transition :name="pageTransition" @after-leave="pageShown = true" mode="out-in">
           <keep-alive :include="caches">
             <suspense>
               <template #default>

@@ -58,9 +58,9 @@ export default () => {
     return message
   }
   // const localeI18n = inject('locales') as { locale: string; messages: object }
-  const getI18n = (localeI18n?:any) => {
-    let combinateMessage ={ ...allLangs()}
-    if(!localeI18n){
+  const getI18n = (localeI18n?: any) => {
+    let combinateMessage = { ...allLangs() }
+    if (!localeI18n) {
       combinateMessage = { ...allLangs(), ...localeI18n.messages }
     }
 

@@ -89,9 +89,9 @@ export class Stack<T> {
   private items: Map<number, T>
 
   //
-  constructor(items?:T[]) {
+  constructor(items?: T[]) {
     this.items = new Map()
-    if(items) {
+    if (items) {
       for (const item of items) {
         this.push(item)
       }

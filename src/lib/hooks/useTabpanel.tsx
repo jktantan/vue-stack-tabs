@@ -19,7 +19,7 @@ const components = new Map<string, any>()
 const deletableCache = new Set<String>()
 const pageShown = ref<boolean>(true)
 const SESSION_TAB_NAME = 'stacktab-active-tab'
-
+let initialed = false
 let max = 0
 export default () => {
   const router = useRouter()
@@ -90,6 +90,7 @@ export default () => {
         tabs.value.push(temp)
       }
     }
+    initialed=true
   }
   const hasTab = (id: string) => {
     for (const tab of tabs.value) {
@@ -104,7 +105,7 @@ export default () => {
   }
   const addTab = (tab: ITabItem) => {
     return new Promise((resolve) => {
-      tabs.value.push(tab)
+        tabs.value.push(tab)
       resolve(true)
     })
   }
@@ -496,6 +497,7 @@ export default () => {
     tabs,
     caches,
     pageShown,
+    initialed,
     setMaxSize,
     canAddTab,
     initial,

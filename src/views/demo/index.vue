@@ -3,8 +3,8 @@ import { useTabRouter } from '@/lib'
 import { onActivated, onMounted, ref } from 'vue'
 useTabRouter()
 const props = defineProps<{
-  tId:string,
-  pId:string,
+  tId: string
+  pId: string
 }>()
 const iTest = ref<string>('')
 onActivated(() => {
