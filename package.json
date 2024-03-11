@@ -51,7 +51,8 @@
     "mitt": "^3.0.1",
     "ulidx": "^2.3.0",
     "uuid": "^9.0.1",
-    "vue-i18n": "^9.10.1"
+    "vue-i18n": "^9.10.1",
+    "vue-i18n-lite": "^1.0.2"
   },
   "devDependencies": {
     "@mdit/plugin-tasklist": "^0.8.0",

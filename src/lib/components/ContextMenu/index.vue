@@ -64,7 +64,7 @@
 <script setup lang="ts">
 import { ref, onMounted, reactive } from 'vue'
 import type { ITabItem, IContextMenu } from '../../model/TabModel'
-import localeI18n from '../../i18n'
+import { useI18n } from 'vue-i18n-lite'
 import { getMaxZIndex } from '../../utils/TabScrollHelper'
 import useTabpanel from '../../hooks/useTabpanel'
 import ContextMenuItem from './ContextMenuItem.vue'
@@ -85,7 +85,7 @@ const props = withDefaults(
   }
 )
 // @ts-ignore
-const { t } = localeI18n().getI18n()
+const { t } = useI18n()
 const contextmenu = ref<HTMLElement>()
 const modifyData = reactive({
   left: props.left,

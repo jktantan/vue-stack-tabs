@@ -1,5 +1,5 @@
-import { useI18n } from 'vue-i18n'
-import { inject } from 'vue'
+import { createI18n } from 'vue-i18n-lite'
+
 export default () => {
   // 引入lang目录下文件
   // 此处使用了 VITE 的 import.meta.globEager。非 VITE 的 可以使用 require.context
@@ -57,14 +57,24 @@ export default () => {
     getLangFiles(modules, message)
     return message
   }
-  const localeI18n = inject('locales') as { locale: string; messages: object }
-  const getI18n = () => {
-    const combinateMessage = { ...allLangs(), ...localeI18n.messages }
-    return useI18n({
-      useScope: 'local',
+  // const localeI18n = inject('locales') as { locale: string; messages: object }
+  const getI18n = (localeI18n?:any) => {
+    let combinateMessage ={ ...allLangs()}
+    if(!localeI18n){
+      combinateMessage = { ...allLangs(), ...localeI18n.messages }
+    }
+
+    return createI18n({
       locale: localeI18n.locale,
+      fallbackLocale: 'en',
       messages: combinateMessage
     })
+    // const combinateMessage = { ...allLangs(), ...localeI18n.messages }
+    // return useI18n({
+    //   useScope: 'local',
+    //   locale: localeI18n.locale,
+    //   messages: combinateMessage
+    // })
   }
   return {
     getI18n

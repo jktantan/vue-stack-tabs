@@ -26,11 +26,11 @@
 <script setup lang="ts" name="TabHeaderItem">
 import { computed, ref, watch } from 'vue'
 import type { ITabItem } from '@/lib/model/TabModel'
-import localeI18n from '@/lib/i18n'
+import { useI18n } from 'vue-i18n-lite'
 // 消息
 const emit = defineEmits(['close', 'active'])
 
-const { t } = localeI18n().getI18n()
+const { t } = useI18n()
 const curtab = ref<HTMLElement>()
 const props = defineProps<{
   item: ITabItem

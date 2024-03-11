@@ -58,13 +58,13 @@ import { TabScrollMode } from '../../model/TabModel'
 import type { ITabItem } from '../../model/TabModel'
 import ContextMenu from '../ContextMenu/index.vue'
 import useContextMenu from '../../hooks/useContextMenu'
-import localeI18n from '../../i18n'
 import useTabpanel from '../../hooks/useTabpanel'
 import TabHeaderItem from './TabHeaderItem.vue'
 import TabHeaderScroll from './TabHeaderScroll.vue'
 import TabHeaderButton from './TabHeaderButton.vue'
+import { useI18n } from 'vue-i18n-lite'
 // @ts-ignore
-const { t } = localeI18n().getI18n()
+const { t } = useI18n()
 const maximum = inject<boolean>('maximum')
 const emit = defineEmits(['active'])
 const scroll = ref()

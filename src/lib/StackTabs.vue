@@ -50,7 +50,7 @@ const props = withDefaults(
     space: 300
   }
 )
-provide('locales', { ...props.i18n })
+// provide('locales', { ...props.i18n })
 // 最大化,并向下传递
 const maximum = ref<boolean>(false)
 provide('maximum', maximum)
