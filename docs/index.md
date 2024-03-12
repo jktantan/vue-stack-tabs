@@ -5,7 +5,7 @@ hero:
   name: Vue Stack Tab
   tagline: 基于 Vue Router 的路由页签组件。
   image:
-    src: '/img/logo.svg',
+    src: '/img/logo.svg'
   actions:
     - text: 快速上手 →
       link: ./guide/

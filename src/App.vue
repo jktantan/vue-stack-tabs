@@ -36,6 +36,14 @@ const openTest3 = () => {
   })
   console.log('TEST2', tabId)
 }
+const open404=()=>{
+  openNewTab({
+    id: ulid(),
+    title: '404',
+    path: '/demo/ttttt',
+    closable: true
+  })
+}
 </script>
 
 <template>
@@ -78,6 +86,9 @@ const openTest3 = () => {
           <el-menu-item index="4" @click="openTest3">
             <span>页面3</span>
           </el-menu-item>
+        <el-menu-item index="4" @click="open404">
+          <span>404</span>
+        </el-menu-item>
           <el-menu-item index="5" @click="openframe('01HR6764M0X9CZKNT15QH82TXY')">
             <span>IFrame页面</span>
           </el-menu-item>

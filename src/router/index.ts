@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Frame from '@/components/layout/Frame.vue'
+
 import { IFrame } from '@/lib'
 const router = createRouter({
   // history: createWebHistory(import.meta.env.BASE_URL),
@@ -28,9 +29,19 @@ const router = createRouter({
           path: 'iframe',
           name: 'iframe',
           component: IFrame
+        },
+        {
+          path:'404',
+          name:'404',
+          component: () => import('@/views/404.vue')
+        },
+        {
+          path: ':pathMatch(.*)',
+          redirect:'/demo/404',
         }
       ]
-    }
+    },
+
   ]
 })
 

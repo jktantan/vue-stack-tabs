@@ -56,6 +56,9 @@ export default defineConfig({
             ]
           }
         ],
+        outline:{
+          label:'在此页面'
+        },
         docFooter: {
           next: '下一页',
           prev: '上一页'
