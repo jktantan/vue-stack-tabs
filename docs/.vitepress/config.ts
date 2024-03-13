@@ -39,25 +39,23 @@ export default defineConfig({
               { text: '安装', link: '/zh/base/install' },
               { text: '入门', link: '/zh/base/introduction' },
               { text: 'Nuxt', link: '/zh/base/nuxt' },
-              { text: '页签操作', link: '/getting-started' },
-              { text: '页签规则', link: '/getting-started' },
-              { text: 'Iframe页签', link: '/getting-started' }
+              { text: '页签操作', link: '/zh/base/tab' }
             ]
           },
           {
-            text: '基础',
+            text: '进阶',
             items: [
-              { text: '安装', link: '/introduction' },
-              { text: '入门', link: '/getting-started' },
-              { text: 'Nuxt', link: '/getting-started' },
-              { text: '页签操作', link: '/getting-started' },
+              { text: '过渡效果', link: '/zh/advance/transition' },
+              { text: '自定义插槽', link: '/zh/advance/slot' },
+              { text: '初始化面答', link: '/zh/advance/initial' },
+              { text: '国际化', link: '/zh/advance/language' },
               { text: '页签规则', link: '/getting-started' },
               { text: 'Iframe页签', link: '/getting-started' }
             ]
           }
         ],
-        outline:{
-          label:'在此页面'
+        outline: {
+          label: '在此页面'
         },
         docFooter: {
           next: '下一页',
