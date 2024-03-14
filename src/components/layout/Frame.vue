@@ -12,7 +12,7 @@ const defaultTabs: ITabData[] = [
 </script>
 
 <template>
-  <vue-stack-tabs :default-tabs="defaultTabs" iframe-path="/demo/iframe" />
+  <vue-stack-tabs :default-tabs="defaultTabs" iframe-path="/demo/iframe" i18n="zh-TW" />
 </template>
 
 <style scoped></style>
