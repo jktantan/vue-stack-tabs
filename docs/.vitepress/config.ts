@@ -39,7 +39,8 @@ export default defineConfig({
               { text: '安装', link: '/zh/base/install' },
               { text: '入门', link: '/zh/base/introduction' },
               { text: 'Nuxt', link: '/zh/base/nuxt' },
-              { text: '页签操作', link: '/zh/base/tab' }
+              { text: '页签操作', link: '/zh/base/tab' },
+              { text: '签内操作', link: '/zh/base/operator' }
             ]
           },
           {
@@ -47,10 +48,17 @@ export default defineConfig({
             items: [
               { text: '过渡效果', link: '/zh/advance/transition' },
               { text: '自定义插槽', link: '/zh/advance/slot' },
-              { text: '初始化面答', link: '/zh/advance/initial' },
-              { text: '国际化', link: '/zh/advance/language' },
-              { text: '页签规则', link: '/getting-started' },
-              { text: 'Iframe页签', link: '/getting-started' }
+              { text: '初始化页签', link: '/zh/advance/initial' },
+              { text: '国际化', link: '/zh/advance/language' }
+            ]
+          },
+          {
+            text: '更多',
+            items: [
+              { text: '配置', link: '/zh/advance/transition' },
+              { text: 'useStackTab', link: '/zh/advance/slot' },
+              { text: 'useTabLoading', link: '/zh/advance/initial' },
+              { text: 'useTabRouter', link: '/zh/advance/language' }
             ]
           }
         ],
