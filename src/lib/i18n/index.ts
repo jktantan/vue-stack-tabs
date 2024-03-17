@@ -58,14 +58,17 @@ export default () => {
     return message
   }
   // const localeI18n = inject('locales') as { locale: string; messages: object }
-  const getI18n = (localeI18n?: any) => {
-    let combinateMessage = { ...allLangs() }
-    if (!localeI18n) {
-      combinateMessage = { ...allLangs(), ...localeI18n.messages }
+  const getI18n = (localeI18n?: { locale: string; messages: any }[]) => {
+    const combinateMessage = { ...allLangs() }
+    if (localeI18n) {
+      for (const l of localeI18n!) {
+        combinateMessage[l.locale] = l.messages
+      }
+      // combinateMessage = { ...allLangs(), ...localeI18n.messages }
     }
 
     return createI18n({
-      locale: localeI18n.locale,
+      locale: 'zh-CN',
       fallbackLocale: 'en',
       messages: combinateMessage
     })

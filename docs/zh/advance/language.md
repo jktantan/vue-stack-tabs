@@ -1,46 +1,55 @@
-# 过渡效果
+# 国际化
 
-您可以通过配置 RouterTab 组件的 **tab-transition** 和 **page-transition** 属性，分别替换默认的**页签**和**页面**过渡效果
+## 配置
 
-::: warning
-* 如果是组件作用域内的 CSS(配置了 scoped)，需要在选择器前添加 >>>、 /deep/ 或 ::v-deep 才能生效
-* 页签项 .stack-tab-item 默认设置了 transition 和 transform-origin 的样式，您可能需要覆盖它已避免影响到自定义的过渡效果
+:::warning
+VueStackTabs 默认支持英文(`en`)和中文(`zh-CN`)两种语言
 :::
-
-## 示例
-
 ```vue
 <template>
-  <vue-stack-tabs page-transition="page-fade" tab-transition="tab-scale" />
+  <div class="app-header">头部</div>
+  <div class="app-body">
+    <div class="app-side">侧边栏</div>
+    <vue-stack-tabs iframe-path="/iframe" i18n="zh-CN"/>
+  </div>
 </template>
-
-<style lang="scss">
-    // 页面 fade 过渡
-    .page-fade {
-      &-enter-active,
-      &-leave-active {
-        transition: opacity 0.5s;
-      }
-
-      &-enter,
-      &-leave-to {
-        opacity: 0;
-      }
-    }
-
-    // 页签 scale 过渡
-    .tab-scale {
-      &-enter-active,
-      &-leave-active {
-        transition: opacity 0.5s, transform 0.5s;
-      }
-
-      &-enter,
-      &-leave-to {
-        transform: scale(1.5);
-        opacity: 0;
-      }
-    }
-</style>
 ```
 
+## 自定义语言
+`main.js` 入口文件
+
+```javascript {14-31}
+// router-tab 组件依赖 vue 
+import { createApp } from 'vue'
+
+// 引入组件和样式
+import StackTabs from 'vue-stack-tabs'
+import 'vue-stack-tab/dist/lib/vue-stack-tabs.css'
+
+import App from './App.vue'
+import router from './router'
+
+const app = createApp(App)
+
+app.use(router)
+app.use(VueStackTabs,[{
+  locale:'xxxx',
+  messages:{
+    VueStackTab: {
+      close: 'Close',
+      closeLefts: 'Close lefts',
+      closeRights: 'Close rights',
+      closeOthers: 'Close others',
+      closeAll: 'Close all',
+      reload: 'Reload',
+      reloadAll: 'Reload all',
+      maximum: 'Maximum',
+      restore: 'Restore',
+      undefined: 'Undefined',
+      loading: 'Loading'
+    }
+  }
+}])
+
+app.mount('#app')
+```

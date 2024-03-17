@@ -7,6 +7,7 @@ import { type ITabData, TabScrollMode } from './model/TabModel'
 import TabHeader from './components/TabHeader/index.vue'
 import useTabpanel from './hooks/useTabpanel'
 import useStackTab from './hooks/useStackTab'
+import { useI18n } from 'vue-i18n-lite'
 const { tabs, pageShown, caches, addPage, destroy, initial, setMaxSize } = useTabpanel()
 const emit = defineEmits(['onActive'])
 const props = withDefaults(
@@ -27,7 +28,7 @@ const props = withDefaults(
     tabScrollMode?: TabScrollMode
     width?: string
     height?: string
-    i18n?: { locale?: string; messages?: object }
+    i18n?: string
     messages?: any
     reloadable?: boolean
     closable?: boolean
@@ -44,7 +45,7 @@ const props = withDefaults(
     tabScrollMode: TabScrollMode.BOTH,
     width: '100%',
     height: '100%',
-    i18n: () => ({ locale: 'zh-CN', messages: {} }),
+    i18n: 'zh-CN',
     reloadable: true,
     closable: true,
     space: 300
@@ -52,11 +53,12 @@ const props = withDefaults(
 )
 // provide('locales', { ...props.i18n })
 // 最大化,并向下传递
+const { changeLocale } = useI18n()
 const maximum = ref<boolean>(false)
 provide('maximum', maximum)
 const { setIFramePath } = useStackTab()
 setIFramePath(props.iframePath)
-
+changeLocale(props.i18n)
 onBeforeMount(() => {
   console.log('on Before mount')
   initial(props.defaultTabs)

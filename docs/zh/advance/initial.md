@@ -1,46 +1,28 @@
-# 页签初始化
+# 初始化页签
 
-您可以通过配置 RouterTab 组件的 **tab-transition** 和 **page-transition** 属性，分别替换默认的**页签**和**页面**过渡效果
-
-::: warning
-* 如果是组件作用域内的 CSS(配置了 scoped)，需要在选择器前添加 >>>、 /deep/ 或 ::v-deep 才能生效
-* 页签项 .stack-tab-item 默认设置了 transition 和 transform-origin 的样式，您可能需要覆盖它已避免影响到自定义的过渡效果
+通过配置 StackTabs 组件的 `default-tabs` 属性，可以设置进入页面时默认显示的页签。
+:::warning
+默认页签必须要配置，且第一个页签应为非可关闭页签
 :::
-
 ## 示例
 
 ```vue
+
 <template>
-  <vue-stack-tabs page-transition="page-fade" tab-transition="tab-scale" />
+  <vue-stack-tabs :default-tabs="defaultTabs" />
 </template>
+<script lang="ts" setup>
+  import { type ITabData } from 'vue-stack-tabs'
 
-<style lang="scss">
-    // 页面 fade 过渡
-    .page-fade {
-      &-enter-active,
-      &-leave-active {
-        transition: opacity 0.5s;
-      }
-
-      &-enter,
-      &-leave-to {
-        opacity: 0;
-      }
+  const defaultTabs: ITabData[] = [
+    {
+      id: 'dashboard',
+      title: '首页',
+      path: '/dashboard',
+      closable: false
     }
+  ]
 
-    // 页签 scale 过渡
-    .tab-scale {
-      &-enter-active,
-      &-leave-active {
-        transition: opacity 0.5s, transform 0.5s;
-      }
-
-      &-enter,
-      &-leave-to {
-        transform: scale(1.5);
-        opacity: 0;
-      }
-    }
-</style>
+</script>
 ```
 
