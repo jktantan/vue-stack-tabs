@@ -1,8 +1,8 @@
 export default {
   VueStackTab: {
     close: '关闭',
-    closeLefts: '关闭左侧',
-    closeRights: '关闭右侧',
+    closeLeft: '关闭左侧',
+    closeRight: '关闭右侧',
     closeOthers: '关闭其他',
     closeAll: '关闭所有',
     reload: '刷新',

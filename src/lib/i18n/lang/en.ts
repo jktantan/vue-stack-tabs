@@ -1,8 +1,8 @@
 export default {
   VueStackTab: {
     close: 'close',
-    closeLefts: 'close lefts',
-    closeRights: 'close rights',
+    closeLeft: 'close left',
+    closeRight: 'close right',
     closeOthers: 'close others',
     closeAll: 'close all',
     reload: 'reload',

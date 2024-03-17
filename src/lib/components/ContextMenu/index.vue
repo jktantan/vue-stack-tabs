@@ -26,13 +26,13 @@
     />
     <context-menu-item
       icon="stack-tab__icon-close-lefts svg-mask"
-      :title="t('VueStackTab.closeLefts')"
+      :title="t('VueStackTab.closeLeft')"
       :disabled="index <= 0 ? 'disabled' : null"
       @click="removeLeftTabs(tabItem.id)"
     />
     <context-menu-item
       icon="stack-tab__icon-close-rights svg-mask"
-      :title="t('VueStackTab.closeRights')"
+      :title="t('VueStackTab.closeRight')"
       :disabled="index >= max - 1 ? 'disabled' : null"
       @click="removeRightTabs(tabItem.id)"
     />
