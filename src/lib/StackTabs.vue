@@ -8,7 +8,8 @@ import TabHeader from './components/TabHeader/index.vue'
 import useTabpanel from './hooks/useTabpanel'
 import useStackTab from './hooks/useStackTab'
 import { useI18n } from 'vue-i18n-lite'
-const { tabs, pageShown, caches, addPage, destroy, initial, setMaxSize } = useTabpanel()
+const { tabs, pageShown, caches, addPage, destroy, initial, setMaxSize, setGlobalScroll } =
+  useTabpanel()
 const emit = defineEmits(['onActive'])
 const props = withDefaults(
   defineProps<{
@@ -29,10 +30,8 @@ const props = withDefaults(
     width?: string
     height?: string
     i18n?: string
-    messages?: any
-    reloadable?: boolean
-    closable?: boolean
     space?: number
+    globalScroll: boolean
     iframePath: string
   }>(),
   {
@@ -46,9 +45,8 @@ const props = withDefaults(
     width: '100%',
     height: '100%',
     i18n: 'zh-CN',
-    reloadable: true,
-    closable: true,
-    space: 300
+    space: 300,
+    globalScroll: false
   }
 )
 // provide('locales', { ...props.i18n })
@@ -58,6 +56,7 @@ const maximum = ref<boolean>(false)
 provide('maximum', maximum)
 const { setIFramePath } = useStackTab()
 setIFramePath(props.iframePath)
+setGlobalScroll(props.globalScroll)
 changeLocale(props.i18n)
 onBeforeMount(() => {
   console.log('on Before mount')

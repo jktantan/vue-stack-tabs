@@ -27,9 +27,10 @@ const components = new Map<string, any>()
 const deletableCache = new Set<String>()
 const pageShown = ref<boolean>(true)
 const SESSION_TAB_NAME = 'stacktab-active-tab'
-const pageScroller = new Map<string, Map<string, number>>()
+const pageScroller = new Map<string, Map<string, any>>()
 let initialed = false
 let max = 0
+let scrollbar = false
 export default () => {
   const router = useRouter()
   const emitter = useEmitter()
@@ -180,9 +181,9 @@ export default () => {
           DynamicComponent: component
         },
         setup() {
-          // onMounted(() => {
-          //   addPageScroller(cacheName, '.cache-page-wrapper')
-          // })
+          onMounted(() => {
+            addPageScroller(cacheName, '.cache-page-wrapper')
+          })
           onDeactivated(() => {
             saveScroller(cacheName)
           })
@@ -201,7 +202,11 @@ export default () => {
             // }, 500)
           })
           return () => (
-            <div class="cache-page-wrapper" id={'W-' + tabInfo.id}>
+            <div
+              class="cache-page-wrapper"
+              id={'W-' + tabInfo.id}
+              style={[scrollbar ? 'overflow:auto' : 'overflow:hidden']}
+            >
               <dynamic-component tId={tabInfo.id} pId={cacheName} />
               <PageLoading tId={tabInfo.id!} />
             </div>
@@ -228,7 +233,9 @@ export default () => {
     if (scroller) {
       for (const key of scroller.keys()) {
         if (document.querySelector(key)) {
-          document.querySelector(key)!.scrollTop = scroller.get(key)!
+          const result = scroller.get(key)!
+          document.querySelector(key)!.scrollTop = result.top
+          document.querySelector(key)!.scrollLeft = result.left
         }
       }
     }
@@ -237,7 +244,10 @@ export default () => {
     const scroller = pageScroller.get(pageId)
     if (scroller) {
       for (const key of scroller.keys()) {
-        const result = document.querySelector(key)?.scrollTop ?? 0
+        const result = {
+          top: document.querySelector(key)?.scrollTop ?? 0,
+          left: document.querySelector(key)?.scrollLeft ?? 0
+        }
         scroller.set(key, result)
       }
     }
@@ -256,7 +266,7 @@ export default () => {
     }
     const scroller = pageScroller.get(pageId)!
     for (const sId of scrollerIds) {
-      scroller.set(sId, 0)
+      scroller.set(sId, { top: 0, left: 0 })
     }
   }
   /**
@@ -543,6 +553,9 @@ export default () => {
   const setMaxSize = (size: number) => {
     max = size
   }
+  const setGlobalScroll = (globalScroll: boolean) => {
+    scrollbar = globalScroll
+  }
 
   return {
     tabs,
@@ -574,6 +587,7 @@ export default () => {
     removeDeletableCache,
     refreshTab,
     refreshAllTabs,
-    addPageScroller
+    addPageScroller,
+    setGlobalScroll
   }
 }
