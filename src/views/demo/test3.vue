@@ -19,7 +19,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="dsfsdfs">
+  <div>
     <el-input v-model="t" />
     <el-input v-model="t" />
     <el-input v-model="t" />

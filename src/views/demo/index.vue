@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useTabRouter } from '@/lib'
 import { onActivated, onMounted, ref } from 'vue'
-useTabRouter()
+const { forward, addScroller } = useTabRouter()
 const props = defineProps<{
   tId: string
   pId: string
@@ -12,8 +12,14 @@ onActivated(() => {
 })
 onMounted(() => {
   console.log('on Demo Index mount')
-  console.log(props)
+  // console.log(props)
+  addScroller('.aaaaaa')
 })
+const goto = () => {
+  forward({
+    path: '/demo/test3'
+  })
+}
 </script>
 <script lang="ts">
 export default {
@@ -21,7 +27,7 @@ export default {
 }
 </script>
 <template>
-  <div><el-input v-model="iTest" /></div>
+  <div><el-input v-model="iTest" /> <el-button @click="goto">跳转测试</el-button></div>
 </template>
 
 <style scoped></style>

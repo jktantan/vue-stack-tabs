@@ -26,22 +26,26 @@ const router = createRouter({
           component: () => import('@/views/demo/test2.vue')
         },
         {
+          path: 'test3',
+          name: 'test3',
+          component: () => import('@/views/demo/test3.vue')
+        },
+        {
           path: 'iframe',
           name: 'iframe',
           component: IFrame
         },
         {
-          path:'404',
-          name:'404',
+          path: '404',
+          name: '404',
           component: () => import('@/views/404.vue')
         },
         {
           path: ':pathMatch(.*)',
-          redirect:'/demo/404',
+          redirect: '/demo/404'
         }
       ]
-    },
-
+    }
   ]
 })
 
