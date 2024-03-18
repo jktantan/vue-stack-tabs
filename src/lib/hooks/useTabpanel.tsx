@@ -1,5 +1,13 @@
 import type { ITabData, ITabItem, ITabPage } from '../model/TabModel'
-import { defineComponent, onActivated, onUnmounted, ref, unref } from 'vue'
+import {
+  defineComponent,
+  onActivated,
+  onDeactivated,
+  onMounted,
+  onUnmounted,
+  ref,
+  unref
+} from 'vue'
 import type { DefineComponent, VNode } from 'vue'
 import { useRouter } from 'vue-router'
 import type { RouteLocationNormalizedLoaded } from 'vue-router'
@@ -19,6 +27,7 @@ const components = new Map<string, any>()
 const deletableCache = new Set<String>()
 const pageShown = ref<boolean>(true)
 const SESSION_TAB_NAME = 'stacktab-active-tab'
+const pageScroller = new Map<string, Map<string, number>>()
 let initialed = false
 let max = 0
 export default () => {
@@ -172,14 +181,20 @@ export default () => {
         },
         setup() {
           // onMounted(() => {
-          //   addCache(cacheName)
+          //   addPageScroller(cacheName, '.cache-page-wrapper')
           // })
+          onDeactivated(() => {
+            saveScroller(cacheName)
+          })
           onActivated(() => {
+            restoreScroller(cacheName)
+            console.log(pageScroller.get(cacheName))
             removeDeletableCache()
             component.props = null
           })
           onUnmounted(() => {
             console.log('on unMounted', cacheName)
+            removeScroller(cacheName)
             // setTimeout(() => {
             // 刷新时重置路由
             // pageShown.value = true
@@ -207,6 +222,42 @@ export default () => {
     // }
     addCache(cacheName)
     return cacheComponent
+  }
+  const restoreScroller = (pageId: string) => {
+    const scroller = pageScroller.get(pageId)
+    if (scroller) {
+      for (const key of scroller.keys()) {
+        if (document.querySelector(key)) {
+          document.querySelector(key)!.scrollTop = scroller.get(key)!
+        }
+      }
+    }
+  }
+  const saveScroller = (pageId: string) => {
+    const scroller = pageScroller.get(pageId)
+    if (scroller) {
+      for (const key of scroller.keys()) {
+        const result = document.querySelector(key)?.scrollTop ?? 0
+        scroller.set(key, result)
+      }
+    }
+  }
+
+  const removeScroller = (pageId: string) => {
+    const scroller = pageScroller.get(pageId)!
+    if (scroller) {
+      scroller.clear()
+      pageScroller.delete(pageId)
+    }
+  }
+  const addPageScroller = (pageId: string, ...scrollerIds: string[]) => {
+    if (!pageScroller.has(pageId)) {
+      pageScroller.set(pageId, new Map<string, number>())
+    }
+    const scroller = pageScroller.get(pageId)!
+    for (const sId of scrollerIds) {
+      scroller.set(sId, 0)
+    }
   }
   /**
    * if id is null , then remove all tab that deleted is true
@@ -522,6 +573,7 @@ export default () => {
     markDeletableCache,
     removeDeletableCache,
     refreshTab,
-    refreshAllTabs
+    refreshAllTabs,
+    addPageScroller
   }
 }

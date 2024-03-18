@@ -1,23 +1,28 @@
 import { defu } from 'defu'
 
-import { getCurrentInstance } from 'vue'
+import { getCurrentInstance, onActivated, onMounted } from 'vue'
 import type { ComponentInternalInstance } from 'vue'
 import { type RouteLocationPathRaw, useRoute, useRouter } from 'vue-router'
 
 import useTabpanel from '@/lib/hooks/useTabpanel'
 import { uriDecode } from '@/lib/utils/UriHelper'
 export default () => {
-  const { attrs } = getCurrentInstance() as ComponentInternalInstance
-  const { pageShown, getTab, markDeletableCache, removeComponent, getComponent } = useTabpanel()
+  const { attrs, props } = getCurrentInstance() as ComponentInternalInstance
+  const { pageShown, getTab, markDeletableCache, removeComponent, getComponent, addPageScroller } =
+    useTabpanel()
   const route = useRoute()
   const router = useRouter()
   let currentId = ''
   // const currentPageId = ''
   let currentTab = ''
-
-  currentId = attrs.tId as string
+  currentId = (attrs.tId || props.tId) as string
+  const currentPageId = (attrs.pId || props.pId) as string
   // currentPageId = attrs.pId as string
   currentTab = route.query.__tab as string
+
+  const addScroller = (...scroller: string[]) => {
+    addPageScroller(currentPageId, ...scroller)
+  }
   const forward = (to: RouteLocationPathRaw) => {
     pageShown.value = false
     const query = defu(
@@ -88,6 +93,7 @@ export default () => {
 
   return {
     forward,
-    backward
+    backward,
+    addScroller
   }
 }
