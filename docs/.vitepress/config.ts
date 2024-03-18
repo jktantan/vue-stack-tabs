@@ -17,9 +17,8 @@ export default defineConfig({
       themeConfig: {
         nav: [
           { text: '教程', link: '/zh/guide/' },
-          { text: 'API', items: [{ text: 'useStackTab', link: '/zh/api/useStackTab' }] },
-          { text: '在线预览', link: 'http://www.baidu.com' },
-          { text: '更新日志', link: '/zh/changelog' },
+          // { text: '在线预览', link: 'http://www.baidu.com' },
+          // { text: '更新日志', link: '/zh/changelog' },
           {
             text: '代码',
             items: [
@@ -53,12 +52,12 @@ export default defineConfig({
             ]
           },
           {
-            text: '更多',
+            text: 'api',
             items: [
-              { text: '配置', link: '/zh/advance/transition' },
-              { text: 'useStackTab', link: '/zh/advance/slot' },
-              { text: 'useTabLoading', link: '/zh/advance/initial' },
-              { text: 'useTabRouter', link: '/zh/advance/language' }
+              { text: '属性', link: '/zh/more/properties' },
+              { text: 'useStackTab', link: '/zh/more/useStackTab' },
+              { text: 'useTabLoading', link: '/zh/more/useTabLoading' },
+              { text: 'useTabRouter', link: '/zh/more/useTabRouter' }
             ]
           }
         ],

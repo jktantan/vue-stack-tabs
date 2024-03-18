@@ -9,7 +9,7 @@
 
 ## 示例
 
-```vue
+```vue:line-numbers
 <template>
   <vue-stack-tabs page-transition="page-fade" tab-transition="tab-scale" />
 </template>

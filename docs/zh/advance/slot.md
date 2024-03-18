@@ -9,7 +9,7 @@ VueStackTabs 支持通过以下插槽个性化页签组件：
 
 ## 示例
 
-```vue
+```vue:line-numbers
 <script lang="ts" setup>
   import { TabHeaderButton } from 'vue-stack-tabs'
 </script>

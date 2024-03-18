@@ -6,8 +6,7 @@
 :::
 ## 示例
 
-```vue
-
+```vue:line-numbers
 <template>
   <vue-stack-tabs :default-tabs="defaultTabs" />
 </template>

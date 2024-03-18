@@ -5,7 +5,7 @@
 ## 加载动画
 **示例：**
 
-```typescript
+```typescript:line-numbers
 // 引用useStackTab方法
 import { useTabLoading } from 'vue-stack-tabs'
 
@@ -20,7 +20,7 @@ closeTabLoading()
 ## 路由
 
 ### 前进
-```typescript
+```typescript:line-numbers
 // 引用useStackTab方法
 import { useTabRouter } from 'vue-stack-tabs'
 
@@ -32,7 +32,7 @@ openTabLoading()
 closeTabLoading()
 ```
 ### 后退
-```typescript
+```typescript:line-numbers
 // 引用useStackTab方法
 import { useTabRouter } from 'vue-stack-tabs'
 

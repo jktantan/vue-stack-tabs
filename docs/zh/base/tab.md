@@ -41,7 +41,7 @@ active("dashboard")
 ## 重置页签
 **示例：**
 
-```typescript
+```typescript:line-numbers
 // 引用useStackTab方法
 import { useStackTab } from 'vue-stack-tabs'
 
@@ -53,7 +53,7 @@ reset()
 ## 页签页面加载动画
 **示例：**
 
-```typescript
+```typescript:line-numbers
 // 引用useStackTab方法
 import { useTabLoading } from 'vue-stack-tabs'
 

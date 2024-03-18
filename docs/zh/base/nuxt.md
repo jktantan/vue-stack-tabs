@@ -6,7 +6,7 @@
 
 `plugins/StackTabs.js` 入口文件
 
-```javascript
+```javascript:line-numbers
 // 引用VueStackTabs
 import StackTab from 'vue-stack-tabs'
 //引入样式
@@ -25,7 +25,7 @@ export default defineNuxtPlugin(({ vueApp }) => {
 
 `components/FakeIFrame.vue`
 
-```vue
+```vue:line-numbers
 <script setup lang="ts">
   import { useTabRouter } from 'vue-stack-tabs'
   useTabRouter()
@@ -39,7 +39,7 @@ export default defineNuxtPlugin(({ vueApp }) => {
 
 `nuxt.config.ts`
 
-```typescript
+```typescript:line-numbers
 export default defineNuxtConfig({
   ...
   hooks: {
@@ -56,10 +56,10 @@ export default defineNuxtConfig({
 ```
 ## 应用组件
 
-> 配置参考: [StackTabs 配置参数](../../api/README.md#routertab-配置参数)
+> 配置参考: [VueStackTabs 配置参数](../../api/README.md#routertab-配置参数)
 
 ::: danger
-StackTabs 仅支持单例模式，请勿在同一个页面中引入多个 StackTabs 组件！
+VueStackTabs 仅支持单例模式，请勿在同一个页面中引入多个 VueStackTabs 组件！
 * 配置 iframe-path 定义iframe页地址
 :::
 
@@ -68,7 +68,7 @@ StackTabs 仅支持单例模式，请勿在同一个页面中引入多个 StackT
 
 `layouts/default.vue`
 
-```vue {5}
+```vue:line-numbers {5}
 <template>
   <div class="app-header">头部</div>
   <div class="app-body">

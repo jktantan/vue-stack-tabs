@@ -6,7 +6,7 @@
 
 `main.js` 入口文件
 
-```javascript {5,6,14}
+```javascript:line-numbers {5,6,14}
 // router-tab 组件依赖 vue 
 import { createApp } from 'vue'
 
@@ -27,16 +27,16 @@ app.mount('#app')
 
 ## 应用组件
 
-> 配置参考: [StackTabs 配置参数](../../api/README.md#routertab-配置参数)
+> 配置参考: [VueStackTabs 配置参数](../../api/README.md#routertab-配置参数)
 
 ::: danger
-StackTabs 仅支持单例模式，请勿在同一个页面中引入多个 StackTabs 组件！
+VueStackTabs 仅支持单例模式，请勿在同一个页面中引入多个 VueStackTabs 组件！
 * 配置 iframe-path 定义iframe页地址
 :::
 
 **示例：**
 
-```html {5}
+```html:line-numbers {5}
 <template>
   <div class="app-header">头部</div>
   <div class="app-body">
@@ -56,7 +56,7 @@ iframe路由地址需要与组件的 **iframe-path** 一致
 
 `router.js` 路由
 
-```javascript {16,25,26,27}
+```javascript:line-numbers {16,25,26,27}
 import { createRouter, createWebHistory } from 'vue-router'
 // 引入布局框架组件
 import Frame from '@/components/layout/Frame.vue'

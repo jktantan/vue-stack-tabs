@@ -5,7 +5,7 @@
 :::warning
 VueStackTabs 默认支持英文(`en`)和中文(`zh-CN`)两种语言
 :::
-```vue
+```vue:line-numbers
 <template>
   <div class="app-header">头部</div>
   <div class="app-body">
@@ -18,7 +18,7 @@ VueStackTabs 默认支持英文(`en`)和中文(`zh-CN`)两种语言
 ## 自定义语言
 `main.js` 入口文件
 
-```javascript {14-31}
+```javascript:line-numbers {14-31}
 // router-tab 组件依赖 vue 
 import { createApp } from 'vue'
 
@@ -37,8 +37,8 @@ app.use(VueStackTabs,[{
   messages:{
     VueStackTab: {
       close: 'Close',
-      closeLefts: 'Close lefts',
-      closeRights: 'Close rights',
+      closeLeft: 'Close left',
+      closeRight: 'Close right',
       closeOthers: 'Close others',
       closeAll: 'Close all',
       reload: 'Reload',
