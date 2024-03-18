@@ -48,7 +48,8 @@ export default defineConfig({
               { text: '过渡效果', link: '/zh/advance/transition' },
               { text: '自定义插槽', link: '/zh/advance/slot' },
               { text: '初始化页签', link: '/zh/advance/initial' },
-              { text: '国际化', link: '/zh/advance/language' }
+              { text: '国际化', link: '/zh/advance/language' },
+              { text: '滚动位置', link: '/zh/advance/scroll' }
             ]
           },
           {
