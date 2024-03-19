@@ -10,7 +10,7 @@ import useStackTab from './hooks/useStackTab'
 import { useI18n } from 'vue-i18n-lite'
 const { tabs, pageShown, caches, addPage, destroy, initial, setMaxSize, setGlobalScroll } =
   useTabpanel()
-const emit = defineEmits(['onActive'])
+const emit = defineEmits(['onActive', 'onPageLoaded'])
 const props = withDefaults(
   defineProps<{
     // 初始页签数据
@@ -73,6 +73,9 @@ setMaxSize(props.max)
 onUnmounted(() => {
   destroy()
 })
+const onComponentLoaded = () => {
+  emit('onPageLoaded')
+}
 </script>
 <template>
   <div
@@ -102,6 +105,7 @@ onUnmounted(() => {
                   :is="tabWrapper(route, Component)"
                   v-if="pageShown"
                   :key="route.fullPath"
+                  @on-loaded="onComponentLoaded"
                 />
               </template>
               <template #fallback> Loading.... </template>

@@ -180,8 +180,12 @@ export default () => {
         components: {
           DynamicComponent: component
         },
-        setup() {
+        emits: {
+          onLoaded: null
+        },
+        setup(props, context) {
           onMounted(() => {
+            context.emit('onLoaded')
             addPageScroller(cacheName, '.cache-page-wrapper')
           })
           onDeactivated(() => {
