@@ -56,7 +56,7 @@ export default defineNuxtConfig({
 ```
 ## 应用组件
 
-> 配置参考: [VueStackTabs 配置参数](../../api/README.md#routertab-配置参数)
+> 配置参考: [VueStackTabs 配置参数](../more/properties.md)
 
 ::: danger
 VueStackTabs 仅支持单例模式，请勿在同一个页面中引入多个 VueStackTabs 组件！
