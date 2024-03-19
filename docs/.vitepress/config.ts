@@ -23,7 +23,7 @@ export default defineConfig({
             text: '代码',
             items: [
               { text: 'GitHub', link: 'https://github.com/jktantan/vue-stack-tabs.git' },
-              { text: 'Gitee', link: '/zh/api/useStackTab' }
+              { text: 'Gitee', link: 'https://gitee.com/jktantan/vue-stack-tabs' }
             ]
           }
         ],
@@ -53,9 +53,9 @@ export default defineConfig({
             ]
           },
           {
-            text: 'api',
+            text: '更多',
             items: [
-              { text: '属性', link: '/zh/more/properties' },
+              { text: '配置属性', link: '/zh/more/properties' },
               { text: 'useStackTab', link: '/zh/more/useStackTab' },
               { text: 'useTabLoading', link: '/zh/more/useTabLoading' },
               { text: 'useTabRouter', link: '/zh/more/useTabRouter' }

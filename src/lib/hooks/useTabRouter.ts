@@ -1,6 +1,6 @@
 import { defu } from 'defu'
 
-import { getCurrentInstance, onActivated, onMounted } from 'vue'
+import { getCurrentInstance } from 'vue'
 import type { ComponentInternalInstance } from 'vue'
 import { type RouteLocationPathRaw, useRoute, useRouter } from 'vue-router'
 
