@@ -1,18 +1,18 @@
 import { useRouter } from 'vue-router'
 import useTabpanel from '../hooks/useTabpanel'
 import { throttle } from 'lodash-es'
-import type { ITabData, ITabItem, ITabPage } from '../model/TabModel'
+import type { ITabData } from '../model/TabModel'
 import { defu } from 'defu'
-import { unref } from 'vue'
+
 import { encodeTabInfo } from '../utils/TabIdHelper'
 import { uriDecode } from '../utils/UriHelper'
 import { ulid } from 'ulidx'
 import { MittType, useEmitter } from './useTabMitt'
-import { Stack } from '../model/TabModel'
+
 let iframePath: string
 export default () => {
   const router = useRouter()
-  const { active, hasTab, pageShown, reset, canAddTab, tabs, addTab, initialed } = useTabpanel()
+  const { active, hasTab, pageShown, reset, canAddTab, destroy } = useTabpanel()
   const emitter = useEmitter()
   /**
    * 打开新的TAB页面
@@ -44,30 +44,30 @@ export default () => {
         return
       }
 
-      if (initialed) {
-        // 增加tab
-        let activeTab: ITabItem | null = null
-        for (const tab of unref(tabs)) {
-          tab.active = false
-        }
-        activeTab = {
-          id: tabInfo.id!,
-          title: tabInfo.title,
-          closable: tabInfo.closable!,
-          refreshable: tabInfo.refreshable!,
-          iframe: tabInfo.iframe!,
-          url: tabInfo.iframe ? tab.path : null,
-          active: true,
-          pages: new Stack<ITabPage>()
-        } as ITabItem
-        addTab(activeTab).finally(() => {
-          toPage(tab, tabInfo)
-          resolve(tabInfo.id)
-        })
-      } else {
-        toPage(tab, tabInfo)
-        resolve(tabInfo.id)
-      }
+      // if (initialed) {
+      //   // 增加tab
+      //   let activeTab: ITabItem | null = null
+      //   for (const tab of unref(tabs)) {
+      //     tab.active = false
+      //   }
+      //   activeTab = {
+      //     id: tabInfo.id!,
+      //     title: tabInfo.title,
+      //     closable: tabInfo.closable!,
+      //     refreshable: tabInfo.refreshable!,
+      //     iframe: tabInfo.iframe!,
+      //     url: tabInfo.iframe ? tab.path : null,
+      //     active: true,
+      //     pages: new Stack<ITabPage>()
+      //   } as ITabItem
+      //   addTab(activeTab).finally(() => {
+      //     toPage(tab, tabInfo)
+      //     resolve(tabInfo.id)
+      //   })
+      // } else {
+      toPage(tab, tabInfo)
+      resolve(tabInfo.id)
+      // }
     })
   }, 500)
   const toPage = (tab: ITabData, tabInfo: any) => {
@@ -98,5 +98,5 @@ export default () => {
     iframePath = path
   }
 
-  return { openNewTab, setIFramePath, active, reset }
+  return { openNewTab, setIFramePath, active, reset, destroy }
 }
