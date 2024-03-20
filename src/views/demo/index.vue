@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { useTabRouter } from '@/lib'
 import { onActivated, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 const { forward, addScroller } = useTabRouter()
+const router = useRouter()
 const props = defineProps<{
   tId: string
   pId: string
@@ -16,8 +18,8 @@ onMounted(() => {
   addScroller('.aaaaaa')
 })
 const goto = () => {
-  forward({
-    path: '/demo/test3'
+  router.push({
+    path: '/other'
   })
 }
 </script>

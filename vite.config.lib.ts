@@ -7,7 +7,12 @@ import loadVersion from 'vite-plugin-package-version'
 import { resolve } from 'path'
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
-  plugins: [vue(), vueJsx(), loadVersion(), dts({ insertTypesEntry:true,tsconfigPath:'tsconfig.lib.json' })],
+  plugins: [
+    vue(),
+    vueJsx(),
+    loadVersion(),
+    dts({ insertTypesEntry: true, tsconfigPath: 'tsconfig.lib.json' })
+  ],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))

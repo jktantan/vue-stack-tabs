@@ -11,6 +11,10 @@ const router = createRouter({
       component: () => import('@/views/index.vue')
     },
     {
+      path: '/other',
+      component: () => import('@/views/other.vue')
+    },
+    {
       path: '/demo',
       name: 'demo',
       component: Frame,

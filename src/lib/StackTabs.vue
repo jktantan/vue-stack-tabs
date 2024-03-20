@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { onBeforeMount, onUnmounted, provide, ref } from 'vue'
+import { onBeforeMount, onBeforeUnmount, onUnmounted, provide, ref } from 'vue'
 import type { TransitionProps, DefineComponent, VNode } from 'vue'
 import { type RouteLocationNormalizedLoaded } from 'vue-router'
 import { getMaxZIndex } from './utils/TabScrollHelper'
@@ -71,7 +71,8 @@ const onTabActive = (id: string) => {
   emit('onActive', id)
 }
 setMaxSize(props.max)
-onUnmounted(() => {
+onBeforeUnmount(() => {
+  window.console.log('StackTabs unmounted')
   isDestroyed.value = true
   destroy()
 })
@@ -98,20 +99,15 @@ const onComponentLoaded = () => {
       </template>
     </tab-header>
     <div class="stack-tab__container">
-      <router-view v-slot="{ Component, route }">
+      <router-view v-slot="{ Component, route }" v-if="!isDestroyed">
         <transition :name="pageTransition" @after-leave="pageShown = true" mode="out-in">
           <keep-alive :include="caches">
-            <suspense>
-              <template #default>
-                <component
-                  :is="tabWrapper(route, Component)"
-                  v-if="pageShown && !isDestroyed"
-                  :key="route.fullPath"
-                  @on-loaded="onComponentLoaded"
-                />
-              </template>
-              <template #fallback> Loading.... </template>
-            </suspense>
+            <component
+              :is="tabWrapper(route, Component)"
+              v-if="pageShown"
+              :key="route.fullPath"
+              @on-loaded="onComponentLoaded"
+            />
           </keep-alive>
         </transition>
       </router-view>
