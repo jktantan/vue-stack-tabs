@@ -195,6 +195,7 @@ export default () => {
             saveScroller(cacheName)
           })
           onActivated(() => {
+            context.emit('onLoaded')
             restoreScroller(cacheName)
             console.log(pageScroller.get(cacheName))
             removeDeletableCache()
