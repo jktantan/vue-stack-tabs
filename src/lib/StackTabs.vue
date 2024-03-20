@@ -8,7 +8,7 @@ import TabHeader from './components/TabHeader/index.vue'
 import useTabpanel from './hooks/useTabpanel'
 import useStackTab from './hooks/useStackTab'
 import { useI18n } from 'vue-i18n-lite'
-const { tabs, pageShown, caches, addPage, destroy, initial, setMaxSize, setGlobalScroll } =
+const { tabs, pageShown, caches, destroy, addPage, initial, setMaxSize, setGlobalScroll } =
   useTabpanel()
 const emit = defineEmits(['onActive', 'onPageLoaded'])
 const props = withDefaults(
@@ -50,6 +50,7 @@ const props = withDefaults(
   }
 )
 // provide('locales', { ...props.i18n })
+const isDestroyed = ref<boolean>(false)
 // 最大化,并向下传递
 const { changeLocale } = useI18n()
 const maximum = ref<boolean>(false)
@@ -71,7 +72,8 @@ const onTabActive = (id: string) => {
 }
 setMaxSize(props.max)
 onUnmounted(() => {
-  // destroy()
+  isDestroyed.value = true
+  destroy()
 })
 const onComponentLoaded = () => {
   emit('onPageLoaded')
@@ -103,7 +105,7 @@ const onComponentLoaded = () => {
               <template #default>
                 <component
                   :is="tabWrapper(route, Component)"
-                  v-if="pageShown"
+                  v-if="pageShown && !isDestroyed"
                   :key="route.fullPath"
                   @on-loaded="onComponentLoaded"
                 />

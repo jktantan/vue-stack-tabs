@@ -12,7 +12,7 @@ import { MittType, useEmitter } from './useTabMitt'
 let iframePath: string
 export default () => {
   const router = useRouter()
-  const { active, hasTab, pageShown, reset, canAddTab, destroy } = useTabpanel()
+  const { active, hasTab, pageShown, reset, canAddTab } = useTabpanel()
   const emitter = useEmitter()
   /**
    * 打开新的TAB页面
@@ -98,5 +98,5 @@ export default () => {
     iframePath = path
   }
 
-  return { openNewTab, setIFramePath, active, reset, destroy }
+  return { openNewTab, setIFramePath, active, reset }
 }

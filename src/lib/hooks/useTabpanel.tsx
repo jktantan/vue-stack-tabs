@@ -555,7 +555,6 @@ export default () => {
     components.clear()
     deletableCache.clear()
     unref(caches).splice(0)
-    pageShown.value = false
   }
   const setMaxSize = (size: number) => {
     max = size
