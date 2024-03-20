@@ -50,7 +50,6 @@ const props = withDefaults(
   }
 )
 // provide('locales', { ...props.i18n })
-const isDestroyed = ref<boolean>(false)
 // 最大化,并向下传递
 const { changeLocale } = useI18n()
 const maximum = ref<boolean>(false)
@@ -72,8 +71,6 @@ const onTabActive = (id: string) => {
 }
 setMaxSize(props.max)
 onBeforeUnmount(() => {
-  window.console.log('StackTabs unmounted')
-  isDestroyed.value = true
   destroy()
 })
 const onComponentLoaded = () => {
@@ -99,7 +96,7 @@ const onComponentLoaded = () => {
       </template>
     </tab-header>
     <div class="stack-tab__container">
-      <router-view v-slot="{ Component, route }" v-if="!isDestroyed">
+      <router-view v-slot="{ Component, route }">
         <transition :name="pageTransition" @after-leave="pageShown = true" mode="out-in">
           <keep-alive :include="caches">
             <component
