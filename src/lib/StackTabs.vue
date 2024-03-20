@@ -71,7 +71,7 @@ const onTabActive = (id: string) => {
 }
 setMaxSize(props.max)
 onUnmounted(() => {
-  destroy()
+  // destroy()
 })
 const onComponentLoaded = () => {
   emit('onPageLoaded')
