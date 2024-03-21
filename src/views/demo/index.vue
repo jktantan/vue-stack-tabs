@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import { useTabRouter } from '@/lib'
+import { useTabRouter, useStackTab } from '@/lib'
 import { onActivated, onMounted, ref } from 'vue'
-const { forward, addScroller } = useTabRouter()
-const props = defineProps<{
-  tId: string
-  pId: string
-}>()
+import { useRouter } from 'vue-router'
+const { addScroller } = useTabRouter()
+const { reset } = useStackTab()
+const router = useRouter()
 const iTest = ref<string>('')
 onActivated(() => {
   console.log('on Demo Index activate')
@@ -16,9 +15,12 @@ onMounted(() => {
   addScroller('.aaaaaa')
 })
 const goto = () => {
-  forward({
-    path: '/demo/test3'
+  router.push({
+    path: '/other'
   })
+}
+const resetTest = () => {
+  reset()
 }
 </script>
 <script lang="ts">
@@ -27,7 +29,10 @@ export default {
 }
 </script>
 <template>
-  <div><el-input v-model="iTest" /> <el-button @click="goto">跳转测试</el-button></div>
+  <div>
+    <el-input v-model="iTest" /> <el-button @click="goto">跳转测试</el-button>
+    <el-button @click="resetTest">重置</el-button>
+  </div>
 </template>
 
 <style scoped></style>

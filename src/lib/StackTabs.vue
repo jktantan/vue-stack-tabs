@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { onBeforeMount, onUnmounted, provide, ref } from 'vue'
+import { onBeforeMount, onBeforeUnmount, onUnmounted, provide, ref } from 'vue'
 import type { TransitionProps, DefineComponent, VNode } from 'vue'
 import { type RouteLocationNormalizedLoaded } from 'vue-router'
 import { getMaxZIndex } from './utils/TabScrollHelper'
@@ -8,7 +8,7 @@ import TabHeader from './components/TabHeader/index.vue'
 import useTabpanel from './hooks/useTabpanel'
 import useStackTab from './hooks/useStackTab'
 import { useI18n } from 'vue-i18n-lite'
-const { tabs, pageShown, caches, addPage, destroy, initial, setMaxSize, setGlobalScroll } =
+const { tabs, pageShown, caches, destroy, addPage, initial, setMaxSize, setGlobalScroll } =
   useTabpanel()
 const emit = defineEmits(['onActive', 'onPageLoaded'])
 const props = withDefaults(
@@ -70,7 +70,7 @@ const onTabActive = (id: string) => {
   emit('onActive', id)
 }
 setMaxSize(props.max)
-onUnmounted(() => {
+onBeforeUnmount(() => {
   destroy()
 })
 const onComponentLoaded = () => {
@@ -99,17 +99,12 @@ const onComponentLoaded = () => {
       <router-view v-slot="{ Component, route }">
         <transition :name="pageTransition" @after-leave="pageShown = true" mode="out-in">
           <keep-alive :include="caches">
-            <suspense>
-              <template #default>
-                <component
-                  :is="tabWrapper(route, Component)"
-                  v-if="pageShown"
-                  :key="route.fullPath"
-                  @on-loaded="onComponentLoaded"
-                />
-              </template>
-              <template #fallback> Loading.... </template>
-            </suspense>
+            <component
+              :is="tabWrapper(route, Component)"
+              v-if="pageShown"
+              :key="route.fullPath"
+              @on-loaded="onComponentLoaded"
+            />
           </keep-alive>
         </transition>
       </router-view>

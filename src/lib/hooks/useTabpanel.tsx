@@ -43,6 +43,9 @@ export default () => {
   const initial = (staticTabs: ITabData[]) => {
     // add default tabs
     defaultTabs.splice(0)
+    caches.value.splice(0)
+    deletableCache.clear()
+    components.clear()
     for (const item of staticTabs) {
       // const id = ulid()
       const fullItem = defu(item, { id: ulid() })
@@ -194,6 +197,7 @@ export default () => {
             saveScroller(cacheName)
           })
           onActivated(() => {
+            context.emit('onLoaded')
             restoreScroller(cacheName)
             console.log(pageScroller.get(cacheName))
             removeDeletableCache()
@@ -554,7 +558,6 @@ export default () => {
     components.clear()
     deletableCache.clear()
     unref(caches).splice(0)
-    pageShown.value = true
   }
   const setMaxSize = (size: number) => {
     max = size

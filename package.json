@@ -1,6 +1,6 @@
 {
   "name": "vue-stack-tabs",
-  "version": "0.1.22",
+  "version": "0.1.27",
   "description": "Vue.js component for router tab.",
   "private": false,
   "type": "module",
@@ -24,9 +24,6 @@
   "license": "Apache License, Version 2.0",
   "bugs": {
     "url": "https://github.com/jktantan/vue-stack-tabs/issues"
-  },
-  "publishConfig": {
-    "registry": "https://registry.npmjs.org/"
   },
   "homepage": "https://github.com/jktantan/vue-stack-tabs.git",
   "scripts": {
