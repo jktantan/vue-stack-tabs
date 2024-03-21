@@ -31,6 +31,11 @@ const router = createRouter({
           component: () => import('@/views/demo/test3.vue')
         },
         {
+          path: 'test4/:id',
+          name: 'test4',
+          component: () => import('@/views/demo/test3.vue')
+        },
+        {
           path: 'iframe',
           name: 'iframe',
           component: IFrame

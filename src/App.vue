@@ -31,7 +31,7 @@ const openTest3 = () => {
   const tabId = openNewTab({
     id: ulid(),
     title: '测试2',
-    path: '/demo/test2?saa=234234',
+    path: '/demo/test4/aaaa',
     closable: true
   })
   console.log('TEST2', tabId)
