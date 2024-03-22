@@ -522,7 +522,7 @@ export default () => {
             break
           } else {
             tab.active = true
-            pageShown.value = false
+            pageShown.value = !tab.iframe
             updateSession(tab)
             if (route) {
               const top = tab.pages.peek()
@@ -551,6 +551,7 @@ export default () => {
     destroy()
     unref(tabs).push(...defaultTabs)
     emitter.emit(MittType.TAB_ACTIVE, { id: defaultTabs[0].id! })
+    pageShown.value=false
     // active(defaultTabs[0].id)
   }
   const destroy = () => {
