@@ -133,9 +133,15 @@ export default () => {
   const addPage = (route: RouteLocationNormalizedLoaded, component: VNode): DefineComponent => {
     let cacheComponent: DefineComponent
     const tabInfo = decodeTabInfo(route.query.__tab as string)
-    const matchPath = route.matched[route.matched.length-1].path
-    const tmpPath = route.path.endsWith("/")?route.path.substring(0, route.path.length - 1):route.path
-    const cacheName = createPageId(tabInfo.id!, matchPath===tmpPath?tmpPath:route.path, route.query.valueOf())
+    const matchPath = route.matched[route.matched.length - 1].path
+    const tmpPath = route.path.endsWith('/')
+      ? route.path.substring(0, route.path.length - 1)
+      : route.path
+    const cacheName = createPageId(
+      tabInfo.id!,
+      matchPath === tmpPath ? tmpPath : route.path,
+      route.query.valueOf()
+    )
     const src = route.query.__src
     // 增加tab
     let activeTab: ITabItem | null = null
@@ -551,7 +557,7 @@ export default () => {
     destroy()
     unref(tabs).push(...defaultTabs)
     emitter.emit(MittType.TAB_ACTIVE, { id: defaultTabs[0].id! })
-    pageShown.value=false
+    pageShown.value = false
     // active(defaultTabs[0].id)
   }
   const destroy = () => {
