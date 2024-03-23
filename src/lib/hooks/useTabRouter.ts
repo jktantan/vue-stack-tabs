@@ -24,7 +24,7 @@ export default () => {
     addPageScroller(currentPageId, ...scroller)
   }
   const forward = (to: RouteLocationPathRaw) => {
-    pageShown.value = false
+    // pageShown.value = false
     const query = defu(
       {
         __tab: currentTab
@@ -42,7 +42,7 @@ export default () => {
    * @param query 返回时要加截的数据
    */
   const backward = (to: number | string, query?: Object) => {
-    pageShown.value = false
+    // pageShown.value = false
 
     const tab = getTab(currentId)
     if (!tab) {

@@ -115,7 +115,7 @@ const closeTab = (item: ITabItem) => {
   // emit('close', item)
   if (item.closable) {
     const activeId = removeTab(item.id)
-    emit('active', activeId)
+    // emit('active', activeId)
   }
   contextMenuShown.value = false
 }

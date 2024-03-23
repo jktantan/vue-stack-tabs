@@ -1,7 +1,7 @@
 <script lang="ts" setup>
-import { onBeforeMount, onBeforeUnmount, onUnmounted, provide, ref } from 'vue'
+import { onBeforeMount, onBeforeUnmount, provide, ref, watch } from 'vue'
 import type { TransitionProps, DefineComponent, VNode } from 'vue'
-import { type RouteLocationNormalizedLoaded } from 'vue-router'
+import { type RouteLocationNormalizedLoaded ,useRoute} from 'vue-router'
 import { getMaxZIndex } from './utils/TabScrollHelper'
 import { type ITabData, TabScrollMode } from './model/TabModel'
 import TabHeader from './components/TabHeader/index.vue'
@@ -11,6 +11,7 @@ import { useI18n } from 'vue-i18n-lite'
 const { tabs, pageShown, caches, destroy, addPage, initial, setMaxSize, setGlobalScroll } =
   useTabpanel()
 const emit = defineEmits(['onActive', 'onPageLoaded'])
+const route =useRoute()
 const props = withDefaults(
   defineProps<{
     // 初始页签数据
@@ -97,7 +98,7 @@ const onComponentLoaded = () => {
     </tab-header>
     <div class="stack-tab__container">
       <router-view v-slot="{ Component, route }">
-        <transition :name="pageTransition" @after-leave="pageShown = true" mode="out-in">
+        <transition :name="pageTransition" mode="out-in">
           <keep-alive :include="caches">
             <component
               :is="tabWrapper(route, Component)"
@@ -108,10 +109,10 @@ const onComponentLoaded = () => {
           </keep-alive>
         </transition>
       </router-view>
-      <transition-group :name="pageTransition" appear>
+      <transition-group :name="pageTransition" appear mode="out-in">
         <iframe
           v-for="frame of tabs.filter((item) => item.iframe)"
-          v-show="frame.active && pageShown"
+          v-show="frame.active"
           :key="frame.id"
           class="stack-tab__iframe"
           :src="/^(javascript|data):/i.test(frame.url ?? '') ? 'about:blank' : frame.url"

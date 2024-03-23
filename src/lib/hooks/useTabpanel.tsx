@@ -1,6 +1,6 @@
 import type { ITabData, ITabItem, ITabPage } from '../model/TabModel'
 import {
-  defineComponent,
+  defineComponent, nextTick,
   onActivated,
   onDeactivated,
   onMounted,
@@ -25,7 +25,8 @@ const caches = ref<string[]>([])
 // Dynamic components
 const components = new Map<string, any>()
 const deletableCache = new Set<String>()
-const pageShown = ref<boolean>(true)
+const deletableTab = new Set<String>()
+const pageShown = ref<boolean>(false)
 const SESSION_TAB_NAME = 'stacktab-active-tab'
 const pageScroller = new Map<string, Map<string, any>>()
 let initialed = false
@@ -37,6 +38,7 @@ export default () => {
   const size = (): number => {
     return tabs.value.length
   }
+
   /**
    * Init the Tab list
    */
@@ -45,6 +47,7 @@ export default () => {
     defaultTabs.splice(0)
     caches.value.splice(0)
     deletableCache.clear()
+    deletableTab.clear()
     components.clear()
     for (const item of staticTabs) {
       // const id = ulid()
@@ -104,6 +107,9 @@ export default () => {
       }
     }
     initialed = true
+    nextTick(()=>{
+      pageShown.value=true
+    })
   }
   const hasTab = (id: string) => {
     for (const tab of tabs.value) {
@@ -133,6 +139,9 @@ export default () => {
   const addPage = (route: RouteLocationNormalizedLoaded, component: VNode): DefineComponent => {
     let cacheComponent: DefineComponent
     const tabInfo = decodeTabInfo(route.query.__tab as string)
+    if(deletableTab.has(tabInfo.id!)){
+      return
+    }
     const matchPath = route.matched[route.matched.length - 1].path
     const tmpPath = route.path.endsWith('/')
       ? route.path.substring(0, route.path.length - 1)
@@ -207,6 +216,7 @@ export default () => {
             restoreScroller(cacheName)
             console.log(pageScroller.get(cacheName))
             removeDeletableCache()
+            deletableTab.clear()
             component.props = null
           })
           onUnmounted(() => {
@@ -300,6 +310,7 @@ export default () => {
         for (const item of unref(tabs)[i].pages.list()) {
           removeComponent(item.id)
           markDeletableCache(item.id)
+          deletableTab.add(unref(tabs)[i].id)
         }
         unref(tabs)[i].pages.clear()
         if (tabs.value.length > 1 && unref(tabs)[i].active) {
@@ -309,17 +320,25 @@ export default () => {
             activeTabId = unref(tabs)[i - 1].id
           }
         }
-        unref(tabs).splice(i, 1)
+          unref(tabs).splice(i, 1)
 
         break
       }
     }
-    if (activeTabId !== '') {
-      emitter.emit(MittType.TAB_ACTIVE, { id: activeTabId })
-      // active(activeTabId)
-    }
-    // if remove inactive tab,then we need remove the cache manually.
-    removeDeletableCache()
+
+      if (activeTabId !== '') {
+        emitter.emit(MittType.TAB_ACTIVE, { id: activeTabId })
+        // active(activeTabId)
+      }
+      // if remove inactive tab,then we need remove the cache manually.
+      const currentTab = getTab(id)
+      if(!currentTab?.active) {
+        removeDeletableCache()
+      }
+
+
+
+
     return activeTabId
   }
 
@@ -330,9 +349,13 @@ export default () => {
         for (const item of uTabs[i].pages.list()) {
           removeComponent(item.id)
           markDeletableCache(item.id)
+          deletableTab.add(uTabs[i].id)
         }
         unref(tabs)[i].pages.clear()
-        unref(tabs).splice(i, 1)
+
+          unref(tabs).splice(i, 1)
+
+
       }
     }
     for (const stay of uTabs) {
@@ -355,9 +378,11 @@ export default () => {
         for (const item of uTabs[i].pages.list()) {
           removeComponent(item.id)
           markDeletableCache(item.id)
+          deletableTab.add(uTabs[i].id)
         }
         unref(tabs)[i].pages.clear()
-        unref(tabs).splice(i, 1)
+          unref(tabs).splice(i, 1)
+
       }
     }
     if (!activeTab!.active) {
@@ -385,9 +410,10 @@ export default () => {
         for (const item of uTabs[i].pages.list()) {
           removeComponent(item.id)
           markDeletableCache(item.id)
+          deletableTab.add(uTabs[i].id)
         }
         unref(tabs)[i].pages.clear()
-        unref(tabs).splice(i, 1)
+          unref(tabs).splice(i, 1)
       }
     }
     for (const stay of uTabs) {
@@ -419,9 +445,11 @@ export default () => {
         for (const item of uTabs[i].pages.list()) {
           removeComponent(item.id)
           markDeletableCache(item.id)
+          deletableTab.add(uTabs[i].id)
         }
         unref(tabs)[i].pages.clear()
-        unref(tabs).splice(i, 1)
+          unref(tabs).splice(i, 1)
+
       }
     }
     for (const stay of uTabs) {
@@ -449,6 +477,9 @@ export default () => {
             // 如果要刷新的是显示的TAB
             if (uTabs.active) {
               pageShown.value = false
+              nextTick(()=>{
+                pageShown.value = true
+              })
             }
             break
           }
@@ -472,6 +503,9 @@ export default () => {
       }
     }
     pageShown.value = false
+    nextTick(()=>{
+      pageShown.value = true
+    })
   }
 
   const addComponent = (id: string, comp: DefineComponent) => {
@@ -520,7 +554,7 @@ export default () => {
    * @return true if already actived
    */
   const active = (id: string, route = true) => {
-    return new Promise((resolve) => {
+    // return new Promise((resolve)=>{
       for (let i = tabs.value.length - 1; i >= 0; i--) {
         const tab = tabs.value[i] as ITabItem
         if (tab.id === id) {
@@ -528,7 +562,7 @@ export default () => {
             break
           } else {
             tab.active = true
-            pageShown.value = !tab.iframe
+            // pageShown.value = false
             updateSession(tab)
             if (route) {
               const top = tab.pages.peek()
@@ -542,8 +576,8 @@ export default () => {
           tabs.value[i].active = false
         }
       }
-      resolve(true)
-    })
+    //   resolve(true)
+    // })
   }
   /**
    * save current tab info into Browser's session
@@ -554,16 +588,21 @@ export default () => {
     window.sessionStorage.setItem(SESSION_TAB_NAME, JSON.stringify(tab))
   }
   const reset = () => {
+    pageShown.value = false
     destroy()
     unref(tabs).push(...defaultTabs)
-    emitter.emit(MittType.TAB_ACTIVE, { id: defaultTabs[0].id! })
-    pageShown.value = false
+
+    nextTick(()=>{
+      pageShown.value =true
+      emitter.emit(MittType.TAB_ACTIVE, { id: defaultTabs[0].id! })
+    })
     // active(defaultTabs[0].id)
   }
   const destroy = () => {
     unref(tabs).splice(0)
     components.clear()
     deletableCache.clear()
+    deletableTab.clear()
     unref(caches).splice(0)
   }
   const setMaxSize = (size: number) => {
