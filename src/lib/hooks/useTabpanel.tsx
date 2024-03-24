@@ -299,6 +299,7 @@ export default () => {
    */
   const removeTab = (id: string): string => {
     let activeTabId = ''
+    const currentTab = getTab(id)
     for (let i = tabs.value.length - 1; i >= 0; i--) {
       if (id === unref(tabs)[i].id) {
         //if it's not closable then return
@@ -329,7 +330,7 @@ export default () => {
       // active(activeTabId)
     }
     // if remove inactive tab,then we need remove the cache manually.
-    const currentTab = getTab(id)
+
     if (!currentTab?.active) {
       removeDeletableCache()
       deletableTab.clear()
@@ -488,7 +489,6 @@ export default () => {
    * 全部刷新
    */
   const refreshAllTabs = () => {
-
     const refreshPage = new Set<string>()
     tabs.value.forEach((value) => {
       refreshPage.add(value.pages.peek()!.id)
@@ -501,10 +501,11 @@ export default () => {
     }
     nextTick(() => {
       pageShown.value = false
-      nextTick(()=>{
-        pageShown.value = true
+      nextTick(() => {
+        setTimeout(() => {
+          pageShown.value = true
+        }, 300)
       })
-
     })
   }
 

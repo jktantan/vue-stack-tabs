@@ -76,7 +76,6 @@ onBeforeUnmount(() => {
 const onComponentLoaded = () => {
   emit('onPageLoaded')
 }
-const iframeShown = ref<boolean>(true)
 </script>
 <template>
   <div
@@ -98,13 +97,7 @@ const iframeShown = ref<boolean>(true)
     </tab-header>
     <div class="stack-tab__container">
       <router-view v-slot="{ Component, route }">
-        <transition
-          :name="pageTransition"
-          @before-leave="iframeShown=false"
-          @after-leave="iframeShown=true"
-          appear
-          mode="out-in"
-        >
+        <transition :name="pageTransition" appear mode="out-in">
           <keep-alive :include="caches">
             <component
               :is="tabWrapper(route, Component)"
@@ -115,10 +108,10 @@ const iframeShown = ref<boolean>(true)
           </keep-alive>
         </transition>
       </router-view>
-      <transition-group :name="pageTransition" appear mode="in-out">
+      <transition-group :name="pageTransition" appear>
         <iframe
           v-for="frame of tabs.filter((item) => item.iframe)"
-          v-show="frame.active && iframeShown"
+          v-show="frame.active"
           :key="frame.id"
           class="stack-tab__iframe"
           :src="/^(javascript|data):/i.test(frame.url ?? '') ? 'about:blank' : frame.url"
