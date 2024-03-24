@@ -137,7 +137,7 @@ export default () => {
   const addPage = (route: RouteLocationNormalizedLoaded, component: VNode): DefineComponent => {
     let cacheComponent: DefineComponent
     const tabInfo = decodeTabInfo(route.query.__tab as string)
-    if (deletableTab.has(tabInfo.id!)) {
+    if (deletableTab.has(tabInfo.id!)||!component) {
       return
     }
     const matchPath = route.matched[route.matched.length - 1].path
