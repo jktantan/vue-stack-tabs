@@ -100,8 +100,8 @@ const iframeShown = ref<boolean>(true)
       <router-view v-slot="{ Component, route }">
         <transition
           :name="pageTransition"
-          @before-leave="iframeShown = false"
-          @after-leave="iframeShown = true"
+          @before-leave="iframeShown=false"
+          @after-leave="iframeShown=true"
           appear
           mode="out-in"
         >

@@ -332,6 +332,7 @@ export default () => {
     const currentTab = getTab(id)
     if (!currentTab?.active) {
       removeDeletableCache()
+      deletableTab.clear()
     }
 
     return activeTabId
@@ -354,6 +355,7 @@ export default () => {
     for (const stay of uTabs) {
       if (stay.active) {
         removeDeletableCache()
+        deletableTab.clear()
         return
       }
     }
@@ -382,6 +384,7 @@ export default () => {
       // active(id)
     } else {
       removeDeletableCache()
+      deletableTab.clear()
     }
   }
   /**
@@ -411,6 +414,7 @@ export default () => {
     for (const stay of uTabs) {
       if (stay.active) {
         removeDeletableCache()
+        deletableTab.clear()
         return
       }
     }
@@ -446,6 +450,7 @@ export default () => {
     for (const stay of uTabs) {
       if (stay.active) {
         removeDeletableCache()
+        deletableTab.clear()
         return
       }
     }
@@ -483,6 +488,7 @@ export default () => {
    * 全部刷新
    */
   const refreshAllTabs = () => {
+
     const refreshPage = new Set<string>()
     tabs.value.forEach((value) => {
       refreshPage.add(value.pages.peek()!.id)
@@ -493,9 +499,12 @@ export default () => {
         caches.value.splice(i, 1)
       }
     }
-    pageShown.value = false
     nextTick(() => {
-      pageShown.value = true
+      pageShown.value = false
+      nextTick(()=>{
+        pageShown.value = true
+      })
+
     })
   }
 
