@@ -47,14 +47,14 @@ export default () => {
    */
   const initial = (staticTabs: ITabData[]) => {
     // add default tabs
-    defaultTabs.splice(0)
-    caches.value.splice(0)
-    deletableCache.clear()
-    deletableTab.clear()
-    components.clear()
+    // defaultTabs.splice(0)
+    // caches.value.splice(0)
+    // deletableCache.clear()
+    // deletableTab.clear()
+    // components.clear()
     for (const item of staticTabs) {
       // const id = ulid()
-      const fullItem = defu(item, { id: ulid() })
+      const fullItem = defu(item, { id: ulid(), refreshable: true, closable: true, iframe: false })
       const __tab = encodeTabInfo(fullItem)
       const uri = uriDecode(fullItem.path)
       const config = defu(fullItem, {
@@ -81,9 +81,10 @@ export default () => {
         pages
       }
 
+      caches.value.push(cacheName)
+
       defaultTabs.push(tab)
       tabs.value.push({ ...tab })
-      caches.value.push(cacheName)
     }
 
     // add temp tab from session
