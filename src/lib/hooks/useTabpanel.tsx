@@ -1,4 +1,4 @@
-import type { ITabData, ITabItem, ITabPage } from '../model/TabModel'
+import type { ITabBase, ITabData, ITabItem, ITabPage } from '../model/TabModel'
 import {
   defineComponent,
   nextTick,
@@ -19,6 +19,7 @@ import { Stack } from '../model/TabModel'
 import { uriDecode } from '../utils/UriHelper'
 import PageLoading from '../components/PageLoading.vue'
 import { MittType, useEmitter } from './useTabMitt'
+import { useI18n } from 'vue-i18n-lite'
 const tabs = ref<ITabItem[]>([])
 const defaultTabs: ITabItem[] = []
 // cache
@@ -36,6 +37,7 @@ let scrollbar = false
 export default () => {
   const router = useRouter()
   const emitter = useEmitter()
+  const { t } = useI18n()
   const size = (): number => {
     return tabs.value.length
   }
@@ -136,14 +138,33 @@ export default () => {
   }
   const addPage = (route: RouteLocationNormalizedLoaded, component: VNode): DefineComponent => {
     let cacheComponent: DefineComponent
-    const tabInfo = decodeTabInfo(route.query.__tab as string)
-    if (deletableTab.has(tabInfo.id!)||!component) {
+    let tabInfo: ITabBase
+    if (route.query.__tab) {
+      tabInfo = decodeTabInfo(route.query.__tab as string)
+    } else {
+      tabInfo = {
+        id: ulid(),
+        title: t('VueStackTab.undefined'),
+        closable: true,
+        refreshable: true,
+        iframe: false
+      }
+      route.query.__tab = encodeTabInfo(tabInfo)
+    }
+
+    if (deletableTab.has(tabInfo.id!) || !component) {
       return
     }
+
+    /**
+     * if using nginx as web server, it will add '/' at the end of url.
+     *
+     */
     const matchPath = route.matched[route.matched.length - 1].path
     const tmpPath = route.path.endsWith('/')
       ? route.path.substring(0, route.path.length - 1)
       : route.path
+
     const cacheName = createPageId(
       tabInfo.id!,
       matchPath === tmpPath ? tmpPath : route.path,
