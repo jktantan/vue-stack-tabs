@@ -27,6 +27,15 @@ const openTest2 = (id: string) => {
   })
   console.log('TEST2', tabId)
 }
+const openTest5 = (id: string) => {
+  const tabId = openNewTab({
+    id,
+    title: '测试2',
+    path: '/demo/test2?saa=123456',
+    closable: true
+  },true)
+  console.log('TEST2', tabId)
+}
 const openTest3 = () => {
   const tabId = openNewTab({
     id: ulid(),
@@ -83,7 +92,7 @@ const open404 = () => {
           <el-menu-item index="3" @click="openTest2('test2')">
             <span>页面2</span>
           </el-menu-item>
-          <el-menu-item index="4" @click="openTest3">
+          <el-menu-item index="4" @click="openTest5('test2')">
             <span>页面3</span>
           </el-menu-item>
           <el-menu-item index="4" @click="open404">

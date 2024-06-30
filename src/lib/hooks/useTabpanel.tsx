@@ -315,6 +315,16 @@ export default () => {
       scroller.set(sId, { top: 0, left: 0 })
     }
   }
+  // use new url for renwTab like refresh tab
+  const renewTab = (tab: ITabData) => {
+    const currentTab = getTab(tab.id!)
+    for (const item of currentTab!.pages.list()) {
+      removeComponent(item.id)
+      markDeletableCache(item.id)
+    }
+    currentTab!.pages.clear()
+
+  }
   /**
    * if id is null , then remove all tab that deleted is true
    * @param id
@@ -659,6 +669,7 @@ export default () => {
     removeRightTabs,
     removeOtherTabs,
     hasTab,
+    renewTab,
     addPage,
     addComponent,
     getComponent,

@@ -12,25 +12,27 @@ import { MittType, useEmitter } from './useTabMitt'
 let iframePath: string
 export default () => {
   const router = useRouter()
-  const { active, hasTab, pageShown, reset, canAddTab } = useTabpanel()
+  const { active, hasTab, pageShown, reset, canAddTab ,renewTab} = useTabpanel()
   const emitter = useEmitter()
   /**
    * 打开新的TAB页面
    * @param tab
    * @param to
    */
-  const openNewTab = throttle((tab: ITabData) => {
+  const openNewTab = throttle((tab: ITabData,renew=false) => {
     return new Promise((resolve, reject) => {
       if (!pageShown.value) {
         reject()
         return
       }
       const tabInfo = defu(tab, { refreshable: true, closable: true, iframe: false })
-
+      if(tabInfo.id && renew && hasTab(tabInfo.id!)){
+        renewTab(tab)
+      }
       /**
        * In the function of openNewTab, if the tab already 'ACTIVE' then do nothing.
        */
-      if (hasTab(tabInfo.id!)) {
+      if (hasTab(tabInfo.id!) && !renew) {
         emitter.emit(MittType.TAB_ACTIVE, { id: tabInfo.id! })
         // active(tabInfo.id!)
         resolve(tabInfo.id)
@@ -88,7 +90,6 @@ export default () => {
       path = iframePath
       query['__src'] = __src
     }
-
     router.push({
       path,
       query
