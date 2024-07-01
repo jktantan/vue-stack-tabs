@@ -8,7 +8,7 @@ const { addScroller } = useTabRouter()
 const route = useRoute()
 onMounted(() => {
   nextTick(() => {
-    // openTabLoading()
+    openTabLoading()
   })
   addScroller('.dsfsdfs')
   t.value = route.query.saa
@@ -17,7 +17,7 @@ onMounted(() => {
   // },10000)
 })
 onUnmounted(() => {
-  // closeTabLoading()
+  closeTabLoading()
 })
 </script>
 

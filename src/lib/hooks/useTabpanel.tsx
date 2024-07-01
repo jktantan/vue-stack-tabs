@@ -322,8 +322,8 @@ export default () => {
       removeComponent(item.id)
       markDeletableCache(item.id)
     }
+    removeDeletableCache()
     currentTab!.pages.clear()
-
   }
   /**
    * if id is null , then remove all tab that deleted is true
