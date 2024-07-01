@@ -8,26 +8,35 @@ import { encodeTabInfo } from '../utils/TabIdHelper'
 import { uriDecode } from '../utils/UriHelper'
 import { ulid } from 'ulidx'
 import { MittType, useEmitter } from './useTabMitt'
+import { nextTick } from 'vue'
 
 let iframePath: string
 export default () => {
   const router = useRouter()
-  const { active, hasTab, pageShown, reset, canAddTab ,renewTab} = useTabpanel()
+  const { active, hasTab, pageShown, reset, canAddTab, renewTab, getTab } = useTabpanel()
   const emitter = useEmitter()
   /**
    * 打开新的TAB页面
    * @param tab
    * @param to
    */
-  const openNewTab = throttle((tab: ITabData,renew=false) => {
+  const openNewTab = throttle((tab: ITabData, renew = false) => {
     return new Promise((resolve, reject) => {
       if (!pageShown.value) {
         reject()
         return
       }
       const tabInfo = defu(tab, { refreshable: true, closable: true, iframe: false })
-      if(tabInfo.id && renew && hasTab(tabInfo.id!)){
+      if (tabInfo.id && renew && hasTab(tabInfo.id!)) {
         renewTab(tab)
+        const currentTab = getTab(tab.id!)
+        // if current tab is active, then must reload the component of router view for complete remove the cache!!!
+        if (currentTab?.active) {
+          pageShown.value = false
+          nextTick(() => {
+            pageShown.value = true
+          })
+        }
       }
       /**
        * In the function of openNewTab, if the tab already 'ACTIVE' then do nothing.
