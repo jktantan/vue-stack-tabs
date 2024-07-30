@@ -1,13 +1,14 @@
 <script lang="ts" setup>
-import { onBeforeMount, onBeforeUnmount, provide, ref, watch } from 'vue'
+import { onBeforeMount, onBeforeUnmount, provide, ref } from 'vue'
 import type { TransitionProps, DefineComponent, VNode } from 'vue'
-import { type RouteLocationNormalizedLoaded, useRoute } from 'vue-router'
+import { type RouteLocationNormalizedLoaded } from 'vue-router'
 import { getMaxZIndex } from './utils/TabScrollHelper'
 import { type ITabData, TabScrollMode } from './model/TabModel'
 import TabHeader from './components/TabHeader/index.vue'
 import useTabpanel from './hooks/useTabpanel'
 import useStackTab from './hooks/useStackTab'
 import { useI18n } from 'vue-i18n-lite'
+import { useEmitter } from '@/lib/hooks/useTabMitt'
 const { tabs, pageShown, caches, destroy, addPage, initial, setMaxSize, setGlobalScroll } =
   useTabpanel()
 const emit = defineEmits(['onActive', 'onPageLoaded'])
@@ -23,6 +24,7 @@ const props = withDefaults(
     contextmenu?: boolean | object
     // 页面转场效果
     pageTransition?: string
+    pageTransitionBack?: string
     // 标签转场效果
     tabTransition?: string | TransitionProps
     // tab 滚动效果
@@ -41,6 +43,7 @@ const props = withDefaults(
     contextmenu: true,
     tabTransition: 'stack-tab-zoom',
     pageTransition: 'stack-tab-swap',
+    pageTransitionBack: 'stack-tab-swap-back',
     tabScrollMode: TabScrollMode.BOTH,
     width: '100%',
     height: '100%',
@@ -76,6 +79,14 @@ onBeforeUnmount(() => {
 const onComponentLoaded = () => {
   emit('onPageLoaded')
 }
+const pageSwitch = ref<string>(props.pageTransition)
+const emitter = useEmitter()
+emitter.on('FORWARD', () => {
+  pageSwitch.value = props.pageTransition
+})
+emitter.on('BACKWARD', () => {
+  pageSwitch.value = props.pageTransitionBack
+})
 </script>
 <template>
   <div
@@ -97,7 +108,7 @@ const onComponentLoaded = () => {
     </tab-header>
     <div class="stack-tab__container">
       <router-view v-slot="{ Component, route }">
-        <transition :name="pageTransition" appear mode="out-in">
+        <transition :name="pageSwitch" appear mode="out-in">
           <keep-alive :include="caches">
             <component
               :is="tabWrapper(route, Component)"

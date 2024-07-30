@@ -12,7 +12,7 @@ import {
 import type { DefineComponent, VNode } from 'vue'
 import { useRouter } from 'vue-router'
 import type { RouteLocationNormalizedLoaded } from 'vue-router'
-import { ulid } from 'ulidx'
+import { ulid } from 'ulid'
 import { encodeTabInfo, createPageId, decodeTabInfo } from '../utils/TabIdHelper'
 import { defu } from 'defu'
 import { Stack } from '../model/TabModel'
@@ -588,6 +588,7 @@ export default () => {
    */
   const active = (id: string, route = true) => {
     // return new Promise((resolve)=>{
+    emitter.emit('FORWARD')
     for (let i = tabs.value.length - 1; i >= 0; i--) {
       const tab = tabs.value[i] as ITabItem
       if (tab.id === id) {

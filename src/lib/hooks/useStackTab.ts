@@ -1,27 +1,26 @@
 import { useRouter } from 'vue-router'
 import useTabpanel from '../hooks/useTabpanel'
-import { throttle } from 'lodash-es'
+import { throttle } from 'throttle-debounce'
 import type { ITabData } from '../model/TabModel'
 import { defu } from 'defu'
 
 import { encodeTabInfo } from '../utils/TabIdHelper'
 import { uriDecode } from '../utils/UriHelper'
-import { ulid } from 'ulidx'
+import { ulid } from 'ulid'
 import { MittType, useEmitter } from './useTabMitt'
 import { nextTick } from 'vue'
 
 let iframePath: string
 export default () => {
   const router = useRouter()
-  const { active, hasTab, pageShown, reset, canAddTab, renewTab, getTab } =
-    useTabpanel()
+  const { active, hasTab, pageShown, reset, canAddTab, renewTab, getTab } = useTabpanel()
   const emitter = useEmitter()
   /**
    * 打开新的TAB页面
    * @param tab
    * @param to
    */
-  const openNewTab = throttle((tab: ITabData, renew = false) => {
+  const openNewTab = throttle(500, (tab: ITabData, renew = false) => {
     return new Promise((resolve, reject) => {
       if (!pageShown.value) {
         reject()
@@ -30,7 +29,7 @@ export default () => {
       const tabInfo = defu(tab, {
         refreshable: true,
         closable: true,
-        iframe: false,
+        iframe: false
       })
       if (tabInfo.id && renew && hasTab(tabInfo.id!)) {
         renewTab(tab)
@@ -85,12 +84,12 @@ export default () => {
       resolve(tabInfo.id)
       // }
     })
-  }, 500)
+  })
   const toPage = (tab: ITabData, tabInfo: any) => {
     const __tab = encodeTabInfo(tabInfo)
     let query = defu(
       {
-        __tab,
+        __tab
       },
       tab.query
     ) as Record<string, string>
@@ -106,7 +105,7 @@ export default () => {
     }
     router.push({
       path,
-      query,
+      query
     })
   }
   const setIFramePath = (path: string) => {

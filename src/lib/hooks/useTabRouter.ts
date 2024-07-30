@@ -6,12 +6,14 @@ import { type RouteLocationPathRaw, useRoute, useRouter } from 'vue-router'
 
 import useTabpanel from '@/lib/hooks/useTabpanel'
 import { uriDecode } from '@/lib/utils/UriHelper'
+import { useEmitter } from '@/lib/hooks/useTabMitt'
 export default () => {
   const { attrs, props } = getCurrentInstance() as ComponentInternalInstance
   const { pageShown, getTab, markDeletableCache, removeComponent, getComponent, addPageScroller } =
     useTabpanel()
   const route = useRoute()
   const router = useRouter()
+  const emitter = useEmitter()
   let currentId = ''
   // const currentPageId = ''
   let currentTab = ''
@@ -31,6 +33,7 @@ export default () => {
       },
       to.query
     )
+    emitter.emit('FORWARD')
     router.push({
       path: to.path,
       query
@@ -85,6 +88,7 @@ export default () => {
       const sourceComponent = component.components.DynamicComponent
       sourceComponent.props = defu(query, sourceComponent.props)
     }
+    emitter.emit('BACKWARD')
     router.push({
       path: pageRoute!.path,
       query: pageRoute!.query

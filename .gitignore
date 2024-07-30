@@ -28,8 +28,6 @@ coverage
 *.sw?
 
 *.tsbuildinfo
-pnpm-lock.yaml
-components.d.ts
-auto-imports.d.ts
-/docs/.vitepress/cache/
-/types/
+/pnpm-lock.yaml
+/components.d.ts
+/auto-imports.d.ts
