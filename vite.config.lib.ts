@@ -11,22 +11,22 @@ export default defineConfig(({ mode }) => ({
     vue(),
     vueJsx(),
     loadVersion(),
-    dts({ insertTypesEntry: true, tsconfigPath: 'tsconfig.lib.json' })
+    dts({ insertTypesEntry: true, tsconfigPath: 'tsconfig.lib.json' }),
   ],
   resolve: {
     alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url))
-    }
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
+    },
   },
   esbuild: {
-    drop: mode === 'production' ? ['console', 'debugger'] : []
+    drop: mode === 'production' ? ['console', 'debugger'] : [],
     // drop: ['console','debugger']
   },
   build: {
     lib: {
       entry: resolve(__dirname, 'src/lib/index.ts'),
       name: 'vue-stack-tabs',
-      fileName: (format) => `vue-stack-tabs.${format}.js`
+      fileName: format => `vue-stack-tabs.${format}.js`,
     },
     rollupOptions: {
       // 确保外部化处理那些你不想打包进库的依赖
@@ -34,9 +34,9 @@ export default defineConfig(({ mode }) => ({
       output: {
         globals: {
           vue: 'Vue',
-          'vue-router': 'vueRouter'
-        }
-      }
-    }
-  }
+          'vue-router': 'vueRouter',
+        },
+      },
+    },
+  },
 }))

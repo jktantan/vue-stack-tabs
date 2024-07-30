@@ -15,20 +15,21 @@ export default defineConfig(({ mode }) => ({
     vueJsx(),
     loadVersion(),
     AutoImport({
-      resolvers: [ElementPlusResolver()]
+      resolvers: [ElementPlusResolver()],
     }),
     Components({
-      resolvers: [ElementPlusResolver()]
-    })
+      resolvers: [ElementPlusResolver()],
+    }),
   ],
   resolve: {
+    preserveSymlinks: true,
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
-      vue: 'vue/dist/vue.esm-bundler.js'
-    }
+      vue: 'vue/dist/vue.esm-bundler.js',
+    },
   },
   esbuild: {
-    drop: mode === 'production' ? ['console', 'debugger'] : []
+    drop: mode === 'production' ? ['console', 'debugger'] : [],
     // drop: ['console','debugger']
-  }
+  },
 }))

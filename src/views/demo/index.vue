@@ -2,7 +2,7 @@
 import { useTabRouter, useStackTab } from '@/lib'
 import { onActivated, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-const { addScroller, forward } = useTabRouter()
+const { addScroller, forward,backward } = useTabRouter()
 const { reset } = useStackTab()
 const router = useRouter()
 const iTest = ref<string>('')
@@ -19,6 +19,7 @@ const goto = () => {
     path: '/demo/test2'
   })
 }
+
 const resetTest = () => {
   reset()
 }

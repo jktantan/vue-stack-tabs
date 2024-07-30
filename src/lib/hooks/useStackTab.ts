@@ -13,7 +13,8 @@ import { nextTick } from 'vue'
 let iframePath: string
 export default () => {
   const router = useRouter()
-  const { active, hasTab, pageShown, reset, canAddTab, renewTab, getTab } = useTabpanel()
+  const { active, hasTab, pageShown, reset, canAddTab, renewTab, getTab } =
+    useTabpanel()
   const emitter = useEmitter()
   /**
    * 打开新的TAB页面
@@ -26,7 +27,11 @@ export default () => {
         reject()
         return
       }
-      const tabInfo = defu(tab, { refreshable: true, closable: true, iframe: false })
+      const tabInfo = defu(tab, {
+        refreshable: true,
+        closable: true,
+        iframe: false,
+      })
       if (tabInfo.id && renew && hasTab(tabInfo.id!)) {
         renewTab(tab)
         const currentTab = getTab(tab.id!)
@@ -85,7 +90,7 @@ export default () => {
     const __tab = encodeTabInfo(tabInfo)
     let query = defu(
       {
-        __tab
+        __tab,
       },
       tab.query
     ) as Record<string, string>
@@ -101,7 +106,7 @@ export default () => {
     }
     router.push({
       path,
-      query
+      query,
     })
   }
   const setIFramePath = (path: string) => {
