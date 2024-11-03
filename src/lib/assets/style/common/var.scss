@@ -1,65 +1,66 @@
+@use "sass:color";
 /*
 主色调
  */
-$--stack-tab-color-primary: #409eff !default;
-$--stack-tab-color-primary-invert: #ffac30 !default;
+$stack-tab-color-primary: #409eff !default;
+$stack-tab-color-primary-invert: #ffac30 !default;
 /*
 大红色
  */
-$--stack-tab-color-danger: #ef4f4f !default;
+$stack-tab-color-danger: #ef4f4f !default;
 /*
 白色
  */
-$--stack-tab-color-white: #fff !default;
+$stack-tab-color-white: #fff !default;
 /*
 黑色
  */
-$--stack-tab-color-black: #000 !default;
-$--stack-tab-color-grey: #4d4d4d !default;
-$--stack-tab-color-disabled: #aaa !default;
+$stack-tab-color-black: #000 !default;
+$stack-tab-color-grey: #4d4d4d !default;
+$stack-tab-color-disabled: #aaa !default;
 /*
 ICON点击颜色
  */
-$--stack-tab-color-primary-activate: mix($--stack-tab-color-primary, #000, 80%) !default;
+$stack-tab-color-primary-activate: color.mix($stack-tab-color-primary, #000, 80%) !default;
 /*
 背景颜色
  */
-$--stack-tab-background-color-base: #fff !default;
-$--stack-tab-background-color-inactive: #fafafa !default;
+$stack-tab-background-color-base: #fff !default;
+$stack-tab-background-color-inactive: #fafafa !default;
 /*
 tab边框颜色
  */
-$--stack-tab-border-color: #f0f0f0;
-$--stack-tab-border: 1px solid $--stack-tab-border-color;
+$stack-tab-border-color: #f0f0f0;
+$stack-tab-border: 1px solid $stack-tab-border-color;
 /*
 tab文本颜色
  */
-$--stack-tab-text-color: $--stack-tab-color-grey;
+$stack-tab-text-color: $stack-tab-color-grey;
 /*
 tab文本大小
  */
-$--stack-tab-font-size: 14px;
+$stack-tab-font-size: 14px;
 
-$--stack-tab-padding: 24px;
-$--stack-tab-icon-margin: 4px;
-$--stack-tab-icon-size: 14px;
+$stack-tab-padding: 24px;
+$stack-tab-icon-margin: 4px;
+$stack-tab-icon-size: 14px;
 
-$--stack-tab-button-size: 20px;
+$stack-tab-button-size: 20px;
 /*
 tab头高度
  */
-$--stack-tab-head-height: 40px;
-$--stack-tab-head-invalid-height: $--stack-tab-head-height -3px;
+$stack-tab-head-height: 40px;
+$stack-tab-head-invalid-height: $stack-tab-head-height -3px;
 
-$--stack-tab-scroll-height: 6px;
-$--stack-tab-scroll-border-radius: $--stack-tab-scroll-height;
-$--stack-tab__trans: all 0.15s ease-in-out;
+$stack-tab-scroll-height: 6px;
+$stack-tab-scroll-border-radius: $stack-tab-scroll-height;
+$stack-tab__trans: all 0.15s ease-in-out;
 
 /*
 阴影
  */
-$--stack-tab-shadow-left: -5px 0 5px -5px rgb(0 0 0 / 60%); //#ccc;
-$--stack-tab-shadow-right: 5px 0 5px -5px rgb(0 0 0 / 60%); //#ccc;
-$--stack-tab-shadow-right-inset: inset -5px 0 5px -5px rgb(0 0 0 / 60%); //#ccc;
-$--stack-tab-shadow-left-inset: inset 5px 0 5px -5px rgb(0 0 0 / 60%); //#ccc;
-$--stack-tab-shadow-context-menu: 5px 5px 5px rgb(0 0 0 / 10%);
+$stack-tab-shadow-left: -5px 0 5px -5px rgb(0 0 0 / 60%); //#ccc;
+$stack-tab-shadow-right: 5px 0 5px -5px rgb(0 0 0 / 60%); //#ccc;
+$stack-tab-shadow-right-inset: inset -5px 0 5px -5px rgb(0 0 0 / 60%); //#ccc;
+$stack-tab-shadow-left-inset: inset 5px 0 5px -5px rgb(0 0 0 / 60%); //#ccc;
+$stack-tab-shadow-context-menu: 5px 5px 5px rgb(0 0 0 / 10%);

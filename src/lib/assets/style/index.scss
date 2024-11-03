@@ -1,4 +1,4 @@
-@import 'stackTab';
-@import 'icon';
-@import 'transition';
-@import 'overlayer';
+@use 'stackTab.scss';
+@use 'icon.scss';
+@use 'transition.scss';
+@use 'overlayer.scss';

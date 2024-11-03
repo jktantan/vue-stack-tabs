@@ -1,4 +1,4 @@
-@import './common/var';
+@use 'common/var' as *;
 
 // 全屏
 .stack-tab__icon-fullscreen {

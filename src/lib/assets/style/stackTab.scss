@@ -1,11 +1,11 @@
 @use 'sass:math';
-@import './common/var';
-@import './common/mixins';
+@use 'common/var' as *;
+@use 'common/mixins';
 
 .stack-tab {
   display: flex;
   min-height: 300px;
-  background-color: $--stack-tab-background-color-base;
+  background-color: $stack-tab-background-color-base;
   flex-direction: column;
   grid-gap: 5px;
 
@@ -30,29 +30,29 @@
   //蒙版按钮
   &__mask-button {
     height: 100%;
-    width: $--stack-tab-button-size;
-    background-color: $--stack-tab-text-color;
+    width: $stack-tab-button-size;
+    background-color: $stack-tab-text-color;
     margin: 0 5px;
-    transition: $--stack-tab__trans;
+    transition: $stack-tab__trans;
 
     .stack-tab__header-button[disabled] & {
       cursor: not-allowed;
-      background-color: $--stack-tab-color-disabled;
+      background-color: $stack-tab-color-disabled;
       transition: none;
       //pointer-events: none;
     }
     &:hover {
-      background-color: $--stack-tab-color-primary;
+      background-color: $stack-tab-color-primary;
     }
 
     &:active {
       // cursor: pointer;
-      background-color: $--stack-tab-color-primary-activate;
+      background-color: $stack-tab-color-primary-activate;
     }
   }
   &__button {
-    height: $--stack-tab-button-size;
-    width: $--stack-tab-button-size;
+    height: $stack-tab-button-size;
+    width: $stack-tab-button-size;
     margin: 0 5px;
   }
 
@@ -60,25 +60,25 @@
     position: relative;
     display: flex;
     width: 100%;
-    height: $--stack-tab-head-height;
-    border-bottom: 1px solid $--stack-tab-border-color;
+    height: $stack-tab-head-height;
+    border-bottom: 1px solid $stack-tab-border-color;
     box-sizing: border-box;
     //user-select: none;
 
     //tab header上面的按钮
     &-button {
       z-index: 2;
-      height: $--stack-tab-head-height;
+      height: $stack-tab-head-height;
       width: fit-content;
       overflow: hidden;
-      background-color: $--stack-tab-background-color-base;
+      background-color: $stack-tab-background-color-base;
       cursor: pointer;
       display: flex;
       align-items: center;
 
       //按钮禁用样式
       &[disabled] {
-        background-color: $--stack-tab-background-color-inactive;
+        background-color: $stack-tab-background-color-inactive;
         box-shadow: none;
         cursor: not-allowed;
       }
@@ -88,7 +88,7 @@
   &__scroll {
     position: relative;
     flex: 1 1 0;
-    height: $--stack-tab-head-height;
+    height: $stack-tab-head-height;
     overflow: hidden;
 
     &-container {
@@ -109,11 +109,11 @@
     bottom: 0;
     left: 0;
     /*z-index: 2;*/
-    height: $--stack-tab-scroll-height;
+    height: $stack-tab-scroll-height;
     background-color: rgb(0 0 0 / 10%);
-    border-radius: $--stack-tab-scroll-border-radius;
+    border-radius: $stack-tab-scroll-border-radius;
     opacity: 0;
-    transition: $--stack-tab__trans;
+    transition: $stack-tab__trans;
 
     .stack-tab__scroll:hover &,
     &.is-dragging {
@@ -127,7 +127,7 @@
     height: 100%;
     background-color: rgba(0, 0, 0, 0.1);
 
-    border-radius: $--stack-tab-scroll-border-radius;
+    border-radius: $stack-tab-scroll-border-radius;
     transition: background-color 0.3s ease-in-out;
 
     &:hover {
@@ -139,7 +139,7 @@
 
     .stack-tab__scrollbar.is-dragging &,
     &:hover {
-      background-color: $--stack-tab-color-primary !important;
+      background-color: $stack-tab-color-primary !important;
     }
   }
 
@@ -163,15 +163,15 @@
   &__item {
     position: relative;
     display: flex;
-    padding: 0 $--stack-tab-padding;
-    font-size: $--stack-tab-font-size;
-    color: $--stack-tab-text-color;
+    padding: 0 $stack-tab-padding;
+    font-size: $stack-tab-font-size;
+    color: $stack-tab-text-color;
     cursor: pointer;
-    background-color: $--stack-tab-background-color-inactive;
-    border: $--stack-tab-border;
+    background-color: $stack-tab-background-color-inactive;
+    border: $stack-tab-border;
     border-left: none;
     border-radius: 8px 8px 0 0;
-    transition: $--stack-tab__trans;
+    transition: $stack-tab__trans;
     user-select: none;
     flex: none;
     align-items: center;
@@ -180,7 +180,7 @@
     margin-top: 5px;
 
     &:first-child {
-      border-left: $--stack-tab-border;
+      border-left: $stack-tab-border;
     }
 
     /*
@@ -195,23 +195,23 @@
      */
     &.is-active {
       z-index: 1;
-      background-color: $--stack-tab-background-color-base;
+      background-color: $stack-tab-background-color-base;
       border-bottom-color: #fff;
-      box-shadow: $--stack-tab-shadow-left, $--stack-tab-shadow-right;
+      box-shadow: $stack-tab-shadow-left, $stack-tab-shadow-right;
       margin-top: unset;
     }
 
     &:hover,
     &.is-active {
-      color: $--stack-tab-color-primary;
+      color: $stack-tab-color-primary;
 
       &.is-icon {
         padding: 0
-          ($--stack-tab-padding - math.div($--stack-tab-button-size + $--stack-tab-icon-margin, 2));
+          ($stack-tab-padding - math.div($stack-tab-button-size + $stack-tab-icon-margin, 2));
 
         .stack-tab__item-button {
-          width: $--stack-tab-button-size;
-          margin-left: $--stack-tab-icon-margin;
+          width: $stack-tab-button-size;
+          margin-left: $stack-tab-icon-margin;
         }
       }
     }
@@ -245,18 +245,18 @@
     &-button {
       height: 100%;
       width: 0;
-      background-color: $--stack-tab-text-color;
-      transition: $--stack-tab__trans;
+      background-color: $stack-tab-text-color;
+      transition: $stack-tab__trans;
 
       &:hover {
-        background-color: $--stack-tab-color-primary;
+        background-color: $stack-tab-color-primary;
       }
 
       &:active {
         /*
         cursor: pointer;
          */
-        background-color: $--stack-tab-color-primary-activate;
+        background-color: $stack-tab-color-primary-activate;
       }
     }
   }
@@ -278,17 +278,17 @@
       line-height: 0.4rem;
       color: #fff;
       text-align: center;
-      border: 1px solid $--stack-tab-background-color-base;
+      border: 1px solid $stack-tab-background-color-base;
       border-radius: 0.5rem;
       transform: translateX(100%) translateY(-50%);
       box-sizing: border-box;
 
       &.default {
-        background: $--stack-tab-color-danger;
+        background: $stack-tab-color-danger;
       }
 
       &.primary {
-        background: $--stack-tab-color-primary;
+        background: $stack-tab-color-primary;
       }
     }
   }
@@ -312,11 +312,11 @@
     z-index: 999;
     min-width: 120px;
     padding: 8px;
-    font-size: $--stack-tab-font-size;
+    font-size: $stack-tab-font-size;
     background: #fff;
-    border: $--stack-tab-border;
+    border: $stack-tab-border;
     border-radius: 10px 0;
-    box-shadow: $--stack-tab-shadow-context-menu;
+    box-shadow: $stack-tab-shadow-context-menu;
     transform-origin: left top;
     transition: all 0.25s ease-in;
 
@@ -326,7 +326,7 @@
       align-items: center;
       padding: 0 10px;
       line-height: 30px;
-      color: $--stack-tab-text-color;
+      color: $stack-tab-text-color;
       cursor: pointer;
       border-radius: 10px 0;
       transition: all 0.2s ease-in-out;
@@ -334,46 +334,46 @@
 
       &:hover,
       &:active {
-        color: $--stack-tab-color-white;
-        background-color: $--stack-tab-color-primary;
+        color: $stack-tab-color-white;
+        background-color: $stack-tab-color-primary;
 
         .svg-mask {
-          background-color: $--stack-tab-color-white;
+          background-color: $stack-tab-color-white;
         }
       }
 
       &[disabled] {
-        color: $--stack-tab-color-disabled;
+        color: $stack-tab-color-disabled;
         pointer-events: none;
         cursor: default;
         background: none;
 
         .svg-mask {
-          background-color: $--stack-tab-color-disabled;
+          background-color: $stack-tab-color-disabled;
         }
       }
     }
 
     &-icon {
-      width: $--stack-tab-font-size;
-      height: $--stack-tab-font-size;
+      width: $stack-tab-font-size;
+      height: $stack-tab-font-size;
       transition: all 0.2s ease-in-out;
 
       &.svg-mask {
-        width: $--stack-tab-font-size;
-        height: $--stack-tab-font-size;
-        background-color: $--stack-tab-text-color;
+        width: $stack-tab-font-size;
+        height: $stack-tab-font-size;
+        background-color: $stack-tab-text-color;
       }
     }
   }
 }
 
 .stack-tab__shadow-left {
-  box-shadow: $--stack-tab-shadow-left;
+  box-shadow: $stack-tab-shadow-left;
 }
 
 .stack-tab__shadow-right {
-  box-shadow: $--stack-tab-shadow-right;
+  box-shadow: $stack-tab-shadow-right;
 }
 
 /**
@@ -381,15 +381,15 @@
  */
 .stack-tab__shadow-inset {
   &-left::after {
-    @include insetShadow();
-    box-shadow: $--stack-tab-shadow-left-inset;
+    @include mixins.insetShadow();
+    box-shadow: $stack-tab-shadow-left-inset;
   }
   &-right::after {
-    @include insetShadow();
-    box-shadow: $--stack-tab-shadow-right-inset;
+    @include mixins.insetShadow();
+    box-shadow: $stack-tab-shadow-right-inset;
   }
   &-all::after {
-    @include insetShadow();
-    box-shadow: $--stack-tab-shadow-left-inset, $--stack-tab-shadow-right-inset;
+    @include mixins.insetShadow();
+    box-shadow: $stack-tab-shadow-left-inset, $stack-tab-shadow-right-inset;
   }
 }
