@@ -111,6 +111,9 @@ export default () => {
   const setIFramePath = (path: string) => {
     iframePath = path
   }
+  const getWrapper = () =>{
+    return document.getElementsByClassName('cache-page-wrapper')[0]
+  }
 
-  return { openNewTab, setIFramePath, active, reset }
+  return { openNewTab, setIFramePath, active, reset,getWrapper }
 }
