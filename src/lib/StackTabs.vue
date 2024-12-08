@@ -9,7 +9,7 @@ import useTabpanel from './hooks/useTabpanel'
 import useStackTab from './hooks/useStackTab'
 import { useI18n } from 'vue-i18n-lite'
 import { useEmitter } from '@/lib/hooks/useTabMitt'
-const { tabs, pageShown, caches, destroy, addPage, initial, setMaxSize, setGlobalScroll } =
+const { tabs, pageShown, caches, destroy, addPage, initial, setMaxSize, setGlobalScroll,clearSession } =
   useTabpanel()
 const emit = defineEmits(['onActive', 'onPageLoaded'])
 const props = withDefaults(
@@ -86,6 +86,9 @@ emitter.on('FORWARD', () => {
 })
 emitter.on('BACKWARD', () => {
   pageSwitch.value = props.pageTransitionBack
+})
+onBeforeUnmount(() => {
+  clearSession()
 })
 </script>
 <template>

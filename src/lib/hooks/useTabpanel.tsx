@@ -621,6 +621,10 @@ export default () => {
     // window.sessionStorage.setItem('tabItems', JSON.stringify(currentItems?.values()))
     window.sessionStorage.setItem(SESSION_TAB_NAME, JSON.stringify(tab))
   }
+  const clearSession = () => {
+    // window.sessionStorage.setItem('tabItems', JSON.stringify(currentItems?.values()))
+    window.sessionStorage.removeItem(SESSION_TAB_NAME)
+  }
   const reset = () => {
     pageShown.value = false
     destroy()
@@ -680,6 +684,7 @@ export default () => {
     refreshTab,
     refreshAllTabs,
     addPageScroller,
-    setGlobalScroll
+    setGlobalScroll,
+    clearSession
   }
 }
