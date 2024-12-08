@@ -79,7 +79,7 @@ export default () => {
     // const removeCaches = new Set()
     for (let i = 0; i < absTo; i++) {
       const popRoute = tabStack.pop()
-      removeComponent(popRoute!.id)
+      // removeComponent(popRoute!.id)
       markDeletableCache(popRoute!.id)
     }
     const pageRoute = tabStack?.peek()

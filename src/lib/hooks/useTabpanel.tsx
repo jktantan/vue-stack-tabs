@@ -171,6 +171,9 @@ export default () => {
       matchPath === tmpPath ? tmpPath : route.path,
       route.query.valueOf()
     )
+    if(deletableCache.has(cacheName)) {
+      return components.get(cacheName)!
+    }
     const src = route.query.__src
     // 增加tab
     let activeTab: ITabItem | null = null
@@ -562,6 +565,7 @@ export default () => {
     for (let i = caches.value.length - 1; i >= 0; i--) {
       if (deletableCache.has(caches.value[i])) {
         unref(caches).splice(i, 1)
+        removeComponent(caches.value[i])
       }
     }
     deletableCache.clear()
