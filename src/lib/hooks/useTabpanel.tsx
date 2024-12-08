@@ -34,6 +34,7 @@ const pageScroller = new Map<string, Map<string, any>>()
 let initialed = false
 let max = 0
 let scrollbar = false
+let sessionPrefix = ''
 export default () => {
   const router = useRouter()
   const emitter = useEmitter()
@@ -322,7 +323,7 @@ export default () => {
   const renewTab = (tab: ITabData) => {
     const currentTab = getTab(tab.id!)
     for (const item of currentTab!.pages.list()) {
-      removeComponent(item.id)
+      // removeComponent(item.id)
       markDeletableCache(item.id)
     }
     removeDeletableCache()
@@ -623,11 +624,11 @@ export default () => {
    */
   const updateSession = (tab: ITabItem) => {
     // window.sessionStorage.setItem('tabItems', JSON.stringify(currentItems?.values()))
-    window.sessionStorage.setItem(SESSION_TAB_NAME, JSON.stringify(tab))
+    window.sessionStorage.setItem(sessionPrefix+SESSION_TAB_NAME, JSON.stringify(tab))
   }
   const clearSession = () => {
     // window.sessionStorage.setItem('tabItems', JSON.stringify(currentItems?.values()))
-    window.sessionStorage.removeItem(SESSION_TAB_NAME)
+    window.sessionStorage.removeItem(sessionPrefix+SESSION_TAB_NAME)
   }
   const reset = () => {
     pageShown.value = false
@@ -656,6 +657,9 @@ export default () => {
     scrollbar = globalScroll
   }
 
+  const setSessionPrefix = (prefix: string) => {
+    sessionPrefix = prefix
+  }
   return {
     tabs,
     caches,
@@ -689,6 +693,7 @@ export default () => {
     refreshAllTabs,
     addPageScroller,
     setGlobalScroll,
-    clearSession
+    clearSession,
+    setSessionPrefix
   }
 }

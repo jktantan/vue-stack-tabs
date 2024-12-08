@@ -9,7 +9,7 @@ import useTabpanel from './hooks/useTabpanel'
 import useStackTab from './hooks/useStackTab'
 import { useI18n } from 'vue-i18n-lite'
 import { useEmitter } from '@/lib/hooks/useTabMitt'
-const { tabs, pageShown, caches, destroy, addPage, initial, setMaxSize, setGlobalScroll,clearSession } =
+const { tabs, pageShown, caches, destroy, addPage, initial, setMaxSize, setGlobalScroll,clearSession ,setSessionPrefix} =
   useTabpanel()
 const emit = defineEmits(['onActive', 'onPageLoaded'])
 const props = withDefaults(
@@ -35,6 +35,7 @@ const props = withDefaults(
     space?: number
     globalScroll: boolean
     iframePath: string
+    sessionPrefix?: string
   }>(),
   {
     defaultTabs: () => [],
@@ -49,7 +50,8 @@ const props = withDefaults(
     height: '100%',
     i18n: 'zh-CN',
     space: 300,
-    globalScroll: false
+    globalScroll: false,
+    sessionPrefix: '',
   }
 )
 // provide('locales', { ...props.i18n })
@@ -64,6 +66,7 @@ changeLocale(props.i18n)
 onBeforeMount(() => {
   console.log('on Before mount')
   initial(props.defaultTabs)
+  setSessionPrefix(props.sessionPrefix)
 })
 const tabWrapper = (route: RouteLocationNormalizedLoaded, component: VNode): DefineComponent => {
   // return defineAsyncComponent(() => addPage(route, component))
