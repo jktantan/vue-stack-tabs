@@ -5,7 +5,7 @@
     :disabled="isDisabledLeftButton"
     @click="!isDisabledLeftButton && onButton(-1 * space)"
   />
-  <div ref="headerScroll" class="stack-tab__scroll" @wheel.prevent="onWheel">
+  <div ref="headerScroll" class="stack-tab__scroll" @wheel.prevent.passive="onWheel">
     <div
       ref="container"
       class="stack-tab__scroll-container"
