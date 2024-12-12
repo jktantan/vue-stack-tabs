@@ -343,7 +343,7 @@ export default () => {
           return id
         }
         for (const item of unref(tabs)[i].pages.list()) {
-          removeComponent(item.id)
+          // removeComponent(item.id)
           markDeletableCache(item.id)
           deletableTab.add(unref(tabs)[i].id)
         }
@@ -380,7 +380,7 @@ export default () => {
     for (let i = uTabs.length - 1; i >= 0; i--) {
       if (uTabs[i].closable) {
         for (const item of uTabs[i].pages.list()) {
-          removeComponent(item.id)
+          // removeComponent(item.id)
           markDeletableCache(item.id)
           deletableTab.add(uTabs[i].id)
         }
@@ -408,7 +408,7 @@ export default () => {
         activeTab = uTabs[i]
       } else if (uTabs[i].closable && uTabs[i].id !== id) {
         for (const item of uTabs[i].pages.list()) {
-          removeComponent(item.id)
+          // removeComponent(item.id)
           markDeletableCache(item.id)
           deletableTab.add(uTabs[i].id)
         }
@@ -440,7 +440,7 @@ export default () => {
     for (let i = startIndex; i >= 0; i--) {
       if (uTabs[i].closable) {
         for (const item of uTabs[i].pages.list()) {
-          removeComponent(item.id)
+          // removeComponent(item.id)
           markDeletableCache(item.id)
           deletableTab.add(uTabs[i].id)
         }
@@ -476,7 +476,7 @@ export default () => {
     for (let i = uTabs.length - 1; i >= startIndex; i--) {
       if (uTabs[i].closable) {
         for (const item of uTabs[i].pages.list()) {
-          removeComponent(item.id)
+          // removeComponent(item.id)
           markDeletableCache(item.id)
           deletableTab.add(uTabs[i].id)
         }
