@@ -1,11 +1,12 @@
 <template>
-  <div v-if="loading" class="stack-tab-loading-mask">
+  <div v-if="loading" class="stack-tab-loading-mask" :style="{zIndex: getMaxZIndex('.cache-page-wrapper *')}">
     <div class="stack-tab-loading--spin turn" />
   </div>
 </template>
 <script setup lang="ts">
 import { ref } from 'vue'
 import { MittType, useEmitter } from '../hooks/useTabMitt'
+import { getMaxZIndex } from '../utils/TabScrollHelper'
 const props = defineProps<{
   tId: string
 }>()

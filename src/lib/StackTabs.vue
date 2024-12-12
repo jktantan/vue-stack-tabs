@@ -119,7 +119,7 @@ onBeforeUnmount(() => {
             <component
               :is="tabWrapper(route, Component)"
               v-if="pageShown"
-              :key="route.fullPath"
+              :key="`${route.name}_${route.fullPath}`"
               @on-loaded="onComponentLoaded"
             />
           </keep-alive>
