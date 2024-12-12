@@ -20,6 +20,7 @@ import { uriDecode } from '../utils/UriHelper'
 import PageLoading from '../components/PageLoading.vue'
 import { MittType, useEmitter } from './useTabMitt'
 import { useI18n } from 'vue-i18n-lite'
+
 const tabs = ref<ITabItem[]>([])
 const defaultTabs: ITabItem[] = []
 // cache
@@ -42,7 +43,6 @@ export default () => {
   const size = (): number => {
     return tabs.value.length
   }
-
   /**
    * Init the Tab list
    */

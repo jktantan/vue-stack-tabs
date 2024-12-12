@@ -2,7 +2,9 @@
 import { useTabRouter, useStackTab } from '@/lib'
 import { onActivated, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import useTabLoading from "@/lib/hooks/useTabLoading";
 const { addScroller, forward, backward } = useTabRouter()
+const {openTabLoading} = useTabLoading()
 const { reset } = useStackTab()
 const router = useRouter()
 const iTest = ref<string>('')
@@ -13,6 +15,7 @@ onMounted(() => {
   console.log('on Demo Index mount')
   // console.log(props)
   addScroller('.aaaaaa')
+  openTabLoading()
 })
 const goto = () => {
   forward({
