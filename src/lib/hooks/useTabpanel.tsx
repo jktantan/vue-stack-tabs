@@ -26,8 +26,8 @@ const defaultTabs: ITabItem[] = []
 const caches = ref<string[]>([])
 // Dynamic components
 const components = new Map<string, any>()
-const deletableCache = new Set<String>()
-const deletableTab = new Set<String>()
+const deletableCache = new Set<string>()
+const deletableTab = new Set<string>()
 const pageShown = ref<boolean>(true)
 const SESSION_TAB_NAME = 'stacktab-active-tab'
 const pageScroller = new Map<string, Map<string, any>>()
@@ -563,13 +563,19 @@ export default () => {
     deletableCache.add(cacheName)
   }
   const removeDeletableCache = () => {
-    for (let i = caches.value.length - 1; i >= 0; i--) {
-      if (deletableCache.has(caches.value[i])) {
-        unref(caches).splice(i, 1)
-        removeComponent(caches.value[i])
+    if(deletableCache.size>0){
+      for (let i = caches.value.length - 1; i >= 0; i--) {
+        if (deletableCache.has(caches.value[i])) {
+          unref(caches).splice(i, 1)
+
+        }
       }
+      for(const cacheName of deletableCache) {
+        removeComponent(cacheName)
+      }
+      deletableCache.clear()
     }
-    deletableCache.clear()
+
   }
   const removeCache = (cacheName: string) => {
     for (let i = caches.value.length - 1; i >= 0; i--) {

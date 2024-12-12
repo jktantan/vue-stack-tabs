@@ -1,10 +1,14 @@
 <script setup lang="ts">
 import { useTabRouter } from '@/lib'
 
-useTabRouter()
+const {backward}=useTabRouter()
+const backto = () => {
+  backward('/demo')
+}
 </script>
 
 <template>
+  <el-button @click="backto"> </el-button>
   <div>404</div>
 </template>
 

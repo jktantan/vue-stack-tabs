@@ -44,15 +44,27 @@ const router = createRouter({
           name: 'iframe',
           component: IFrame
         },
-        {
-          path: '404',
-          name: '404',
-          component: () => import('@/views/404.vue')
-        },
+        // {
+        //   path: '404',
+        //   name: '404',
+        //   component: () => import('@/views/404.vue')
+        // },
         {
           path: ':pathMatch(.*)',
           redirect: '/demo/404'
         }
+      ]
+    },
+    {
+      path: '/404',
+      name: '404',
+      component: Frame,
+      children: [
+        {
+          path: '',
+          name: '404home',
+          component: () => import('@/views/404.vue')
+        },
       ]
     }
   ]

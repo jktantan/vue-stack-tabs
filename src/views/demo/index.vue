@@ -3,7 +3,7 @@ import { useTabRouter, useStackTab } from '@/lib'
 import { onActivated, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 const { addScroller, forward, backward } = useTabRouter()
-const { reset } = useStackTab()
+const { openNewTab } = useStackTab()
 const router = useRouter()
 const iTest = ref<string>('')
 onActivated(() => {
@@ -16,12 +16,19 @@ onMounted(() => {
 })
 const goto = () => {
   forward({
-    path: '/demo/test2'
+    path: '/404'
   })
 }
 
 const resetTest = () => {
-  reset()
+  openNewTab(
+    {
+      id: 'SearchFormPreview',
+      title: '查询预览',
+      path: `/demo/test3`,
+    },
+    true
+  )
 }
 </script>
 <script lang="ts">
