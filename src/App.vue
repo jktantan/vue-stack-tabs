@@ -51,8 +51,8 @@ const openTest3 = () => {
 const open404 = () => {
   openNewTab({
     id: ulid(),
-    title: '404',
-    path: '/demo/ttttt',
+    title: '测试4',
+    path: '/demo/test4/aaaa',
     closable: true
   })
 }
