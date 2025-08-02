@@ -90,9 +90,9 @@ emitter.on('FORWARD', () => {
 emitter.on('BACKWARD', () => {
   pageSwitch.value = props.pageTransitionBack
 })
-onBeforeUnmount(() => {
-  clearSession()
-})
+// onBeforeUnmount(() => {
+//   clearSession()
+// })
 </script>
 <template>
   <div
