@@ -89,7 +89,7 @@ export default () => {
     }
 
     // add temp tab from session
-    const tempTab = window.sessionStorage.getItem(SESSION_TAB_NAME)
+    const tempTab = window.sessionStorage.getItem(sessionPrefix+SESSION_TAB_NAME)
     if (tempTab !== null && tempTab !== undefined) {
       // const tempItems = JSON.parse(window.sessionStorage.getItem('tabItems')!)
       const temp = JSON.parse(tempTab, (k, v) => {
