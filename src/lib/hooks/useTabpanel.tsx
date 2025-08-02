@@ -32,7 +32,7 @@ const deletableTab = new Set<string>()
 const pageShown = ref<boolean>(true)
 const SESSION_TAB_NAME = 'stacktab-active-tab'
 const pageScroller = new Map<string, Map<string, any>>()
-let initialed = false
+const initialed = ref<boolean>(false)
 let max = 0
 let scrollbar = false
 let sessionPrefix = ''
@@ -111,7 +111,7 @@ export default () => {
         tabs.value.push(temp)
       }
     }
-    initialed = true
+    initialed.value = true
   }
   const hasTab = (id: string) => {
     for (const tab of tabs.value) {

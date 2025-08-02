@@ -9,7 +9,7 @@ import useTabpanel from './hooks/useTabpanel'
 import useStackTab from './hooks/useStackTab'
 import { useI18n } from 'vue-i18n-lite'
 import { useEmitter } from '@/lib/hooks/useTabMitt'
-const { tabs, pageShown, caches, destroy, addPage, initial, setMaxSize, setGlobalScroll,clearSession ,setSessionPrefix} =
+const { tabs, initialed,pageShown, caches, destroy, addPage, initial, setMaxSize, setGlobalScroll,clearSession ,setSessionPrefix} =
   useTabpanel()
 const emit = defineEmits(['onActive', 'onPageLoaded'])
 const props = withDefaults(
@@ -65,11 +65,16 @@ setGlobalScroll(props.globalScroll)
 changeLocale(props.i18n)
 onBeforeMount(() => {
   console.log('on Before mount')
-  initial(props.defaultTabs)
-  setSessionPrefix(props.sessionPrefix)
+  // initial(props.defaultTabs)
+  // setSessionPrefix(props.sessionPrefix)
 })
 const tabWrapper = (route: RouteLocationNormalizedLoaded, component: VNode): DefineComponent => {
   // return defineAsyncComponent(() => addPage(route, component))
+  if(!initialed.value){
+    setSessionPrefix(props.sessionPrefix)
+    initial(props.defaultTabs)
+
+  }
   return addPage(route, component)
 }
 const onTabActive = (id: string) => {
@@ -90,9 +95,9 @@ emitter.on('FORWARD', () => {
 emitter.on('BACKWARD', () => {
   pageSwitch.value = props.pageTransitionBack
 })
-// onBeforeUnmount(() => {
-//   clearSession()
-// })
+onBeforeUnmount(() => {
+  clearSession()
+})
 </script>
 <template>
   <div
