@@ -21,6 +21,7 @@ import PageLoading from '../components/PageLoading.vue'
 import { MittType, useEmitter } from './useTabMitt'
 import { useI18n } from 'vue-i18n-lite'
 
+
 const tabs = ref<ITabItem[]>([])
 const defaultTabs: ITabItem[] = []
 // cache
@@ -637,24 +638,26 @@ export default () => {
     window.sessionStorage.removeItem(sessionPrefix+SESSION_TAB_NAME)
   }
   const reset = () => {
-    pageShown.value = false
-    destroy()
-    nextTick(() => {
-      unref(tabs).push(...defaultTabs)
-      emitter.emit(MittType.TAB_ACTIVE, { id: defaultTabs[0].id! })
-      // pageShown.value = false
-      nextTick(() => {
-        pageShown.value = true
-      })
-    })
+    removeAllTabs()
+    // pageShown.value = false
+    // destroy()
+    // nextTick(() => {
+    //   // unref(tabs).push(...defaultTabs)
+    //   // emitter.emit(MittType.TAB_ACTIVE, { id: defaultTabs[0].id! })
+    //   // // pageShown.value = false
+    //   nextTick(() => {
+    //     pageShown.value = true
+    //   })
+    // })
     // active(defaultTabs[0].id)
   }
   const destroy = () => {
     unref(tabs).splice(0)
-    components.clear()
     deletableCache.clear()
     deletableTab.clear()
     unref(caches).splice(0)
+    components.clear()
+    clearSession()
   }
   const setMaxSize = (size: number) => {
     max = size
