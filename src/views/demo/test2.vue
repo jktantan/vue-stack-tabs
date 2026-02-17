@@ -1,17 +1,17 @@
 <script setup lang="ts">
-import { nextTick, onMounted, onUnmounted, ref } from 'vue'
-import { useStackTab, useTabLoading, useTabRouter } from '@/lib'
+import { onMounted, onUnmounted, ref } from 'vue'
+import { useTabActions, useTabLoading, useTabRouter } from '@/lib'
 import { useRoute } from 'vue-router'
 const t = ref()
-const { openTabLoading, closeTabLoading } = useTabLoading()
-const { addScroller, backward } = useTabRouter()
-const { openNewTab,reset } = useStackTab()
+const { closeTabLoading } = useTabLoading()
+const { addScrollTarget, backward } = useTabRouter()
+const { reset } = useTabActions()
 const route = useRoute()
 onMounted(() => {
   // nextTick(() => {
   //   openTabLoading()
   // })
-  addScroller('.dsfsdfs')
+  addScrollTarget('.dsfsdfs')
   t.value = route.query.saa
   // setTimeout(()=>{
   //   closeTabLoading()
@@ -20,7 +20,7 @@ onMounted(() => {
 const backto = () => {
   backward('/demo')
 }
-const resetTab=()=>{
+const resetTab = () => {
   reset()
 }
 onUnmounted(() => {

@@ -1,14 +1,13 @@
 <script setup lang="ts">
 import { nextTick, onMounted, onUnmounted, ref } from 'vue'
-import { useTabLoading, useTabRouter } from '@/lib'
+import { useTabRouter } from '@/lib'
 const t = ref()
-const { openTabLoading, closeTabLoading } = useTabLoading()
-const { addScroller } = useTabRouter()
+const { addScrollTarget } = useTabRouter()
 onMounted(() => {
   nextTick(() => {
     // openTabLoading()
   })
-  addScroller('.dsfsdfs')
+  addScrollTarget('.dsfsdfs')
   // setTimeout(()=>{
   //   closeTabLoading()
   // },10000)

@@ -31,3 +31,16 @@ coverage
 /pnpm-lock.yaml
 /components.d.ts
 /auto-imports.d.ts
+
+# Vite config cache
+vite.config.ts.timestamp-*.mjs
+
+# VitePress cache
+docs/.vitepress/cache/
+docs/.vitepress/dist/
+
+# Playgrounds
+playgrounds/*/node_modules
+playgrounds/*/dist
+playgrounds/*/.nuxt
+playgrounds/*/.output

@@ -1,4 +1,11 @@
-// Tab的滚动方式
+/**
+ * TabModel - 标签页数据模型
+ *
+ * 职责：定义标签、页面、栈结构及右键菜单的数据结构
+ * 使用：useTabPanel、useTabActions、ContextMenu 等
+ */
+
+/** 标签栏滚动方式：滚轮、按钮、或两者 */
 export enum TabScrollMode {
   // 使用滚轮
   WHEEL = 'wheel',
@@ -19,56 +26,63 @@ export enum TabScrollMode {
 //   TAB_REFRESH = 'TAB_REFRESH',
 //   TAB_REFRESH_ALL = 'TAB_REFRESH_ALL'
 // }
-// 拖拽数据接口
+/** 标签栏滚动条拖拽时的临时状态 */
 export interface DragData {
   thumbLeft: number
   startScrollLeft: number
   startThumbLeft: number
   startPageX: number
 }
-// 滑块数据接口
+/** 滚动条滑块计算所需的数据 */
 export interface ScrollData {
   clientWidth: number
   scrollWidth: number
   scrollLeft: number
 }
-// 滚动条事件类型
 export type ScrollEvents = {
   ScrollUpdate: void
 }
 
-/**
- * Tab data for open
- */
+/** 打开标签时传入的完整数据（含 path、query） */
 export interface ITabData extends ITabBase {
   // tab name
   title: string
   path: string
   query?: Record<string, string>
 }
+/** iframe 刷新方式：postMessage 由 iframe 内页自行刷新（不重建 DOM，动画正常）；reload 强制重载 iframe */
+export type IframeRefreshMode = 'postMessage' | 'reload'
+
+/** 标签基础信息（id、title、是否可关闭/刷新、是否 iframe） */
 export interface ITabBase {
   id?: string
   title: string
   closable?: boolean
   refreshable?: boolean
   iframe?: boolean
+  /** iframe 刷新方式，默认 postMessage */
+  iframeRefreshMode?: IframeRefreshMode
 }
+/** 内部使用的标签项，含 active 状态和 pages 栈 */
 export interface ITabItem extends ITabBase {
   id: string
   closable: boolean
   refreshable: boolean
   iframe: boolean
+  iframeRefreshMode?: IframeRefreshMode
   url?: string
   active: boolean
   pages: Stack<ITabPage>
 }
 
+/** 标签内的单个页面（对应 keep-alive 的一个缓存实例） */
 export interface ITabPage {
   id: string
   tabId: string
   path: string
   query?: Record<string, string>
 }
+/** 右键菜单项：图标、标题、回调、禁用条件 */
 export interface IContextMenu {
   icon?: string
   title: string
@@ -84,11 +98,10 @@ export interface IContextMenu {
 //   path: string
 //   query: any
 // }
+/** 使用 Map 实现的栈结构，用于标签内的 pages 页面栈 */
 export class Stack<T> {
-  // 存储的Map
   private items: Map<number, T>
 
-  //
   constructor(items?: T[]) {
     this.items = new Map()
     if (items) {

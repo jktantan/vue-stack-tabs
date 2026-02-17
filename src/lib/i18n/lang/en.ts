@@ -10,6 +10,7 @@ export default {
     maximum: 'maximum',
     restore: 'restore',
     undefined: 'undefined',
-    loading: 'loading'
+    loading: 'loading',
+    openInNewWindow: 'Open in new window'
   }
 }

@@ -1,11 +1,14 @@
 /**
- * 滚动到指定位置
- * @export
- * @param {Element} wrap 滚动区域
- * @param {number} [left=0]
- * @param {number} [top=0]
+ * 滚动工具函数
+ *
+ * 职责：页面/标签切换时保存与恢复滚动位置，以及 z-index 计算
+ * 使用：useTabPanel 的 scrollPositionsByPageId、TabHeader 滚动条
  */
-export const _scrollTo = ({
+
+/**
+ * 将指定容器滚动到 (left, top)，支持 smooth
+ */
+export const scrollTo = ({
   wrap,
   left = 0,
   top = 0,
@@ -30,50 +33,45 @@ export const _scrollTo = ({
   }
 }
 
-/**
- * 指定元素滚动到可视区域
- * @export
- * @param {Element} el 目标元素
- * @param {Element} wrap 滚动区域
- * @param {String} block 垂直方向的对齐，可选：'start', 'center', 'end', 或 'nearest'
- * @param {String} inline 水平方向的对齐，可选值同上
- */
-export function _scrollIntoView({
+/** 将指定元素滚动到容器可视区域内，支持 block/inline 对齐方式 */
+export function scrollIntoView({
   el,
   wrap,
   block = 'start',
   inline = 'nearest'
 }: {
   el: HTMLElement
-  wrap: any
-  block?: any
-  inline?: any
+  wrap: HTMLElement | { value: HTMLElement | null } | null
+  block?: ScrollLogicalPosition
+  inline?: ScrollLogicalPosition
 }) {
-  if (!el || !wrap) return
+  const wrapEl = wrap && typeof wrap === 'object' && 'value' in wrap ? wrap.value : wrap
+  if (!el || !wrapEl) return
 
   if (el.scrollIntoView) {
     el.scrollIntoView({ behavior: 'smooth', block, inline })
   } else {
     const { offsetLeft, offsetTop } = el
-    let left, top
+    let left: number
+    let top: number
 
     if (block === 'center') {
-      top = offsetTop + (el.clientHeight - wrap.clientHeight) / 2
+      top = offsetTop + (el.clientHeight - wrapEl.clientHeight) / 2
     } else {
       top = offsetTop
     }
 
     if (inline === 'center') {
-      left = offsetLeft + (el.clientWidth - wrap.clientWidth) / 2
+      left = offsetLeft + (el.clientWidth - wrapEl.clientWidth) / 2
     } else {
       left = offsetLeft
     }
 
-    _scrollTo({ wrap, left, top })
+    scrollTo({ wrap: wrapEl, left, top })
   }
 }
 
-// 获取滚动条宽度
+/** 获取系统滚动条宽度（用于布局计算） */
 export const getScrollbarWidth = (function () {
   let width: number | null = null
 
@@ -91,14 +89,10 @@ export const getScrollbarWidth = (function () {
   }
 })()
 
-/**
- * 获取最大z-index
- * @returns 最大z-index的值
- */
+/** 获取指定选择器下元素的最大 z-index + 1，用于最大化时置顶 */
 export const getMaxZIndex = (key = '.stack-tab__container *'): number => {
   const allZIndex = Array.from(document.querySelectorAll(key)).map(
     (e) => +window.getComputedStyle(e).zIndex || 0
   )
-  // 特殊处理，不高于90000的才行
   return allZIndex.length ? Math.max(...allZIndex.filter((item) => item < 90000)) + 1 : 1
 }

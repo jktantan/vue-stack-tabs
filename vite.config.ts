@@ -10,26 +10,29 @@ import loadVersion from 'vite-plugin-package-version'
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
+  server: {
+    port: 5173
+  },
   plugins: [
     vue(),
     vueJsx(),
     loadVersion(),
     AutoImport({
-      resolvers: [ElementPlusResolver()],
+      resolvers: [ElementPlusResolver()]
     }),
     Components({
-      resolvers: [ElementPlusResolver()],
-    }),
+      resolvers: [ElementPlusResolver()]
+    })
   ],
   resolve: {
     preserveSymlinks: true,
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
-      vue: 'vue/dist/vue.esm-bundler.js',
-    },
+      vue: 'vue/dist/vue.esm-bundler.js'
+    }
   },
   esbuild: {
-    drop: mode === 'production' ? ['console', 'debugger'] : [],
+    drop: mode === 'production' ? ['console', 'debugger'] : []
     // drop: ['console','debugger']
-  },
+  }
 }))

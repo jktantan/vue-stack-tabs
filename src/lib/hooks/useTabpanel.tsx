@@ -1,682 +1,519 @@
+/**
+ * useTabPanel - 标签页核心 Hook
+ *
+ * 职责：
+ * 1. 管理标签列表 (tabs)、每个标签内的页面栈 (pages)
+ * 2. 管理 keep-alive 的缓存列表 (caches)、组件映射 (components)
+ * 3. 处理关闭/出栈时的缓存驱逐（标记 + 延迟执行）
+ * 4. 处理刷新（通过 exclude 触发重挂载，不销毁组件定义）
+ * 5. 滚动位置保存与恢复
+ * 6. Session 持久化（刷新后恢复上次激活的标签）
+ *
+ * 使用范围：内部 hook，由 StackTabs、useTabActions、useTabRouter、ContextMenu 调用
+ */
 import type { ITabBase, ITabData, ITabItem, ITabPage } from '../model/TabModel'
-import {
-  defineComponent,
-  nextTick,
-  onActivated,
-  onDeactivated,
-  onMounted,
-  onUnmounted,
-  ref,
-  unref
-} from 'vue'
+import { defineComponent, onActivated, onDeactivated, onMounted, onUnmounted } from 'vue'
 import type { DefineComponent, VNode } from 'vue'
 import { useRouter } from 'vue-router'
 import type { RouteLocationNormalizedLoaded } from 'vue-router'
 import { ulid } from 'ulid'
-import { encodeTabInfo, createPageId, decodeTabInfo } from '../utils/TabIdHelper'
+import { encodeTabInfo, createPageId, decodeTabInfo } from '../utils/tabInfoEncoder'
 import { defu } from 'defu'
 import { Stack } from '../model/TabModel'
-import { uriDecode } from '../utils/UriHelper'
+import { parseUrl, isCrossOriginUrl } from '../utils/urlParser'
 import PageLoading from '../components/PageLoading.vue'
-import { MittType, useEmitter } from './useTabMitt'
+import { TabEventType, useTabEmitter } from './useTabEventBus'
 import { useI18n } from 'vue-i18n-lite'
 
+import {
+  tabs,
+  defaultTabs,
+  caches,
+  components,
+  tabIdsToEvict,
+  refreshKey,
+  excludedCacheIdsForRefresh,
+  iframeRefreshKeys,
+  isInitialized,
+  maxTabCount,
+  useGlobalScroll,
+  cacheIdsToEvict,
+  setMaxTabCount,
+  setUseGlobalScroll,
+  setSessionPrefix
+} from './tabPanel/state'
+import {
+  markCacheForEviction,
+  markTabPagesForEviction,
+  markTabPagesForEvictionOnly,
+  addCache,
+  removeCache,
+  evictMarkedCaches
+} from './tabPanel/evict'
+import { restoreScroller, saveScroller, removeScroller, addPageScroller } from './tabPanel/scroll'
+import {
+  saveActiveTabToSession,
+  clearSession,
+  restoreTabFromSession,
+  getSessionKey
+} from './tabPanel/session'
 
-const tabs = ref<ITabItem[]>([])
-const defaultTabs: ITabItem[] = []
-// cache
-const caches = ref<string[]>([])
-// Dynamic components
-const components = new Map<string, any>()
-const deletableCache = new Set<string>()
-const deletableTab = new Set<string>()
-const pageShown = ref<boolean>(true)
-const SESSION_TAB_NAME = 'stacktab-active-tab'
-const pageScroller = new Map<string, Map<string, any>>()
-const initialed = ref<boolean>(false)
-let max = 0
-let scrollbar = false
-let sessionPrefix = ''
+/* eslint-disable vue/one-component-per-file */
+/** 占位组件：当路由组件为空或标签已被标记删除时返回 */
+const EmptyPlaceholderComponent = defineComponent({
+  name: 'StackTabEmptyPlaceholder',
+  setup() {
+    return () => null
+  }
+})
+
+/** 规范化路径（nginx 等可能加尾部斜杠） */
+export const normalizePathForCache = (route: RouteLocationNormalizedLoaded): string => {
+  const lastMatch = route.matched[route.matched.length - 1]
+  const matchPath = lastMatch?.path ?? route.path
+  const path = route.path.endsWith('/') ? route.path.slice(0, -1) : route.path
+  return matchPath === path ? path : route.path
+}
+
 export default () => {
   const router = useRouter()
-  const emitter = useEmitter()
+  const emitter = useTabEmitter()
   const { t } = useI18n()
-  const size = (): number => {
-    return tabs.value.length
-  }
+
+  const size = (): number => tabs.value.length
+
   /**
-   * Init the Tab list
+   * 初始化：根据 defaultTabs 创建标签与初始页面，并尝试从 sessionStorage 恢复上次激活的标签
+   * @param staticTabs - 初始标签配置
    */
-  const initial = (staticTabs: ITabData[]) => {
-    // add default tabs
-    // defaultTabs.splice(0)
-    // caches.value.splice(0)
-    // deletableCache.clear()
-    // deletableTab.clear()
-    // components.clear()
+  const initialize = (staticTabs: ITabData[]) => {
     for (const item of staticTabs) {
-      // const id = ulid()
       const fullItem = defu(item, { id: ulid(), refreshable: true, closable: true, iframe: false })
-      const __tab = encodeTabInfo(fullItem)
-      const uri = uriDecode(fullItem.path)
+      const tabId = fullItem.id ?? ulid()
+      fullItem.id = tabId
+      const uri = parseUrl(fullItem.path)
       const config = defu(fullItem, {
         closable: true,
         refreshable: true,
         iframe: false
       })
-      const cacheName = createPageId(fullItem.id, uri.path, uri.query)
+      const cacheName = createPageId(tabId, uri.path, uri.query)
       const page: ITabPage = {
         id: cacheName,
-        tabId: fullItem.id,
+        tabId,
         path: uri.path,
-        query: defu(uri.query, { __tab })
+        query: defu(uri.query, { __tab: encodeTabInfo(fullItem) })
       }
       const pages = new Stack<ITabPage>()
       pages.push(page)
       const tab: ITabItem = {
-        id: fullItem.id,
-        title: config.title,
+        id: tabId,
+        title: config.title ?? '',
         closable: config.closable,
         refreshable: config.refreshable,
         iframe: config.iframe,
+        iframeRefreshMode: (config as { iframeRefreshMode?: string }).iframeRefreshMode === 'reload' ? 'reload' : 'postMessage',
         active: false,
         pages
       }
 
-      caches.value.push(cacheName)
-
+      addCache(cacheName)
       defaultTabs.push(tab)
       tabs.value.push({ ...tab })
     }
 
-    // add temp tab from session
-    const tempTab = window.sessionStorage.getItem(sessionPrefix+SESSION_TAB_NAME)
-    if (tempTab !== null && tempTab !== undefined) {
-      // const tempItems = JSON.parse(window.sessionStorage.getItem('tabItems')!)
-      const temp = JSON.parse(tempTab, (k, v) => {
-        if (k === 'pages') {
-          return new Stack<ITabPage>(v)
-        } else {
-          return v
-        }
-      })
-      // const temp = defu({ pages: new Stack<ITabPage>() }, tempItems) as ITabItem
-      let hasTab = false
-      for (const tab of tabs.value) {
-        if (tab.id === temp.id) {
-          hasTab = true
-          break
-        }
+    const storedTabJson = sessionStorage.getItem(getSessionKey())
+    const restoredTab = restoreTabFromSession(storedTabJson)
+    if (restoredTab && !tabs.value.some((t) => t.id === restoredTab!.id)) {
+      if (restoredTab.iframe && restoredTab.url && restoredTab.iframeRefreshMode === undefined) {
+        restoredTab.iframeRefreshMode = isCrossOriginUrl(restoredTab.url)
+          ? 'reload'
+          : 'postMessage'
       }
-      if (!hasTab) {
-        tabs.value.push(temp)
-      }
+      tabs.value.push(restoredTab)
     }
-    initialed.value = true
+    isInitialized.value = true
   }
-  const hasTab = (id: string) => {
-    for (const tab of tabs.value) {
-      if (tab.id === id) {
-        return true
-      }
-    }
-    return false
-  }
-  const canAddTab = () => {
-    return max <= 0 || (max > 0 && max > tabs.value.length)
-  }
+
+  const hasTab = (id: string) => tabs.value.some((t) => t.id === id)
+  const canAddTab = () =>
+    maxTabCount <= 0 || (maxTabCount > 0 && maxTabCount > tabs.value.length)
+
   const addTab = (tab: ITabItem) => {
-    return new Promise((resolve) => {
-      tabs.value.push(tab)
-      resolve(true)
-    })
+    tabs.value.push(tab)
+    return Promise.resolve(true)
   }
-  const getTab = (id: string) => {
+
+  const getTab = (id: string) => tabs.value.find((t) => t.id === id) ?? null
+
+  /** 从路由解析 tabInfo，若无则创建默认并写入 query */
+  const parseTabInfoFromRoute = (route: RouteLocationNormalizedLoaded): ITabBase => {
+    if (route.query.__tab) return decodeTabInfo(route.query.__tab as string)
+    const tabInfo: ITabBase = {
+      id: ulid(),
+      title: t('VueStackTab.undefined'),
+      closable: true,
+      refreshable: true,
+      iframe: false
+    }
+    route.query.__tab = encodeTabInfo(tabInfo)
+    return tabInfo
+  }
+
+  /** 查找或创建目标 tab，同步 active 并添加 page */
+  const findOrCreateTargetTab = (
+    tabInfo: ITabBase,
+    route: RouteLocationNormalizedLoaded,
+    cacheName: string,
+    page: ITabPage
+  ): ITabItem => {
+    let targetTab: ITabItem | null = null
     for (const tab of tabs.value) {
-      if (tab.id === id) {
-        return tab
-      }
-    }
-    return null
-  }
-  const addPage = (route: RouteLocationNormalizedLoaded, component: VNode): DefineComponent => {
-    let cacheComponent: DefineComponent
-    let tabInfo: ITabBase
-    if (route.query.__tab) {
-      tabInfo = decodeTabInfo(route.query.__tab as string)
-    } else {
-      tabInfo = {
-        id: ulid(),
-        title: t('VueStackTab.undefined'),
-        closable: true,
-        refreshable: true,
-        iframe: false
-      }
-      route.query.__tab = encodeTabInfo(tabInfo)
-    }
-
-    if (deletableTab.has(tabInfo.id!) || !component) {
-      return
-    }
-
-    /**
-     * if using nginx as web server, it will add '/' at the end of url.
-     *
-     */
-    const matchPath = route.matched[route.matched.length - 1].path
-    const tmpPath = route.path.endsWith('/')
-      ? route.path.substring(0, route.path.length - 1)
-      : route.path
-
-    const cacheName = createPageId(
-      tabInfo.id!,
-      matchPath === tmpPath ? tmpPath : route.path,
-      route.query.valueOf()
-    )
-    if(deletableCache.has(cacheName)) {
-      return components.get(cacheName)!
-    }
-    const src = route.query.__src
-    // 增加tab
-    let activeTab: ITabItem | null = null
-    for (const tab of unref(tabs)) {
       tab.active = false
-      if (tab.id === tabInfo.id) {
-        activeTab = tab as ITabItem
+      if (tab.id === tabInfo.id) targetTab = tab as ITabItem
+    }
+
+    if (targetTab === null) {
+      const pages = new Stack<ITabPage>()
+      pages.push(page)
+      const src = route.query.__src
+      targetTab = {
+        id: tabInfo.id!,
+        title: tabInfo.title,
+        closable: tabInfo.closable!,
+        refreshable: tabInfo.refreshable!,
+        iframe: tabInfo.iframe!,
+        iframeRefreshMode: tabInfo.iframeRefreshMode ?? 'postMessage',
+        url: decodeURIComponent(src as string),
+        active: true,
+        pages
+      }
+      addTab(targetTab).then(() => {
+        emitter.emit(TabEventType.TAB_ACTIVE, { id: tabInfo.id!, isRoute: false })
+      })
+    } else {
+      targetTab.active = true
+      if (targetTab.pages.isEmpty() || targetTab.pages.peek()!.id !== page.id) {
+        targetTab.pages.push(page)
       }
     }
+    return targetTab
+  }
+
+  /**
+   * 根据当前路由更新/创建标签与页面状态
+   * @returns 缓存名、标签信息、目标标签，或 empty/recovered
+   */
+  const updatePageState = (
+    route: RouteLocationNormalizedLoaded
+  ):
+    | { cacheName: string; tabInfo: ITabBase; targetTab: ITabItem }
+    | { empty: true }
+    | { recovered: DefineComponent; cacheName: string } => {
+    const tabInfo = parseTabInfoFromRoute(route)
+    if (tabIdsToEvict.has(tabInfo.id!)) return { empty: true }
+
+    const path = normalizePathForCache(route)
+    const cacheName = createPageId(tabInfo.id!, path, route.query.valueOf())
+    if (cacheIdsToEvict.has(cacheName)) {
+      cacheIdsToEvict.delete(cacheName)
+      const cached = components.get(cacheName)
+      if (cached) return { recovered: cached, cacheName }
+    }
+
     const page: ITabPage = {
       id: cacheName,
       tabId: tabInfo.id!,
       path: route.path,
       query: route.query as Record<string, string>
     }
+    const targetTab = findOrCreateTargetTab(tabInfo, route, cacheName, page)
+    saveActiveTabToSession(targetTab)
+    return { cacheName, tabInfo, targetTab }
+  }
 
-    if (activeTab === null) {
-      const pages = new Stack<ITabPage>()
-      pages.push(page)
-      activeTab = {
-        id: tabInfo.id!,
-        title: tabInfo.title,
-        closable: tabInfo.closable!,
-        refreshable: tabInfo.refreshable!,
-        iframe: tabInfo.iframe!,
-        url: decodeURIComponent(src as string),
-        active: true,
-        pages
-      }
-      addTab(activeTab).then(() => {
-        emitter.emit(MittType.TAB_ACTIVE, { id: tabInfo.id!, isRoute: false })
-      })
-    } else {
-      activeTab.active = true
-      if (activeTab.pages.isEmpty() || activeTab.pages.peek()!.id !== page.id) {
-        activeTab.pages.push(page)
-      }
-    }
-    updateSession(activeTab)
-    // const cacheSet = new Set(caches.value)
+  const resolvePageComponent = (
+    ctx: { cacheName: string; tabInfo: ITabBase; targetTab: ITabItem },
+    component: VNode
+  ): DefineComponent => {
+    const { cacheName, tabInfo } = ctx
     if (components.has(cacheName)) {
-      cacheComponent = components.get(cacheName)!
-    } else {
-      // 增加控件
-      cacheComponent = defineComponent({
-        name: cacheName!,
-        components: {
-          DynamicComponent: component
-        },
-        emits: {
-          onLoaded: null
-        },
-        setup(props, context) {
-          onMounted(() => {
-            context.emit('onLoaded')
-            addPageScroller(cacheName, '.cache-page-wrapper')
-          })
-          onDeactivated(() => {
-            saveScroller(cacheName)
-          })
-          onActivated(() => {
-            context.emit('onLoaded')
-            restoreScroller(cacheName)
-            console.log(pageScroller.get(cacheName))
-            removeDeletableCache()
-            deletableTab.clear()
-            component.props = null
-          })
-          onUnmounted(() => {
-            console.log('on unMounted', cacheName)
-            removeScroller(cacheName)
-            // setTimeout(() => {
-            // 刷新时重置路由
-            // pageShown.value = true
-            // }, 500)
-          })
-          return () => (
-            <div
-              class="cache-page-wrapper"
-              id={'W-' + tabInfo.id}
-              style={[scrollbar ? 'overflow:auto' : 'overflow:hidden']}
-            >
-              <dynamic-component tId={tabInfo.id} pId={cacheName} />
-              <PageLoading tId={tabInfo.id!} />
-            </div>
-          )
-        }
-      })
-      components.set(cacheName, cacheComponent)
-
-      //
+      addCache(cacheName)
+      return components.get(cacheName)!
     }
-
-    // 加入缓存
-    // const cacheSet = new Set(caches.value)
-    // if (routerAlive.value) {
-    // if (!cacheSet.has(cacheName)) {
-    //   caches.value.push(cacheName)
-    // }
-    // }
+    const cacheComponent = defineComponent({
+      name: cacheName,
+      components: { DynamicComponent: component },
+      emits: ['onLoaded'],
+      setup(_props, context) {
+        onMounted(() => {
+          context.emit('onLoaded')
+          addPageScroller(cacheName, '.cache-page-wrapper')
+        })
+        onDeactivated(() => saveScroller(cacheName))
+        onActivated(() => {
+          context.emit('onLoaded')
+          restoreScroller(cacheName)
+          evictMarkedCaches()
+          tabIdsToEvict.clear()
+          clearExcludedCacheIdForRefresh(cacheName)
+          component.props = null
+        })
+        onUnmounted(() => removeScroller(cacheName))
+        return () => (
+          <div
+            class="cache-page-wrapper"
+            id={'W-' + tabInfo.id}
+            style={[useGlobalScroll ? 'overflow:auto' : 'overflow:hidden']}
+          >
+            <dynamic-component tId={tabInfo.id} pId={cacheName} />
+            <PageLoading tabId={tabInfo.id!} />
+          </div>
+        )
+      }
+    }) as DefineComponent
+    components.set(cacheName, cacheComponent)
     addCache(cacheName)
     return cacheComponent
   }
-  const restoreScroller = (pageId: string) => {
-    const scroller = pageScroller.get(pageId)
-    if (scroller) {
-      for (const key of scroller.keys()) {
-        if (document.querySelector(key)) {
-          const result = scroller.get(key)!
-          document.querySelector(key)!.scrollTop = result.top
-          document.querySelector(key)!.scrollLeft = result.left
-        }
-      }
-    }
-  }
-  const saveScroller = (pageId: string) => {
-    const scroller = pageScroller.get(pageId)
-    if (scroller) {
-      for (const key of scroller.keys()) {
-        const result = {
-          top: document.querySelector(key)?.scrollTop ?? 0,
-          left: document.querySelector(key)?.scrollLeft ?? 0
-        }
-        scroller.set(key, result)
-      }
-    }
+
+  const clearExcludedCacheIdForRefresh = (cacheId: string) => {
+    excludedCacheIdsForRefresh.value = excludedCacheIdsForRefresh.value.filter((c) => c !== cacheId)
   }
 
-  const removeScroller = (pageId: string) => {
-    const scroller = pageScroller.get(pageId)!
-    if (scroller) {
-      scroller.clear()
-      pageScroller.delete(pageId)
+  /**
+   * 将路由对应的组件注册为缓存页面，由 tabWrapper 调用
+   * @returns 包装后的缓存组件
+   */
+  const addPage = (route: RouteLocationNormalizedLoaded, component: VNode): DefineComponent => {
+    if (!component) return EmptyPlaceholderComponent as DefineComponent
+
+    const state = updatePageState(route)
+    if ('empty' in state) return EmptyPlaceholderComponent as DefineComponent
+    if ('recovered' in state) {
+      addCache(state.cacheName)
+      return state.recovered
     }
+    return resolvePageComponent(state, component)
   }
-  const addPageScroller = (pageId: string, ...scrollerIds: string[]) => {
-    if (!pageScroller.has(pageId)) {
-      pageScroller.set(pageId, new Map<string, number>())
-    }
-    const scroller = pageScroller.get(pageId)!
-    for (const sId of scrollerIds) {
-      scroller.set(sId, { top: 0, left: 0 })
-    }
-  }
-  // use new url for renwTab like refresh tab
+
   const renewTab = (tab: ITabData) => {
     const currentTab = getTab(tab.id!)
-    for (const item of currentTab!.pages.list()) {
-      // removeComponent(item.id)
-      markDeletableCache(item.id)
-    }
-    removeDeletableCache()
-    currentTab!.pages.clear()
+    if (!currentTab) return
+    markTabPagesForEvictionOnly(currentTab)
+    evictMarkedCaches()
+    currentTab.pages.clear()
   }
-  /**
-   * if id is null , then remove all tab that deleted is true
-   * @param id
-   */
+
   const removeTab = (id: string): string => {
     let activeTabId = ''
     const currentTab = getTab(id)
-    for (let i = tabs.value.length - 1; i >= 0; i--) {
-      if (id === unref(tabs)[i].id) {
-        //if it's not closable then return
-        if (!unref(tabs)[i].closable) {
-          return id
-        }
-        for (const item of unref(tabs)[i].pages.list()) {
-          // removeComponent(item.id)
-          markDeletableCache(item.id)
-          deletableTab.add(unref(tabs)[i].id)
-        }
-        unref(tabs)[i].pages.clear()
-        if (tabs.value.length > 1 && unref(tabs)[i].active) {
-          if (i === 0) {
-            activeTabId = unref(tabs)[i + 1].id
-          } else {
-            activeTabId = unref(tabs)[i - 1].id
-          }
-        }
-        unref(tabs).splice(i, 1)
+    const tabList = tabs.value
+    const i = tabList.findIndex((t) => t?.id === id)
+    if (i < 0) return ''
 
-        break
-      }
+    const tab = tabList[i]!
+    if (!tab.closable) return id
+
+    markTabPagesForEviction(tab)
+    tab.pages.clear()
+    if (tabList.length > 1 && tab.active) {
+      activeTabId = (i === 0 ? tabList[1] : tabList[i - 1])?.id ?? ''
     }
+    tabList.splice(i, 1)
 
-    if (activeTabId !== '') {
-      emitter.emit(MittType.TAB_ACTIVE, { id: activeTabId })
-      // active(activeTabId)
+    if (activeTabId) {
+      emitter.emit(TabEventType.TAB_ACTIVE, { id: activeTabId })
     }
-    // if remove inactive tab,then we need remove the cache manually.
-
     if (!currentTab?.active) {
-      removeDeletableCache()
-      deletableTab.clear()
+      evictMarkedCaches()
+      tabIdsToEvict.clear()
     }
 
     return activeTabId
   }
 
   const removeAllTabs = () => {
-    const uTabs = unref(tabs)
-    for (let i = uTabs.length - 1; i >= 0; i--) {
-      if (uTabs[i].closable) {
-        for (const item of uTabs[i].pages.list()) {
-          // removeComponent(item.id)
-          markDeletableCache(item.id)
-          deletableTab.add(uTabs[i].id)
-        }
-        unref(tabs)[i].pages.clear()
-
-        unref(tabs).splice(i, 1)
+    const tabList = tabs.value
+    for (let i = tabList.length - 1; i >= 0; i--) {
+      const tab = tabList[i]
+      if (tab?.closable) {
+        markTabPagesForEviction(tab)
+        tab.pages.clear()
+        tabList.splice(i, 1)
       }
     }
-    for (const stay of uTabs) {
-      if (stay.active) {
-        removeDeletableCache()
-        deletableTab.clear()
-        return
-      }
+    const hasActive = tabList.some((t) => t.active)
+    if (hasActive) {
+      evictMarkedCaches()
+      tabIdsToEvict.clear()
+      return
     }
-    // 如果都是非Active状态，就把最后一个active
-    emitter.emit(MittType.TAB_ACTIVE, { id: uTabs[uTabs.length - 1].id })
-    // active(uTabs[uTabs.length - 1].id)
+    const last = tabList[tabList.length - 1]
+    if (last) emitter.emit(TabEventType.TAB_ACTIVE, { id: last.id })
   }
+
   const removeOtherTabs = (id: string) => {
-    const uTabs = unref(tabs)
-    let activeTab
-    for (let i = uTabs.length - 1; i >= 0; i--) {
-      if (uTabs[i].id === id) {
-        activeTab = uTabs[i]
-      } else if (uTabs[i].closable && uTabs[i].id !== id) {
-        for (const item of uTabs[i].pages.list()) {
-          // removeComponent(item.id)
-          markDeletableCache(item.id)
-          deletableTab.add(uTabs[i].id)
-        }
-        unref(tabs)[i].pages.clear()
-        unref(tabs).splice(i, 1)
-      }
-    }
-    if (!activeTab!.active) {
-      emitter.emit(MittType.TAB_ACTIVE, { id })
-      // active(id)
-    } else {
-      removeDeletableCache()
-      deletableTab.clear()
-    }
-  }
-  /**
-   * 关闭左边
-   * @param id
-   */
-  const removeLeftTabs = (id: string) => {
-    let startIndex = -1
-    const uTabs = unref(tabs)
-    for (let i = 0; i < uTabs.length; i++) {
-      if (uTabs[i].id === id) {
-        startIndex = i - 1
-        break
-      }
-    }
-    for (let i = startIndex; i >= 0; i--) {
-      if (uTabs[i].closable) {
-        for (const item of uTabs[i].pages.list()) {
-          // removeComponent(item.id)
-          markDeletableCache(item.id)
-          deletableTab.add(uTabs[i].id)
-        }
-        unref(tabs)[i].pages.clear()
-        unref(tabs).splice(i, 1)
-      }
-    }
-    for (const stay of uTabs) {
-      if (stay.active) {
-        removeDeletableCache()
-        deletableTab.clear()
-        return
-      }
-    }
-    // 如果都是非Active状态，就把最后一个active
-    emitter.emit(MittType.TAB_ACTIVE, { id: uTabs[0].id })
-    // active(uTabs[0].id)
-  }
-
-  /**
-   * 关闭右边
-   * @param id
-   */
-  const removeRightTabs = (id: string) => {
-    const uTabs = unref(tabs)
-    let startIndex = uTabs.length
-    for (let i = 0; i < uTabs.length; i++) {
-      if (uTabs[i].id === id) {
-        startIndex = i + 1
-        break
-      }
-    }
-    for (let i = uTabs.length - 1; i >= startIndex; i--) {
-      if (uTabs[i].closable) {
-        for (const item of uTabs[i].pages.list()) {
-          // removeComponent(item.id)
-          markDeletableCache(item.id)
-          deletableTab.add(uTabs[i].id)
-        }
-        unref(tabs)[i].pages.clear()
-        unref(tabs).splice(i, 1)
-      }
-    }
-    for (const stay of uTabs) {
-      if (stay.active) {
-        removeDeletableCache()
-        deletableTab.clear()
-        return
-      }
-    }
-    emitter.emit(MittType.TAB_ACTIVE, { id: uTabs[uTabs.length - 1].id })
-    // active(uTabs[uTabs.length - 1].id)
-  }
-
-  /**
-   * 刷新
-   */
-  const refreshTab = (id: string) => {
-    // const uTabs = unref(tabs)
-    for (const uTabs of unref(tabs)) {
-      if (uTabs.id === id) {
-        const currentPageId = uTabs.pages.peek()?.id
-        for (let i = caches.value.length - 1; i >= 0; i--) {
-          const cacheId = caches.value[i]
-          if (cacheId === currentPageId) {
-            caches.value.splice(i, 1)
-            // 如果要刷新的是显示的TAB
-            if (uTabs.active) {
-              pageShown.value = false
-              nextTick(() => {
-                pageShown.value = true
-              })
-            }
-            break
-          }
-        }
-        break
-      }
-    }
-  }
-  /**
-   * 全部刷新
-   */
-  const refreshAllTabs = () => {
-    const refreshPage = new Set<string>()
-    tabs.value.forEach((value) => {
-      refreshPage.add(value.pages.peek()!.id)
-    })
-    for (let i = caches.value.length - 1; i >= 0; i--) {
-      const cacheId = caches.value[i]
-      if (refreshPage.has(cacheId)) {
-        caches.value.splice(i, 1)
-      }
-    }
-    nextTick(() => {
-      pageShown.value = false
-      nextTick(() => {
-        setTimeout(() => {
-          pageShown.value = true
-        }, 300)
-      })
-    })
-  }
-
-  const addComponent = (id: string, comp: DefineComponent) => {
-    components.set(id, comp)
-  }
-  const getComponent = (id: string) => {
-    return components.get(id)
-  }
-  const removeComponent = (id: string) => {
-    components.delete(id)
-  }
-
-  /**
-   * Delete the cache after new Page loaded.
-   * @param cacheName
-   */
-  const markDeletableCache = (cacheName: string) => {
-    deletableCache.add(cacheName)
-  }
-  const removeDeletableCache = () => {
-    if(deletableCache.size>0){
-      for (let i = caches.value.length - 1; i >= 0; i--) {
-        if (deletableCache.has(caches.value[i])) {
-          unref(caches).splice(i, 1)
-
-        }
-      }
-      for(const cacheName of deletableCache) {
-        removeComponent(cacheName)
-      }
-      deletableCache.clear()
-    }
-
-  }
-  const removeCache = (cacheName: string) => {
-    for (let i = caches.value.length - 1; i >= 0; i--) {
-      if (cacheName === caches.value[i]) {
-        unref(caches).splice(i, 1)
-      }
-    }
-  }
-  const addCache = (cacheName: string) => {
-    const cacheSet = new Set(caches.value)
-    if (!cacheSet.has(cacheName)) {
-      caches.value.push(cacheName)
-    }
-  }
-
-  /**
-   * active the tab,
-   * @param id
-   * @param route
-   * @return true if already actived
-   */
-  const active = (id: string, route = true) => {
-    // return new Promise((resolve)=>{
-    emitter.emit('FORWARD')
-    for (let i = tabs.value.length - 1; i >= 0; i--) {
-      const tab = tabs.value[i] as ITabItem
+    const tabList = tabs.value
+    let activeTab: ITabItem | undefined
+    for (let i = tabList.length - 1; i >= 0; i--) {
+      const tab = tabList[i]
+      if (!tab) continue
       if (tab.id === id) {
-        if (tab.active) {
-          break
-        } else {
-          tab.active = true
-          // pageShown.value = false
-          updateSession(tab)
-          if (route) {
-            const top = tab.pages.peek()
-            router.push({
-              path: top!.path,
-              query: top!.query
-            })
-          }
+        activeTab = tab as ITabItem
+      } else if (tab.closable) {
+        markTabPagesForEviction(tab)
+        tab.pages.clear()
+        tabList.splice(i, 1)
+      }
+    }
+    if (activeTab && !activeTab.active) {
+      emitter.emit(TabEventType.TAB_ACTIVE, { id })
+    } else {
+      evictMarkedCaches()
+      tabIdsToEvict.clear()
+    }
+  }
+
+  const removeLeftTabs = (id: string) => {
+    const tabList = tabs.value
+    const pivot = tabList.findIndex((t) => t?.id === id)
+    if (pivot <= 0) return
+
+    for (let i = pivot - 1; i >= 0; i--) {
+      const tab = tabList[i]
+      if (tab?.closable) {
+        markTabPagesForEviction(tab)
+        tab.pages.clear()
+        tabList.splice(i, 1)
+      }
+    }
+    if (tabList.some((t) => t.active)) {
+      evictMarkedCaches()
+      tabIdsToEvict.clear()
+      return
+    }
+    const first = tabList[0]
+    if (first) emitter.emit(TabEventType.TAB_ACTIVE, { id: first.id })
+  }
+
+  const removeRightTabs = (id: string) => {
+    const tabList = tabs.value
+    const pivot = tabList.findIndex((t) => t?.id === id)
+    if (pivot < 0 || pivot >= tabList.length - 1) return
+
+    for (let i = tabList.length - 1; i > pivot; i--) {
+      const tab = tabList[i]
+      if (tab?.closable) {
+        markTabPagesForEviction(tab)
+        tab.pages.clear()
+        tabList.splice(i, 1)
+      }
+    }
+    if (tabList.some((t) => t.active)) {
+      evictMarkedCaches()
+      tabIdsToEvict.clear()
+      return
+    }
+    const last = tabList[tabList.length - 1]
+    if (last) emitter.emit(TabEventType.TAB_ACTIVE, { id: last.id })
+  }
+
+  const refreshTab = (id: string) => {
+    const tab = getTab(id)
+    if (!tab?.refreshable) return
+
+    if (tab.iframe) {
+      if (tab.iframeRefreshMode === 'reload') {
+        iframeRefreshKeys.value = {
+          ...iframeRefreshKeys.value,
+          [id]: (iframeRefreshKeys.value[id] ?? 0) + 1
         }
       } else {
-        tabs.value[i].active = false
+        ;(emitter as { emit: (t: string, p: string) => void }).emit('REFRESH_IFRAME_POSTMESSAGE', id)
+      }
+      return
+    }
+
+    const currentPageId = tab.pages.peek()?.id
+    if (!currentPageId) return
+
+    excludedCacheIdsForRefresh.value = [...excludedCacheIdsForRefresh.value, currentPageId]
+    if (tab.active) {
+      refreshKey.value++
+    }
+  }
+
+  const refreshAllTabs = () => {
+    const toRefresh: string[] = []
+    for (const tab of tabs.value) {
+      if (!tab?.refreshable) continue
+      if (tab.iframe) {
+        if (tab.iframeRefreshMode === 'reload') {
+          iframeRefreshKeys.value = {
+            ...iframeRefreshKeys.value,
+            [tab.id]: (iframeRefreshKeys.value[tab.id] ?? 0) + 1
+          }
+        } else {
+          ;(emitter as { emit: (t: string, p: string) => void }).emit('REFRESH_IFRAME_POSTMESSAGE', tab.id)
+        }
+      } else {
+        const pageId = tab.pages.peek()?.id
+        if (pageId) toRefresh.push(pageId)
       }
     }
-    //   resolve(true)
-    // })
+    if (toRefresh.length > 0) {
+      excludedCacheIdsForRefresh.value = [...excludedCacheIdsForRefresh.value, ...toRefresh]
+      refreshKey.value++
+    }
   }
+
+  const getComponent = (id: string) => components.get(id)
+
   /**
-   * save current tab info into Browser's session
-   * @param id
+   * 激活指定标签，更新 active 状态并可选跳转路由
+   * @param id - 标签 id
+   * @param route - 是否执行 router.push
    */
-  const updateSession = (tab: ITabItem) => {
-    // window.sessionStorage.setItem('tabItems', JSON.stringify(currentItems?.values()))
-    window.sessionStorage.setItem(sessionPrefix+SESSION_TAB_NAME, JSON.stringify(tab))
+  const active = (id: string, route = true) => {
+    emitter.emit('FORWARD')
+    const target = getTab(id)
+    if (!target) return
+    if (target.active) return
+
+    for (const tab of tabs.value) {
+      tab.active = tab.id === id
+    }
+    saveActiveTabToSession(target as ITabItem)
+    // 强制触发 tabs 响应式更新，确保 TabHeader 高亮与 iframe 进入动画 timing 正确
+    tabs.value = tabs.value.slice()
+    if (route) {
+      const top = target.pages.peek()
+      if (top) router.push({ path: top.path, query: top.query })
+    }
   }
-  const clearSession = () => {
-    // window.sessionStorage.setItem('tabItems', JSON.stringify(currentItems?.values()))
-    window.sessionStorage.removeItem(sessionPrefix+SESSION_TAB_NAME)
-  }
-  const reset = () => {
-    removeAllTabs()
-    // pageShown.value = false
-    // destroy()
-    // nextTick(() => {
-    //   // unref(tabs).push(...defaultTabs)
-    //   // emitter.emit(MittType.TAB_ACTIVE, { id: defaultTabs[0].id! })
-    //   // // pageShown.value = false
-    //   nextTick(() => {
-    //     pageShown.value = true
-    //   })
-    // })
-    // active(defaultTabs[0].id)
-  }
+
+  const reset = () => removeAllTabs()
+
   const destroy = () => {
-    unref(tabs).splice(0)
-    deletableCache.clear()
-    deletableTab.clear()
-    unref(caches).splice(0)
+    tabs.value.length = 0
+    cacheIdsToEvict.clear()
+    tabIdsToEvict.clear()
+    iframeRefreshKeys.value = {}
+    caches.value.length = 0
     components.clear()
     clearSession()
   }
-  const setMaxSize = (size: number) => {
-    max = size
-  }
-  const setGlobalScroll = (globalScroll: boolean) => {
-    scrollbar = globalScroll
-  }
 
-  const setSessionPrefix = (prefix: string) => {
-    sessionPrefix = prefix
-  }
   return {
     tabs,
     caches,
-    pageShown,
-    initialed,
-    setMaxSize,
+    refreshKey,
+    excludedCacheIdsForRefresh,
+    isInitialized,
+    setMaxSize: setMaxTabCount,
     canAddTab,
-    initial,
+    initialize,
     size,
     active,
     destroy,
@@ -693,15 +530,16 @@ export default () => {
     hasTab,
     renewTab,
     addPage,
-    addComponent,
+    addComponent: (id: string, comp: DefineComponent) => components.set(id, comp),
     getComponent,
-    removeComponent,
-    markDeletableCache,
-    removeDeletableCache,
+    removeComponent: (id: string) => components.delete(id),
+    markCacheForEviction,
+    evictMarkedCaches,
     refreshTab,
     refreshAllTabs,
+    iframeRefreshKeys,
     addPageScroller,
-    setGlobalScroll,
+    setGlobalScroll: setUseGlobalScroll,
     clearSession,
     setSessionPrefix
   }

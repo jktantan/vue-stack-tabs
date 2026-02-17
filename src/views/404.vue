@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useTabRouter } from '@/lib'
 
-const {backward}=useTabRouter()
+const { backward } = useTabRouter()
 const backto = () => {
   backward('/demo')
 }

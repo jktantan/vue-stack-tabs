@@ -3,8 +3,7 @@ import Frame from '@/components/layout/Frame.vue'
 
 import { IFrame } from '@/lib'
 const router = createRouter({
-  // history: createWebHistory(import.meta.env.BASE_URL),
-  history: createWebHistory(),
+  history: createWebHistory(import.meta.env.BASE_URL || '/'),
   routes: [
     {
       path: '/',
@@ -28,6 +27,28 @@ const router = createRouter({
           path: 'test2',
           name: 'test2',
           component: () => import('@/views/demo/test2.vue')
+        },
+        {
+          path: 'subroute',
+          name: 'subroute',
+          component: () => import('@/views/demo/subroute/Test2Layout.vue'),
+          children: [
+            {
+              path: '',
+              name: 'subroute-home',
+              component: () => import('@/views/demo/subroute/Test2SubHome.vue')
+            },
+            {
+              path: 'detail',
+              name: 'subroute-detail',
+              component: () => import('@/views/demo/subroute/Test2SubDetail.vue')
+            },
+            {
+              path: 'detail/:id',
+              name: 'subroute-detail-id',
+              component: () => import('@/views/demo/subroute/Test2SubDetail.vue')
+            }
+          ]
         },
         {
           path: 'test3',
@@ -64,7 +85,7 @@ const router = createRouter({
           path: '',
           name: '404home',
           component: () => import('@/views/404.vue')
-        },
+        }
       ]
     }
   ]

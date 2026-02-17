@@ -14,22 +14,24 @@ VueStackTabs 默认不开启全局滚动，如需全局滚动请设置`global-sc
 
 ## 页面滚动元素
 
-当滚动条在页面节点内部时，可以通过 `addScroller` 设置页面滚动元素。
+当滚动条在页面节点内部时，可以通过 `addScrollTarget` 设置页面滚动元素。
 
 **示例：**
 
 单个滚动元素
+
 ```typescript:line-numbers
 import { useTabRouter } from 'vue-stack-tabs'
-const { addScroller } = useTabRouter()
+const { addScrollTarget } = useTabRouter()
 
-addScroller('.custom-scroller')
+addScrollTarget('.custom-scroller')
 ```
 
 多个滚动元素
+
 ```typescript:line-numbers
 import { useTabRouter } from 'vue-stack-tabs'
-const { addScroller } = useTabRouter()
+const { addScrollTarget } = useTabRouter()
 
-addScroller(['.custom-scroller-1', '.custom-scroller-2'])
+addScrollTarget('.custom-scroller-1', '.custom-scroller-2')
 ```

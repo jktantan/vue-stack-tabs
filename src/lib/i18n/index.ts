@@ -9,20 +9,16 @@ export default () => {
    * 获取所有语言文件
    * @param {Object} mList
    */
-  function getLangFiles(mList: any, msg: any) {
+  function getLangFiles(
+    mList: Record<string, { default?: Record<string, unknown> }>,
+    msg: Record<string, Record<string, unknown>>
+  ) {
     for (const path in mList) {
-      if (mList[path].default) {
-        //  获取文件名
+      const mod = mList[path] as { default?: Record<string, unknown> }
+      if (mod?.default) {
         const pathName = path.substring(path.lastIndexOf('/') + 1, path.lastIndexOf('.'))
-
-        if (msg[pathName]) {
-          msg[pathName] = {
-            ...mList[pathName],
-            ...mList[path].default
-          }
-        } else {
-          msg[pathName] = mList[path].default
-        }
+        const existing = msg[pathName] as Record<string, unknown> | undefined
+        msg[pathName] = existing ? { ...existing, ...mod.default } : mod.default
       }
     }
   }
@@ -52,16 +48,16 @@ export default () => {
   // 那么你就可以 使用 :lower:（小写） :upper:（大写） 来引入文件
   // const viewModules = import.meta.globEager('../views/**/locales/[[:lower:]][[:lower:]]-[[:upper:]][[:upper:]].ts')
 
-  const allLangs: any = () => {
-    const message: any = {}
-    getLangFiles(modules, message)
+  const allLangs = (): Record<string, Record<string, unknown>> => {
+    const message: Record<string, Record<string, unknown>> = {}
+    getLangFiles(modules as Record<string, { default?: Record<string, unknown> }>, message)
     return message
   }
   // const localeI18n = inject('locales') as { locale: string; messages: object }
-  const getI18n = (localeI18n?: { locale: string; messages: any }[]) => {
+  const getI18n = (localeI18n?: { locale: string; messages: Record<string, unknown> }[]) => {
     const combinateMessage = { ...allLangs() }
     if (localeI18n) {
-      for (const l of localeI18n!) {
+      for (const l of localeI18n) {
         combinateMessage[l.locale] = l.messages
       }
       // combinateMessage = { ...allLangs(), ...localeI18n.messages }
@@ -70,7 +66,7 @@ export default () => {
     return createI18n({
       locale: 'zh-CN',
       fallbackLocale: 'en',
-      messages: combinateMessage
+      messages: combinateMessage as Record<string, Record<string, string>>
     })
     // const combinateMessage = { ...allLangs(), ...localeI18n.messages }
     // return useI18n({

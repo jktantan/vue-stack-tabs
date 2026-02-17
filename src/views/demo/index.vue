@@ -1,10 +1,8 @@
 <script setup lang="ts">
-import { useTabRouter, useStackTab } from '@/lib'
+import { useTabActions, useTabRouter } from '@/lib'
 import { onActivated, onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
-const { addScroller, forward, backward } = useTabRouter()
-const { openNewTab,reset } = useStackTab()
-const router = useRouter()
+const { addScrollTarget, forward } = useTabRouter()
+const { reset } = useTabActions()
 const iTest = ref<string>('')
 onActivated(() => {
   console.log('on Demo Index activate')
@@ -12,7 +10,7 @@ onActivated(() => {
 onMounted(() => {
   console.log('on Demo Index mount')
   // console.log(props)
-  addScroller('.aaaaaa')
+  addScrollTarget('.aaaaaa')
 })
 const goto = () => {
   forward({
@@ -21,7 +19,7 @@ const goto = () => {
 }
 
 const resetTest = () => {
-  // openNewTab(
+  // openTab(
   //   {
   //     id: 'SearchFormPreview',
   //     title: '查询预览',
@@ -34,7 +32,7 @@ const resetTest = () => {
 </script>
 <script lang="ts">
 export default {
-  name: 'demoIndex'
+  name: 'DemoIndex'
 }
 </script>
 <template>

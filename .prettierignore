@@ -1,0 +1,7 @@
+node_modules
+dist
+dist-ssr
+coverage
+*.min.js
+pnpm-lock.yaml
+docs/.vitepress/cache

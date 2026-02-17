@@ -2,24 +2,26 @@
 layout: home
 
 hero:
-  name: Vue Stack Tab
-  tagline: 基于 Vue Router 的路由页签组件。
+  name: Vue Stack Tabs
+  tagline: A route-based tab component for Vue 3 and Vue Router
   image:
     src: '/img/logo.svg'
   actions:
-    - text: 快速上手 →
+    - text: Get Started →
       link: ./guide/
+    - text: Live Demo →
+      link: ./demo
     - theme: alt
       text: GitHub
       link: https://github.com/jktantan/vue-stack-tabs.git
     - theme: alt
       text: Gitee
-      link: https://github.com/jktantan/vue-stack-tabs.git
+      link: https://gitee.com/jktantan/vue-stack-tabs
 features:
-  - title: IFRAME模拟
-    details: 模拟IFRAME功能，一个标签就是一个IFRAME，不同标签的页面相互独立。
-  - title: 栈式处理
-    details: 标签页内页面缓存使用栈式方案，前进保存缓存，后退清除缓存。
-  - title: Vue Router 驱动
-    details: 基于 "Vue Router" 路由进入扩展和限制。
+  - title: iframe-like Tabs
+    details: Each tab acts like an iframe with isolated component scope. Pages in different tabs do not interfere.
+  - title: Stack-based Caching
+    details: Tab pages use a stack. Forward pushes and caches; backward pops and evicts.
+  - title: Vue Router Driven
+    details: Integrated with Vue Router for route-based tab management.
 ---

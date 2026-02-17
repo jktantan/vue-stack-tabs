@@ -20,6 +20,7 @@ transition 过渡样式
 .stack-tab-swap {
   $trans: 30px;
 
+  &-move,
   &-enter-active,
   &-leave-active {
     transition: all 0.3s ease-in-out;

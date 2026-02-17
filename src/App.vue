@@ -1,25 +1,33 @@
+<!--
+  App - 演示应用根组件
+
+  职责：布局（el-container）、侧边栏导航、调用 useTabActions 打开各类标签
+-->
 <script setup lang="ts">
-import { useStackTab } from '@/lib'
+import { useTabActions } from '@/lib'
 import { ulid } from 'ulid'
-const { openNewTab } = useStackTab()
+const { openTab } = useTabActions()
+/** 打开 iframe 标签 */
 const openframe = (id: string) => {
-  openNewTab({
+  openTab({
     id,
     title: '面试',
-    path: 'https://cn.vuejs.org/',
+    path: 'http://localhost:5174/',
     iframe: true
   })
 }
+/** 打开首页标签（不可关闭） */
 const openDashboard = (id: string) => {
-  openNewTab({
+  openTab({
     id,
     title: '首页',
     path: '/demo',
     closable: false
   })
 }
+/** 打开测试2标签 */
 const openTest2 = (id: string) => {
-  const tabId = openNewTab({
+  const tabId = openTab({
     id,
     title: '测试2',
     path: '/demo/test2?saa=234234',
@@ -27,8 +35,9 @@ const openTest2 = (id: string) => {
   })
   console.log('TEST2', tabId)
 }
+/** 打开测试2标签（renew 模式，清空栈后重新打开） */
 const openTest5 = (id: string) => {
-  const tabId = openNewTab(
+  const tabId = openTab(
     {
       id,
       title: '测试2',
@@ -39,20 +48,21 @@ const openTest5 = (id: string) => {
   )
   console.log('TEST2', tabId)
 }
-const openTest3 = () => {
-  const tabId = openNewTab({
-    id: ulid(),
-    title: '测试2',
-    path: '/demo/test4/aaaa',
-    closable: true
-  })
-  console.log('TEST2', tabId)
-}
+/** 打开 404 测试页 */
 const open404 = () => {
-  openNewTab({
+  openTab({
     id: ulid(),
     title: '测试4',
     path: '/demo/test4/aaaa',
+    closable: true
+  })
+}
+/** 打开子路由示例（试验性） */
+const openSubroute = (id: string) => {
+  openTab({
+    id,
+    title: '子路由',
+    path: '/demo/subroute',
     closable: true
   })
 }
@@ -100,6 +110,9 @@ const open404 = () => {
           </el-menu-item>
           <el-menu-item index="4" @click="open404">
             <span>404</span>
+          </el-menu-item>
+          <el-menu-item index="subroute" @click="openSubroute('subroute-demo')">
+            <span>子路由 <small>(试验)</small></span>
           </el-menu-item>
           <el-menu-item index="5" @click="openframe('01HR6764M0X9CZKNT15QH82TXY')">
             <span>IFrame页面</span>

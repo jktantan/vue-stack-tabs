@@ -1,0 +1,15 @@
+{
+  "name": "playground-nuxt",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "nuxt dev",
+    "build": "nuxt build",
+    "build:source": "nuxt build"
+  },
+  "dependencies": {
+    "vue-stack-tabs": "file:../..",
+    "nuxt": "^3.14.0",
+    "sass": "^1.97.3"
+  }
+}

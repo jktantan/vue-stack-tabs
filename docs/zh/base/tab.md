@@ -2,22 +2,22 @@
 
 ## 打开
 
-VueStackTab提供函数来打开或切换页签
+VueStackTabs 提供 useTabActions 来打开或切换页签
 
 **示例：**
 
 ```typescript
-// 引用useStackTab方法
-import { useStackTab } from 'vue-stack-tabs'
+// 引用 useTabActions
+import { useTabActions } from 'vue-stack-tabs'
 
-const { openNewTab } = useStackTab()
+const { openTab } = useTabActions()
 
 /**
  * 如果没传ID，则新建页答
  * ID相同时，则只切换页签
  * return 页签ID
  */
-const tabId = openNewTab({
+const tabId = openTab({
   id: 'dashboard',
   title: '首页',
   path: '/dashboard',
@@ -26,35 +26,38 @@ const tabId = openNewTab({
 ```
 
 ## 切换页签
+
 **示例：**
 
 ```typescript
-// 引用useStackTab方法
-import { useStackTab } from 'vue-stack-tabs'
+// 引用 useTabActions
+import { useTabActions } from 'vue-stack-tabs'
 
-const { active } = useStackTab()
+const { activeTab } = useTabActions()
 
 // 传入页签ID
-active("dashboard")
+activeTab('dashboard')
 ```
 
 ## 重置页签
+
 **示例：**
 
 ```typescript:line-numbers
-// 引用useStackTab方法
-import { useStackTab } from 'vue-stack-tabs'
+// 引用 useTabActions
+import { useTabActions } from 'vue-stack-tabs'
 
-const { reset } = useStackTab()
+const { reset } = useTabActions()
 
 reset()
 ```
 
 ## 页签页面加载动画
+
 **示例：**
 
 ```typescript:line-numbers
-// 引用useStackTab方法
+// 引用 useTabActions
 import { useTabLoading } from 'vue-stack-tabs'
 
 const { openTabLoading,closeTabLoading } = useTabLoading()

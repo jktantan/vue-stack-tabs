@@ -5,6 +5,7 @@
 :::warning
 VueStackTabs 默认支持英文(`en`)和中文(`zh-CN`)两种语言
 :::
+
 ```vue:line-numbers
 <template>
   <div class="app-header">头部</div>
@@ -16,15 +17,16 @@ VueStackTabs 默认支持英文(`en`)和中文(`zh-CN`)两种语言
 ```
 
 ## 自定义语言
+
 `main.js` 入口文件
 
 ```javascript:line-numbers {14-31}
-// router-tab 组件依赖 vue 
+// vue-stack-tabs 依赖 vue 和 vue-router
 import { createApp } from 'vue'
 
 // 引入组件和样式
-import StackTabs from 'vue-stack-tabs'
-import 'vue-stack-tab/dist/lib/vue-stack-tabs.css'
+import VueStackTabs from 'vue-stack-tabs'
+import 'vue-stack-tabs/dist/style.css'
 
 import App from './App.vue'
 import router from './router'
@@ -32,7 +34,7 @@ import router from './router'
 const app = createApp(App)
 
 app.use(router)
-app.use(VueStackTabs,[{
+app.use(VueStackTabs, [{
   locale:'xxxx',
   messages:{
     VueStackTab: {
@@ -46,7 +48,8 @@ app.use(VueStackTabs,[{
       maximum: 'Maximum',
       restore: 'Restore',
       undefined: 'Undefined',
-      loading: 'Loading'
+      loading: 'Loading',
+      openInNewWindow: 'Open in new window'
     }
   }
 }])

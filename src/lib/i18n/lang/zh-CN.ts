@@ -10,6 +10,7 @@ export default {
     maximum: '最大化',
     restore: '还原',
     undefined: '未命名',
-    loading: '加载中'
+    loading: '加载中',
+    openInNewWindow: '在新窗口打开'
   }
 }

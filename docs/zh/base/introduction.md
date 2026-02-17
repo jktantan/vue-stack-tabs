@@ -1,5 +1,9 @@
 # 入门
 
+## 效果预览
+
+<DemoPreview path="/demo" title="入门示例" />
+
 ## 引入组件
 
 **示例：**
@@ -7,12 +11,12 @@
 `main.js` 入口文件
 
 ```javascript:line-numbers {5,6,14}
-// router-tab 组件依赖 vue 
+// vue-stack-tabs 依赖 vue 和 vue-router
 import { createApp } from 'vue'
 
 // 引入组件和样式
-import StackTabs from 'vue-stack-tabs'
-import 'vue-stack-tab/dist/lib/vue-stack-tabs.css'
+import VueStackTabs from 'vue-stack-tabs'
+import 'vue-stack-tabs/dist/style.css'
 
 import App from './App.vue'
 import router from './router'
@@ -31,8 +35,9 @@ app.mount('#app')
 
 ::: danger
 VueStackTabs 仅支持单例模式，请勿在同一个页面中引入多个 VueStackTabs 组件！
-* 配置 iframe-path 定义iframe页地址
-:::
+
+- 配置 iframe-path 定义iframe页地址
+  :::
 
 **示例：**
 
@@ -71,7 +76,7 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      // 父路由组件内必须包含 <router-tab>
+      // 父路由组件内必须包含 <vue-stack-tabs>
       component: Frame,
       children: [
         {

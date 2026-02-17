@@ -293,16 +293,57 @@
     }
   }
 
+  &__iframes {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    /* 进入的 iframe 置于上层；延迟进入，等待其他 tab 离开动画完成后再播放入场 */
+    .stack-tab-swap-enter-active {
+      z-index: 1;
+      transition-duration: 0.5s;
+      transition-delay: 0.3s;
+    }
+    .stack-tab-swap-leave-active {
+      z-index: 0;
+      position: absolute;
+    }
+  }
+
+  &__iframe-wrapper {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+  }
+
   &__iframe {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    /*
-    新浏览器使用这个来消除frame的边框
-     */
     border: 0;
+  }
+
+  &__iframe-loading {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    background: var(--stack-tab-iframe-loading-bg, #f5f5f5);
+
+    &-text {
+      color: var(--stack-tab-iframe-loading-color, #999);
+      font-size: var(--stack-tab-font-size, 14px);
+    }
   }
   /*
   右键菜单
