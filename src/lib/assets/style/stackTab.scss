@@ -299,6 +299,7 @@
     left: 0;
     width: 100%;
     height: 100%;
+    pointer-events: none; /* 允许鼠标事件穿透到下层，避免遮挡其他标签 */
     /* 进入的 iframe 置于上层；延迟进入，等待其他 tab 离开动画完成后再播放入场 */
     .stack-tab-swap-enter-active {
       z-index: 1;
@@ -317,6 +318,7 @@
     left: 0;
     width: 100%;
     height: 100%;
+    pointer-events: auto; /* 恢复鼠标事件，允许与 iframe 交互 */
   }
 
   &__iframe {
