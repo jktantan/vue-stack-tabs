@@ -1,62 +1,42 @@
-# Vue Stack Tabs
+# vue-stack-tabs
 
-[![npm version](https://img.shields.io/npm/v/vue-stack-tabs.svg)](https://www.npmjs.com/package/vue-stack-tabs)
-[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
+> Vue 3 多标签页管理库，基于 Vue Router。用 Vue 作用域实现类似 iframe TabPanel 的效果——**每个 Tab 间组件作用域互不干扰**。
 
-A multi-tab management library for Vue 3 and Vue Router. Each tab has its own component stack with isolated scope, suitable for admin dashboards, multi-tab workspaces, and similar scenarios.
+## ✨ 特性
 
-基于 Vue 3 和 Vue Router 的多标签页管理库。每个标签拥有独立的组件栈，作用域互不干扰，适合后台管理、多页签工作台等场景。
-
----
-
-## Table of Contents / 目录
-
-- [Features / 特性](#features--特性)
-- [Installation / 安装](#installation--安装)
-- [Quick Start / 快速开始](#quick-start--快速开始)
-- [Props / 属性](#props--属性)
-- [API](#api)
-- [Nuxt](#nuxt)
-- [iframe & PostMessage](#iframe--postmessage)
-- [i18n / 国际化](#i18n--国际化)
-- [Sub-routes / 子路由](#sub-routes-experimental--子路由试验性)
-- [完整中文说明](#完整中文说明)
-- [License / 许可证](#license--许可证)
+- 🗂️ **路由级标签页** — 每个标签拥有独立的组件和缓存
+- 📚 **栈式页内导航** — 标签内支持 forward / backward，类似浏览器历史栈
+- 🔄 **标签刷新** — 单个刷新或全部刷新，完全重建组件实例
+- 🌐 **iframe 标签** — 支持嵌入 iframe 页面，postMessage 通信
+- 💾 **Session 持久化** — 浏览器刷新后恢复上次激活的标签
+- 📜 **滚动位置记忆** — 切换标签后自动恢复上次滚动位置
+- 🎨 **右键菜单** — 内置关闭/刷新操作
+- 🌍 **国际化** — 内置中英文，可扩展
+- 📦 **Nuxt 3/4 模块** — 开箱即用
 
 ---
 
-## Features / 特性
-
-- **Route-based & iframe tabs** — Tab pages from Vue Router routes or embedded iframes
-- **Tab operations** — Add, close, refresh, batch close (all / left / right / others)
-- **Stack navigation** — Forward / backward within a tab
-- **Scroll position** — Remember and restore scroll per page
-- **Session recovery** — Restore last active tab on refresh
-- **Nuxt 3/4 module** — Official Nuxt integration
-
----
-
-## Installation / 安装
+## 📦 安装
 
 ```bash
-pnpm add vue-stack-tabs
-# or
+# npm
 npm install vue-stack-tabs
-```
 
-**Peer dependencies:** Vue 3, Vue Router 5.x
+# pnpm
+pnpm add vue-stack-tabs
+```
 
 ---
 
-## Quick Start / 快速开始
+## 🚀 快速接入（Vue 3）
 
-### Vue
+### 1. 注册插件
 
 ```ts
 // main.ts
 import { createApp } from 'vue'
 import VueStackTabs from 'vue-stack-tabs'
-import 'vue-stack-tabs/dist/style.css'
+import 'vue-stack-tabs/dist/vue-stack-tabs.css'
 import App from './App.vue'
 import router from './router'
 
@@ -66,652 +46,389 @@ app.use(VueStackTabs)
 app.mount('#app')
 ```
 
-```vue
-<!-- App.vue or layout -->
-<template>
-  <vue-stack-tabs iframe-path="/iframe" />
-</template>
-```
+### 2. 配置路由
 
-Configure the iframe route to match `iframe-path` (see [Route config](#route-config--路由配置)).
-
-### Route Config / 路由配置
-
-The parent route must wrap `<vue-stack-tabs>`, and the iframe path route must be registered.
+标签页依赖 Vue Router，需要一个承载 `<VueStackTabs>` 的父路由：
 
 ```ts
 // router.ts
 import { createRouter, createWebHistory } from 'vue-router'
-import Frame from '@/components/layout/Frame.vue'
-import { IFrame } from 'vue-stack-tabs'
 
 const router = createRouter({
   history: createWebHistory(),
   routes: [
     {
       path: '/',
-      component: Frame,  // contains <vue-stack-tabs>
+      component: () => import('./Layout.vue'),
       children: [
-        { path: '', component: () => import('@/views/home.vue') },
-        { path: 'iframe', component: IFrame },  // must match iframe-path
-        { path: ':pathMatch(.*)', redirect: '/404' }
+        { path: '', component: () => import('./pages/Home.vue') },
+        { path: 'about', component: () => import('./pages/About.vue') },
+        { path: 'settings', component: () => import('./pages/Settings.vue') },
+        // iframe 占位路由（必须）
+        { path: 'iframe', component: () => import('vue-stack-tabs').then((m) => m.IFrame) }
       ]
     }
   ]
 })
+
+export default router
+```
+
+### 3. 使用组件
+
+```vue
+<!-- Layout.vue -->
+<template>
+  <div style="width: 100%; height: 100vh">
+    <VueStackTabs iframe-path="/iframe" :default-tabs="defaultTabs" :max="20" :contextmenu="true" />
+  </div>
+</template>
+
+<script setup lang="ts">
+import type { ITabData } from 'vue-stack-tabs'
+
+const defaultTabs: ITabData[] = [
+  {
+    title: '首页',
+    path: '/',
+    closable: false,
+    refreshable: true
+  }
+]
+</script>
+```
+
+### 4. 打开标签
+
+```ts
+import { useTabActions } from 'vue-stack-tabs'
+
+const { openTab, closeTab, refreshTab } = useTabActions()
+
+// 打开新标签
+openTab({
+  id: 'about', // 可选，不传则自动生成
+  title: '关于',
+  path: '/about',
+  query: { id: '1' } // 可选
+})
+
+// 关闭标签
+closeTab('about')
+
+// 刷新标签
+refreshTab('about')
 ```
 
 ---
 
-## Props / 属性
+## 🚀 快速接入（Nuxt 3/4）
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `defaultTabs` | `ITabData[]` | `[]` | Initial tabs |
-| `max` | `number` | `20` | Max open tabs |
-| `iframePath` | `string` | — | iframe route path **(required)** |
-| `iframeAllowedOrigins` | `string[]` | `[]` | Origins allowed for postMessage `openTab` |
-| `pageTransition` | `string` | `stack-tab-swap` | Page transition name |
-| `tabTransition` | `string` | `stack-tab-zoom` | Tab transition name |
-| `tabScrollMode` | `'wheel' \| 'button' \| 'both'` | `both` | Tab bar scroll mode |
-| `width` / `height` | `string` | `100%` | Component size |
-| `i18n` | `string` | `zh-CN` | Locale (`zh-CN` \| `en`) |
-| `space` | `number` | `300` | Tab scroll step (px) |
-| `globalScroll` | `boolean` | `false` | Use page-level scroll |
-| `contextmenu` | `boolean \| object` | `true` | Right-click menu |
-| `sessionPrefix` | `string` | `''` | Prefix for sessionStorage key |
+### 1. 注册模块
+
+```ts
+// nuxt.config.ts
+export default defineNuxtConfig({
+  modules: ['vue-stack-tabs/nuxt'],
+  vueStackTabs: {
+    locale: 'zh-CN'
+  },
+  css: ['vue-stack-tabs/dist/vue-stack-tabs.css']
+})
+```
+
+### 2. 在 Layout 中使用
+
+```vue
+<!-- layouts/default.vue -->
+<template>
+  <div style="width: 100%; height: 100vh">
+    <VueStackTabs iframe-path="/iframe" :default-tabs="defaultTabs" />
+  </div>
+</template>
+
+<script setup lang="ts">
+import type { ITabData } from 'vue-stack-tabs'
+
+const defaultTabs: ITabData[] = [{ title: '首页', path: '/', closable: false, refreshable: true }]
+</script>
+```
+
+### 3. 页面中使用
+
+```vue
+<!-- pages/index.vue -->
+<template>
+  <div>
+    <h1>首页</h1>
+    <button @click="openTab({ title: '关于', path: '/about' })">打开关于页</button>
+  </div>
+</template>
+
+<script setup>
+import { useTabActions } from 'vue-stack-tabs'
+const { openTab } = useTabActions()
+</script>
+```
 
 ---
 
-## API
+## 📖 API 参考
 
 ### useTabActions
 
+标签级操作封装。
+
 ```ts
 import { useTabActions } from 'vue-stack-tabs'
 
 const {
-  openTab,
-  closeTab,
-  closeAllTabs,
-  refreshTab,
-  refreshAllTabs,
-  activeTab,
-  reset,
-  tabs,
-  openInNewWindow
+  openTab, // (tab: ITabData, renew?: boolean) => Promise<string>
+  closeTab, // (id: string) => string
+  closeAllTabs, // () => void
+  refreshTab, // (id: string) => void
+  refreshAllTabs, // () => void
+  activeTab, // (id: string, isRoute?: boolean) => void
+  reset, // () => void
+  tabs // Ref<ITabItem[]>
 } = useTabActions()
 ```
 
-| Method | Description |
-|--------|-------------|
-| `openTab(tab, renew?)` | Open tab. `renew=true` clears stack and reopens |
-| `closeTab(id)` | Close tab |
-| `closeAllTabs()` | Close all tabs |
-| `refreshTab(id)` | Refresh current page of tab |
-| `refreshAllTabs()` | Refresh all tabs |
-| `activeTab(id, isRoute?)` | Activate tab |
-| `reset()` | Reset all tabs |
-| `openInNewWindow(id)` | Open iframe tab in new window (fallback) |
+| 方法                   | 说明                                                      |
+| ---------------------- | --------------------------------------------------------- |
+| `openTab(tab, renew?)` | 打开新标签。`renew=true` 时若已存在则清空页面栈后重新打开 |
+| `closeTab(id)`         | 关闭指定标签，返回新激活的标签 ID                         |
+| `closeAllTabs()`       | 关闭所有可关闭标签                                        |
+| `refreshTab(id)`       | 刷新指定标签（替换 ULID，重建组件实例）                   |
+| `refreshAllTabs()`     | 刷新所有标签                                              |
+| `activeTab(id)`        | 激活指定标签（切换 Tab）                                  |
+| `reset()`              | 关闭所有标签并重置状态                                    |
 
-**openTab(tab: ITabData)**
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `id` | `string` | No | Tab id (auto-generated if omitted) |
-| `title` | `string` | Yes | Tab title |
-| `path` | `string` | Yes | Route path or iframe URL |
-| `query` | `Record<string, string>` | No | Query params |
-| `iframe` | `boolean` | No | Open as iframe |
-| `iframeRefreshMode` | `'postMessage' \| 'reload'` | No | iframe refresh mode |
-| `closable` | `boolean` | No | Default `true` |
-| `refreshable` | `boolean` | No | Default `true` |
+---
 
 ### useTabRouter
 
-Used **inside tab pages** for in-tab navigation.
+标签内栈式导航，**只能在标签内的页面组件中使用**。
 
 ```ts
 import { useTabRouter } from 'vue-stack-tabs'
 
 const { forward, backward, addScrollTarget } = useTabRouter()
-
-// Forward: push new page
-forward({ path: '/detail', query: { id: '1' } })
-
-// Backward: pop stack
-backward('/list')           // back to first matching path
-backward(1)                 // back 1 step
-backward(2, { foo: 'bar' }) // back 2 steps, pass query to target
-
-// Register scroll containers for position restore
-addScrollTarget('.scroll-area', '#panel')
 ```
+
+| 方法                        | 说明                              |
+| --------------------------- | --------------------------------- |
+| `forward(to)`               | 在当前标签内前进到新页面          |
+| `backward(to, backQuery?)`  | 在当前标签内后退                  |
+| `addScrollTarget(selector)` | 注册需要记忆滚动位置的 DOM 选择器 |
+
+#### forward
+
+```ts
+// 前进到 /detail 页面
+forward({ path: '/detail', query: { id: '123' } })
+
+// 循环压栈自身（同路由可多次入栈，每次创建独立缓存）
+forward({ path: '/list', query: { page: '2' } })
+```
+
+#### backward
+
+```ts
+// 后退 1 步（默认）
+backward(1)
+
+// 后退 N 步
+backward(3)
+
+// 回退到指定路径（自动从栈中查找）
+backward('/list')
+
+// 带参回退（目标页通过 props._back 接收）
+backward('/list', { result: 'success', data: { id: 1 } })
+```
+
+**目标页接收参数：**
+
+```vue
+<script setup>
+// 声明 props 接收后退参数
+defineProps<{ _back?: { result: string; data: any } }>()
+</script>
+```
+
+---
 
 ### useTabLoading
 
-```ts
-import { useTabLoading } from 'vue-stack-tabs'
-
-const { openTabLoading, closeTabLoading } = useTabLoading()
-```
-
-### Initial Tabs / 初始化页签
-
-```vue
-<vue-stack-tabs
-  iframe-path="/iframe"
-  :default-tabs="[
-    { id: 'home', title: 'Home', path: '/', closable: false },
-    { title: 'About', path: '/about' }
-  ]"
-/>
-```
-
-> The first tab should be non-closable (`closable: false`).
-
----
-
-## Nuxt
-
-### Module (recommended)
-
-```ts
-// nuxt.config.ts
-export default defineNuxtConfig({
-  modules: ['vue-stack-tabs/nuxt'],
-  vueStackTabs: {
-    locale: 'zh-CN'
-  }
-})
-```
-
-The module auto-imports `useTabActions`, `useTabRouter`, `useTabLoading`.
-
-### iframe route in Nuxt
-
-```ts
-// nuxt.config.ts
-export default defineNuxtConfig({
-  hooks: {
-    'pages:extend'(pages) {
-      pages.push({
-        name: 'iframe',
-        path: '/iframe',
-        file: '~/components/IFrame.vue'  // minimal component with useTabRouter()
-      })
-    }
-  }
-})
-```
-
----
-
-## iframe & PostMessage
-
-### Open tab from iframe
-
-```ts
-import { postOpenTab } from 'vue-stack-tabs'
-
-postOpenTab({
-  title: 'New Page',
-  path: '/detail',
-  query: { id: '123' },
-  closable: true,
-  refreshable: true
-})
-```
-
-Parent must allow the iframe origin if cross-origin:
-
-```vue
-<vue-stack-tabs
-  iframe-path="/iframe"
-  :iframe-allowed-origins="['https://iframe-origin.com']"
-/>
-```
-
-### Receive refresh in iframe
-
-```ts
-import { onRefreshRequest } from 'vue-stack-tabs'
-import { onUnmounted } from 'vue'
-
-const unlisten = onRefreshRequest()  // defaults to location.reload()
-onUnmounted(unlisten)
-```
-
-### Cross-origin iframe (reload mode)
-
-When the iframe is cross-origin and you cannot modify its code:
-
-```ts
-openTab({
-  title: 'External',
-  path: 'https://example.com',
-  iframe: true,
-  iframeRefreshMode: 'reload'
-})
-```
-
----
-
-## i18n / 国际化
-
-Built-in: `zh-CN`, `en`.
-
-```vue
-<vue-stack-tabs iframe-path="/iframe" i18n="zh-CN" />
-```
-
-### Custom messages
-
-```ts
-app.use(VueStackTabs, [{
-  locale: 'zh-CN',
-  messages: {
-    VueStackTab: {
-      close: 'Close',
-      closeLefts: 'Close left',
-      closeRights: 'Close right',
-      closeOthers: 'Close others',
-      closeAll: 'Close all',
-      reload: 'Reload',
-      reloadAll: 'Reload all',
-      maximum: 'Maximize',
-      restore: 'Restore',
-      undefined: 'Undefined',
-      loading: 'Loading',
-      openInNewWindow: 'Open in new window'
-    }
-  }
-}])
-```
-
----
-
-## Slots
-
-| Slot | Description |
-|------|-------------|
-| `leftButton` | Left side of tab bar |
-| `rightButton` | Right side of tab bar |
-
----
-
-## Events
-
-| Event | Payload | Description |
-|-------|---------|-------------|
-| `onActive` | `id: string` | Fired when a tab is activated |
-| `onPageLoaded` | — | Fired when page component is loaded |
-
----
-
-## Exports
-
-```ts
-import VueStackTabs, {
-  useTabActions,
-  useTabRouter,
-  useTabLoading,
-  TabHeaderButton,
-  IFrame,
-  postOpenTab,
-  onRefreshRequest,
-  MSG_REFRESH,
-  MSG_OPEN_TAB
-} from 'vue-stack-tabs'
-import type { ITabData, ITabBase, IframeOpenTabPayload } from 'vue-stack-tabs'
-```
-
----
-
-## Sub-routes (Experimental / 子路由试验性)
-
-Nested routes with `children` and `forward`/`backward` are supported. See [SUBROUTE_EXPERIMENTAL.md](./docs/SUBROUTE_EXPERIMENTAL.md) for details. This feature is experimental.
-
----
-
-## Development / 开发
-
-```bash
-pnpm install
-pnpm run dev        # Demo app
-pnpm run test       # Unit tests
-pnpm run test:prepack   # Pre-pack: unit + Vue + Nuxt (source)
-pnpm run test:packaged # Post-pack: Vue + Nuxt (dist)
-pnpm run docs:dev   # Docs preview
-```
-
-See [CONTRIBUTING.md](./CONTRIBUTING.md). [AGENTS.md](./AGENTS.md) for AI assistants.
-
----
-
-## 完整中文说明
-
-### 安装与引入
-
-```ts
-// main.ts
-import { createApp } from 'vue'
-import VueStackTabs from 'vue-stack-tabs'
-import 'vue-stack-tabs/dist/style.css'
-import App from './App.vue'
-import router from './router'
-
-const app = createApp(App)
-app.use(router)
-app.use(VueStackTabs)
-app.mount('#app')
-```
-
-**依赖：** Vue 3、Vue Router 5.x
-
-### 快速开始
-
-```vue
-<!-- App.vue 或布局组件 -->
-<template>
-  <vue-stack-tabs iframe-path="/iframe" />
-</template>
-```
-
-父路由需包裹 `<vue-stack-tabs>`，并注册与 `iframe-path` 一致的 iframe 路由。
-
-### 路由配置
-
-```ts
-// router.ts
-import { createRouter, createWebHistory } from 'vue-router'
-import Frame from '@/components/layout/Frame.vue'
-import { IFrame } from 'vue-stack-tabs'
-
-const router = createRouter({
-  history: createWebHistory(),
-  routes: [
-    {
-      path: '/',
-      component: Frame,  // 内部包含 <vue-stack-tabs>
-      children: [
-        { path: '', component: () => import('@/views/home.vue') },
-        { path: 'iframe', component: IFrame },  // 需与 iframe-path 一致
-        { path: ':pathMatch(.*)', redirect: '/404' }
-      ]
-    }
-  ]
-})
-```
-
-### 属性
-
-| 属性 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
-| `defaultTabs` | `ITabData[]` | `[]` | 初始页签 |
-| `max` | `number` | `20` | 最大打开数量 |
-| `iframePath` | `string` | — | iframe 路由路径 **（必填）** |
-| `iframeAllowedOrigins` | `string[]` | `[]` | 允许 postMessage 调用 openTab 的 iframe 来源 |
-| `pageTransition` | `string` | `stack-tab-swap` | 页面转场效果 |
-| `tabTransition` | `string` | `stack-tab-zoom` | 标签转场效果 |
-| `tabScrollMode` | `'wheel' \| 'button' \| 'both'` | `both` | 标签栏滚动方式 |
-| `width` / `height` | `string` | `100%` | 组件尺寸 |
-| `i18n` | `string` | `zh-CN` | 语言（`zh-CN` \| `en`） |
-| `space` | `number` | `300` | 标签滚动步长（px） |
-| `globalScroll` | `boolean` | `false` | 是否使用页面级滚动 |
-| `contextmenu` | `boolean \| object` | `true` | 右键菜单 |
-| `sessionPrefix` | `string` | `''` | sessionStorage key 前缀 |
-
-### API
-
-#### useTabActions
-
-```ts
-import { useTabActions } from 'vue-stack-tabs'
-
-const {
-  openTab,
-  closeTab,
-  closeAllTabs,
-  refreshTab,
-  refreshAllTabs,
-  activeTab,
-  reset,
-  tabs,
-  openInNewWindow
-} = useTabActions()
-```
-
-| 方法 | 说明 |
-|------|------|
-| `openTab(tab, renew?)` | 打开标签；`renew=true` 时清空栈并重新打开 |
-| `closeTab(id)` | 关闭指定标签 |
-| `closeAllTabs()` | 关闭所有标签 |
-| `refreshTab(id)` | 刷新指定标签当前页 |
-| `refreshAllTabs()` | 刷新所有标签 |
-| `activeTab(id, isRoute?)` | 激活指定标签 |
-| `reset()` | 重置所有标签 |
-| `openInNewWindow(id)` | iframe 标签在新窗口打开（无法嵌入时降级） |
-
-**openTab(tab: ITabData)**
-
-| 字段 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| `id` | `string` | 否 | 标签 id，不填则自动生成 |
-| `title` | `string` | 是 | 标签名称 |
-| `path` | `string` | 是 | 路由路径或 iframe URL |
-| `query` | `Record<string, string>` | 否 | 查询参数 |
-| `iframe` | `boolean` | 否 | 是否以 iframe 打开 |
-| `iframeRefreshMode` | `'postMessage' \| 'reload'` | 否 | iframe 刷新方式 |
-| `closable` | `boolean` | 否 | 默认 `true` |
-| `refreshable` | `boolean` | 否 | 默认 `true` |
-
-#### useTabRouter
-
-在**标签内的页面**中使用，用于标签内前进/后退。
-
-```ts
-import { useTabRouter } from 'vue-stack-tabs'
-
-const { forward, backward, addScrollTarget } = useTabRouter()
-
-// 前进：入栈新页面
-forward({ path: '/detail', query: { id: '1' } })
-
-// 后退：出栈
-backward('/list')           // 回退到首个匹配路径
-backward(1)                 // 回退 1 步
-backward(2, { foo: 'bar' }) // 回退 2 步，并向目标页传递 query
-
-// 注册滚动容器（用于位置记忆与恢复）
-addScrollTarget('.scroll-area', '#panel')
-```
-
-#### useTabLoading
+页面加载状态控制，**只能在标签内的页面组件中使用**。
 
 ```ts
 import { useTabLoading } from 'vue-stack-tabs'
 
 const { openTabLoading, closeTabLoading } = useTabLoading()
+
+// 显示加载遮罩
+openTabLoading()
+
+// 异步操作完成后关闭
+fetchData().finally(() => closeTabLoading())
 ```
 
-#### 初始化页签
+> 组件卸载时自动关闭 Loading，无需手动清理。
 
-```vue
-<vue-stack-tabs
-  iframe-path="/iframe"
-  :default-tabs="[
-    { id: 'home', title: '首页', path: '/', closable: false },
-    { title: '关于', path: '/about' }
-  ]"
-/>
-```
+---
 
-> 第一个页签建议设为不可关闭（`closable: false`）。
+## ⚙️ Props
 
-### Nuxt
+`<VueStackTabs>` 组件属性：
 
-#### 模块方式（推荐）
+| Prop                   | 类型                        | 默认值                  | 说明                                              |
+| ---------------------- | --------------------------- | ----------------------- | ------------------------------------------------- |
+| `iframePath`           | `string`                    | **必填**                | iframe 占位路由的路径                             |
+| `defaultTabs`          | `ITabData[]`                | `[]`                    | 初始标签列表                                      |
+| `max`                  | `number`                    | `20`                    | 最大标签数量                                      |
+| `contextmenu`          | `boolean \| object`         | `true`                  | 是否启用右键菜单                                  |
+| `pageTransition`       | `string`                    | `'stack-tab-swap'`      | 前进时的页面转场动画名                            |
+| `pageTransitionBack`   | `string`                    | `'stack-tab-swap-back'` | 后退时的页面转场动画名                            |
+| `tabTransition`        | `string \| TransitionProps` | `'stack-tab-zoom'`      | 标签增删时的过渡效果                              |
+| `tabScrollMode`        | `TabScrollMode`             | `'both'`                | 标签栏滚动方式：`'wheel'` / `'button'` / `'both'` |
+| `width`                | `string`                    | `'100%'`                | 容器宽度                                          |
+| `height`               | `string`                    | `'100%'`                | 容器高度                                          |
+| `i18n`                 | `string`                    | `'zh-CN'`               | 国际化语言                                        |
+| `globalScroll`         | `boolean`                   | `false`                 | 是否使用页面级滚动记忆                            |
+| `sessionPrefix`        | `string`                    | `''`                    | sessionStorage 键前缀                             |
+| `iframeAllowedOrigins` | `string[]`                  | 同源                    | 允许 iframe postMessage 的来源列表                |
 
-```ts
-// nuxt.config.ts
-export default defineNuxtConfig({
-  modules: ['vue-stack-tabs/nuxt'],
-  vueStackTabs: {
-    locale: 'zh-CN'
-  }
-})
-```
+---
 
-模块会自动导入 `useTabActions`、`useTabRouter`、`useTabLoading`。
+## 🎯 Events
 
-#### Nuxt 中配置 iframe 路由
+| 事件           | 参数           | 说明                   |
+| -------------- | -------------- | ---------------------- |
+| `onActive`     | `(id: string)` | 标签被激活时触发       |
+| `onPageLoaded` | —              | 页面组件加载完成时触发 |
 
-```ts
-// nuxt.config.ts
-export default defineNuxtConfig({
-  hooks: {
-    'pages:extend'(pages) {
-      pages.push({
-        name: 'iframe',
-        path: '/iframe',
-        file: '~/components/IFrame.vue'  // 最小组件，含 useTabRouter() 即可
-      })
-    }
-  }
-})
-```
+---
 
-### iframe 与父窗口通信
+## 🖼️ iframe 标签页
 
-#### iframe 内打开新标签
-
-```ts
-import { postOpenTab } from 'vue-stack-tabs'
-
-postOpenTab({
-  title: '新页面',
-  path: '/detail',
-  query: { id: '123' },
-  closable: true,
-  refreshable: true
-})
-```
-
-跨域时父应用需配置 `iframeAllowedOrigins`：
-
-```vue
-<vue-stack-tabs
-  iframe-path="/iframe"
-  :iframe-allowed-origins="['https://iframe来源域名']"
-/>
-```
-
-#### iframe 内接收刷新指令
-
-```ts
-import { onRefreshRequest } from 'vue-stack-tabs'
-import { onUnmounted } from 'vue'
-
-const unlisten = onRefreshRequest()  // 默认执行 location.reload()
-onUnmounted(unlisten)
-```
-
-#### 跨域 iframe（reload 模式）
-
-若 iframe 为跨域且无法修改其代码，可指定 `iframeRefreshMode: 'reload'`，刷新时直接重载 iframe：
+### 打开 iframe 标签
 
 ```ts
 openTab({
   title: '外部页面',
   path: 'https://example.com',
-  iframe: true,
-  iframeRefreshMode: 'reload'
+  iframe: true
 })
 ```
 
-### 国际化
+### iframe 内页面打开标签
 
-内置 `zh-CN`、`en`。
-
-```vue
-<vue-stack-tabs iframe-path="/iframe" i18n="zh-CN" />
-```
-
-#### 自定义文案
+在 iframe 内的页面中，可以通过 `postMessage` 打开宿主的标签：
 
 ```ts
-app.use(VueStackTabs, [{
-  locale: 'zh-CN',
-  messages: {
-    VueStackTab: {
-      close: '关闭',
-      closeLefts: '关闭左侧',
-      closeRights: '关闭右侧',
-      closeOthers: '关闭其他',
-      closeAll: '关闭全部',
-      reload: '刷新',
-      reloadAll: '刷新全部',
-      maximum: '最大化',
-      restore: '还原',
-      undefined: '未定义',
-      loading: '加载中',
-      openInNewWindow: '新窗口打开'
-    }
-  }
-}])
+import { postOpenTab } from 'vue-stack-tabs'
+
+// 在 iframe 内调用
+postOpenTab({
+  title: '新页面',
+  path: '/detail',
+  query: { id: '1' }
+})
 ```
 
-### 插槽
+### iframe 刷新
 
-| 插槽 | 说明 |
-|------|------|
-| `leftButton` | 标签栏左侧 |
-| `rightButton` | 标签栏右侧 |
+iframe 刷新有两种模式：
 
-### 事件
-
-| 事件 | 参数 | 说明 |
-|------|------|------|
-| `onActive` | `id: string` | 标签被激活时触发 |
-| `onPageLoaded` | — | 页面组件加载完成时触发 |
-
-### 导出
+- `postMessage`（默认）：向 iframe 发送消息，由内页自行刷新
+- `reload`：重建 iframe DOM（适用于跨域页面）
 
 ```ts
-import VueStackTabs, {
-  useTabActions,
-  useTabRouter,
-  useTabLoading,
-  TabHeaderButton,
-  IFrame,
-  postOpenTab,
-  onRefreshRequest,
-  MSG_REFRESH,
-  MSG_OPEN_TAB
-} from 'vue-stack-tabs'
-import type { ITabData, ITabBase, IframeOpenTabPayload } from 'vue-stack-tabs'
+// iframe 内页面监听刷新请求
+import { onRefreshRequest } from 'vue-stack-tabs'
+
+onRefreshRequest(() => {
+  // 执行刷新逻辑
+  location.reload()
+})
 ```
-
-### 子路由（试验性）
-
-支持路由 `children` 与 `forward`/`backward` 多级导航。详见 [SUBROUTE_EXPERIMENTAL.md](./docs/SUBROUTE_EXPERIMENTAL.md)。该功能为试验性。
-
-### 开发
-
-```bash
-pnpm install
-pnpm run dev           # 演示应用
-pnpm run test          # 单元测试
-pnpm run test:prepack  # 打包前：单元 + Vue + Nuxt（源码）
-pnpm run test:packaged # 打包后：Vue + Nuxt（dist）
-pnpm run docs:dev      # 文档预览
-```
-
-参见 [CONTRIBUTING.md](./CONTRIBUTING.md)。[AGENTS.md](./AGENTS.md) 供 AI 助手参考。
 
 ---
 
-## License / 许可证
+## 🌍 国际化
 
-Apache License 2.0
+内置语言：`zh-CN`（中文）、`en-US`（英文）。
+
+```ts
+// 切换语言
+app.use(VueStackTabs, [{ locale: 'en-US' }])
+```
+
+自定义语言包：
+
+```ts
+app.use(VueStackTabs, [
+  {
+    locale: 'ja-JP',
+    messages: {
+      'VueStackTab.close': '閉じる',
+      'VueStackTab.refresh': '更新'
+      // ...
+    }
+  }
+])
+```
+
+---
+
+## 📄 类型定义
+
+```ts
+/** 打开标签时传入的数据 */
+interface ITabData {
+  id?: string // 标签 ID（不传则自动生成 ULID）
+  title: string // 标签标题
+  path: string // 路由路径或 iframe URL
+  query?: Record<string, string> // 路由参数
+  closable?: boolean // 是否可关闭（默认 true）
+  refreshable?: boolean // 是否可刷新（默认 true）
+  iframe?: boolean // 是否为 iframe 标签（默认 false）
+  iframeRefreshMode?: 'postMessage' | 'reload' // iframe 刷新方式
+}
+
+/** 标签栏滚动模式 */
+enum TabScrollMode {
+  WHEEL = 'wheel',
+  BUTTON = 'button',
+  BOTH = 'both'
+}
+```
+
+---
+
+## 📁 项目结构
+
+```
+src/lib/
+├── StackTabs.vue           # 主组件
+├── index.ts                # 入口与导出
+├── hooks/                  # 核心逻辑
+│   ├── useTabActions.ts    # 对外 API
+│   ├── useTabRouter.ts     # 栈内导航
+│   ├── useTabLoading.ts    # Loading 状态
+│   └── useTabPanel.tsx     # 核心引擎
+├── model/TabModel.ts       # 类型定义
+├── components/             # UI 组件
+├── nuxt/                   # Nuxt 模块
+└── assets/style/           # 样式
+```
+
+详细架构设计请参阅 [`ARCHITECTURE.md`](./ARCHITECTURE.md)。
+
+---
+
+## 📝 License
+
+[LGPL-2.1](./LICENSE)

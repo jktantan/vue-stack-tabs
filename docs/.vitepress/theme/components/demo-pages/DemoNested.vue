@@ -4,10 +4,10 @@
     <p>演示在同一个标签内的前进和后退导航。</p>
     
     <div class="nested-nav">
-      <button @click="goHome" class="btn">首页 Home</button>
-      <button @click="goDetail(1)" class="btn">详情 1</button>
-      <button @click="goDetail(2)" class="btn">详情 2</button>
-      <button @click="goDetail(3)" class="btn">详情 3</button>
+      <button class="btn" @click="goHome">首页 Home</button>
+      <button class="btn" @click="goDetail(1)">详情 1</button>
+      <button class="btn" @click="goDetail(2)">详情 2</button>
+      <button class="btn" @click="goDetail(3)">详情 3</button>
     </div>
     
     <div class="nested-content">

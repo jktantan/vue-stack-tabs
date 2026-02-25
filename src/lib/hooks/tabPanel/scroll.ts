@@ -10,7 +10,9 @@ export const restoreScroller = (pageCacheId: string) => {
   const positions = scrollPositionsByPageId.get(pageCacheId)
   if (!positions) return
   for (const [sel, pos] of positions) {
-    const el = document.querySelector(sel) as HTMLElement | null
+    const el = sel.startsWith('#')
+      ? document.getElementById(sel.slice(1))
+      : (document.querySelector(sel) as HTMLElement | null)
     if (el) {
       el.scrollTop = pos.top
       el.scrollLeft = pos.left
@@ -23,7 +25,9 @@ export const saveScroller = (pageCacheId: string) => {
   const positions = scrollPositionsByPageId.get(pageCacheId)
   if (!positions) return
   for (const sel of positions.keys()) {
-    const el = document.querySelector(sel) as HTMLElement | null
+    const el = sel.startsWith('#')
+      ? document.getElementById(sel.slice(1))
+      : (document.querySelector(sel) as HTMLElement | null)
     positions.set(sel, {
       top: el?.scrollTop ?? 0,
       left: el?.scrollLeft ?? 0

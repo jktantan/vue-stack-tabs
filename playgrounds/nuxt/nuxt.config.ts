@@ -4,26 +4,18 @@ import { dirname } from 'node:path'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const rootDir = resolve(__dirname, '../..')
-const useSource = process.env.USE_SOURCE === '1' || process.env.USE_SOURCE === 'true'
 
-export default defineNuxtConfig(
-  useSource
-    ? {
-        modules: [resolve(rootDir, 'src/lib/nuxt/module.ts')],
-        vueStackTabs: { locale: 'zh-CN' },
-        vite: {
-          resolve: {
-            alias: {
-              'vue-stack-tabs': resolve(rootDir, 'src/lib/index.ts'),
-              '@': resolve(rootDir, 'src')
-            }
-          }
-        },
-        css: [resolve(rootDir, 'src/lib/assets/style/index.scss')]
+export default defineNuxtConfig({
+  // 开发阶段默认使用源码模式
+  modules: [resolve(rootDir, 'src/lib/nuxt/module.ts')],
+  vueStackTabs: { locale: 'zh-CN' },
+  vite: {
+    resolve: {
+      alias: {
+        'vue-stack-tabs': resolve(rootDir, 'src/lib/index.ts'),
+        '@': resolve(rootDir, 'src')
       }
-    : {
-        modules: ['vue-stack-tabs/nuxt'],
-        vueStackTabs: { locale: 'zh-CN' },
-        css: ['vue-stack-tabs/dist/vue-stack-tabs.css']
-      }
-)
+    }
+  },
+  css: [resolve(rootDir, 'src/lib/assets/style/index.scss')]
+})

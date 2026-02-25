@@ -22,21 +22,11 @@ describe('tabInfoEncoder', () => {
     expect(decoded.refreshable).toBe(true)
   })
 
-  it('createPageId 相同输入产生相同输出', () => {
-    const id1 = createPageId('t1', '/path', { a: '1', b: '2' })
-    const id2 = createPageId('t1', '/path', { b: '2', a: '1' })
-    expect(id1).toBe(id2)
-  })
-
-  it('createPageId 不同 tabId 产生不同输出', () => {
-    const id1 = createPageId('t1', '/path', {})
-    const id2 = createPageId('t2', '/path', {})
+  it('createPageId 每次生成唯一 ULID', () => {
+    const id1 = createPageId()
+    const id2 = createPageId()
+    expect(id1).toBeTruthy()
+    expect(id2).toBeTruthy()
     expect(id1).not.toBe(id2)
-  })
-
-  it('createPageId 排除 __ 前缀的 query', () => {
-    const withTab = createPageId('t1', '/path', { __tab: 'x', a: '1' })
-    const withoutTab = createPageId('t1', '/path', { a: '1' })
-    expect(withTab).toBe(withoutTab)
   })
 })

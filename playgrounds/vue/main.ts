@@ -1,6 +1,5 @@
 import { createApp } from 'vue'
 import VueStackTabs from 'vue-stack-tabs'
-import 'vue-stack-tabs/dist/style.css'
 import App from './App.vue'
 import router from './router'
 

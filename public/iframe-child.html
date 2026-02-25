@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Iframe 子页面测试</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        padding: 20px;
+        background: #f0f9eb;
+      }
+      .card {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+      }
+      button {
+        padding: 10px 20px;
+        background: #409eff;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      input {
+        padding: 8px;
+        width: 200px;
+        margin-right: 10px;
+        border: 1px solid #dcdfe6;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h2>此页面运行在隔离的 iframe 中</h2>
+      <p>页面加载时间: <span id="time"></span></p>
+      <p>
+        用于测试 iframe 页面的加载、刷新隔离，以及通过 `postMessage` 向外层通信请求打开新 Tab
+        的功能。
+      </p>
+
+      <div style="margin: 20px 0">
+        <label>隔离缓存测试输入框：</label>
+        <input type="text" id="ipt" placeholder="切走该页签是否会销毁内容？" />
+      </div>
+
+      <div style="margin: 20px 0">
+        <button onclick="requestNewTab()">向父级发送 postMessage 请求在外部打开新 Tab</button>
+      </div>
+    </div>
+
+    <script>
+      document.getElementById('time').innerText = new Date().toLocaleTimeString()
+
+      function requestNewTab() {
+        window.parent.postMessage(
+          {
+            type: 'openTab',
+            payload: {
+              id: 'iframe_triggered_tab',
+              title: 'IFrame 弹出的新页签',
+              path: '/demo/page2',
+              closable: true
+            },
+            refresh: true
+          },
+          '*'
+        )
+      }
+    </script>
+  </body>
+</html>

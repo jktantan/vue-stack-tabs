@@ -22,7 +22,7 @@ export const tabIdsToEvict = new Set<string>()
 /** 刷新计数器，变更时触发 component :key 变化 */
 export const refreshKey = ref<number>(0)
 /** 刷新时临时加入 keep-alive exclude 的缓存 ID */
-export const excludedCacheIdsForRefresh = ref<string[]>([])
+// 改用 ULID 的新架构，无需黑名单隔离机制
 /** pageCacheId -> Map<selector, { top, left }> 滚动位置存储 */
 export const scrollPositionsByPageId = new Map<string, Map<string, { top: number; left: number }>>()
 /** 是否已完成初始化 */

@@ -5,7 +5,5 @@ export default defineNuxtPlugin((nuxtApp) => {
     locale?: string
   }
 
-  nuxtApp.vueApp.use(VueStackTabs, {
-    locale: config?.locale ?? 'zh-CN'
-  })
+  nuxtApp.vueApp.use(VueStackTabs, [{ locale: config?.locale ?? 'zh-CN' }])
 })

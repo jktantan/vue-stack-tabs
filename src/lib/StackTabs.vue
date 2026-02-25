@@ -25,9 +25,8 @@ import { useTabEmitter } from '@/lib/hooks/useTabEventBus'
 const {
   tabs,
   caches,
-  refreshKey,
-  excludedCacheIdsForRefresh,
   iframeRefreshKeys,
+  activeCacheKey,
   destroy,
   addPage,
   initialize,
@@ -208,10 +207,17 @@ const handleRefreshIframePostMessage = (payload: unknown) => {
   const iframe = iframeElRefs[tabId]
   if (iframe?.contentWindow) {
     try {
+      console.log(
+        `[vue-stack-tabs] Sending 'vue-stack-tabs:refresh' postMessage to iframe: ${tabId}`
+      )
       iframe.contentWindow.postMessage({ type: 'vue-stack-tabs:refresh' }, '*')
-    } catch {
-      /* 跨域时可能失败，忽略 */
+    } catch (e) {
+      console.warn(`[vue-stack-tabs] Failed to send refresh postMessage to iframe: ${tabId}`, e)
     }
+  } else {
+    console.warn(
+      `[vue-stack-tabs] IFrame element not found for tabId: ${tabId} when trying to refresh.`
+    )
   }
 }
 
@@ -274,38 +280,29 @@ onBeforeUnmount(() => {
     <div class="stack-tab__container">
       <router-view v-slot="{ Component, route }">
         <transition :name="pageSwitch" appear mode="out-in">
-          <keep-alive :include="caches" :exclude="excludedCacheIdsForRefresh">
+          <keep-alive :include="caches">
             <component
               :is="tabWrapper(route, Component)"
-              :key="`${route.fullPath}_${refreshKey}`"
+              :key="activeCacheKey"
+              :vnode="Component"
               @on-loaded="onComponentLoaded"
             />
           </keep-alive>
         </transition>
       </router-view>
-      <transition-group
-        :name="pageTransition"
-        tag="div"
-        class="stack-tab__iframes"
-        appear
-      >
+      <transition-group :name="pageTransition" tag="div" class="stack-tab__iframes" appear>
         <Transition
           v-for="frame of iframeTabs"
           :key="getIframeKey(frame)"
           :name="pageTransition"
           appear
         >
-          <div
-            v-show="frame.active"
-            class="stack-tab__iframe-wrapper"
-          >
-            <div
-              v-show="iframeLoadingStates[frame.id] !== false"
-              class="stack-tab__iframe-loading"
-            >
+          <div v-show="frame.active" class="stack-tab__iframe-wrapper">
+            <div v-show="iframeLoadingStates[frame.id] !== false" class="stack-tab__iframe-loading">
               <span class="stack-tab__iframe-loading-text">{{ t('VueStackTab.loading') }}</span>
             </div>
             <iframe
+              :key="iframeRefreshKeys[frame.id] || 0"
               :ref="(el) => setIframeRef(frame.id, el as HTMLIFrameElement | null)"
               class="stack-tab__iframe"
               :src="getIframeSrc(frame)"

@@ -81,6 +81,8 @@ export interface ITabPage {
   tabId: string
   path: string
   query?: Record<string, string>
+  /** 该页面从别的页面被后退唤醒时附带的临时闭包参数，不污染 URL */
+  _backParams?: Record<string, unknown>
 }
 /** 右键菜单项：图标、标题、回调、禁用条件 */
 export interface IContextMenu {
@@ -100,7 +102,7 @@ export interface IContextMenu {
 // }
 /** 使用 Map 实现的栈结构，用于标签内的 pages 页面栈 */
 export class Stack<T> {
-  private items: Map<number, T>
+  protected items: Map<number, T>
 
   constructor(items?: T[]) {
     this.items = new Map()
@@ -160,14 +162,26 @@ export class Stack<T> {
   }
 
   /**
-   * @description: 清空栈
+   * @description: 清空栈内存
    */
   clear() {
     this.items.clear()
   }
 
-  list() {
+  /**
+   * @description: 将栈中的元素转换为数组
+   * @return {T[]}
+   */
+  list(): T[] {
     return Array.from(this.items.values())
+  }
+
+  /**
+   * @description: 用于控制 JSON.stringify 时的序列化输出
+   * @return {T[]}
+   */
+  toJSON(): T[] {
+    return this.list()
   }
 
   /**
@@ -175,17 +189,6 @@ export class Stack<T> {
    * @return {String}
    */
   toString(): string {
-    if (this.isEmpty()) {
-      return ''
-    }
-    let result: string = ''
-    this.items.forEach((value, key) => {
-      result = `${result}${key === 0 ? '' : ', '}${value}`
-    })
-    return result
-  }
-  toJSON() {
-    // return Object.fromEntries(this.items)
-    return Array.from(this.items.values())
+    return this.list().toString()
   }
 }

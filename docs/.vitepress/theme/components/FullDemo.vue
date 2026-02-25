@@ -11,22 +11,22 @@
     <div class="demo-controls">
       <h3>快速操作 / Quick Actions</h3>
       <div class="control-group">
-        <button @click="openHome" class="btn">🏠 首页 Home</button>
-        <button @click="openAbout" class="btn">📄 关于 About</button>
-        <button @click="openContact" class="btn">📧 联系 Contact</button>
+        <button class="btn" @click="openHome">🏠 首页 Home</button>
+        <button class="btn" @click="openAbout">📄 关于 About</button>
+        <button class="btn" @click="openContact">📧 联系 Contact</button>
       </div>
       <div class="control-group">
-        <button @click="openMultipleTabs" class="btn">📑 打开多个标签</button>
-        <button @click="refreshCurrentTab" class="btn">🔄 刷新当前</button>
-        <button @click="closeAllTabs" class="btn">❌ 关闭全部</button>
+        <button class="btn" @click="openMultipleTabs">📑 打开多个标签</button>
+        <button class="btn" @click="refreshCurrentTab">🔄 刷新当前</button>
+        <button class="btn" @click="closeAllTabs">❌ 关闭全部</button>
       </div>
       <div class="control-group">
-        <button @click="openScrollDemo" class="btn">📜 滚动演示</button>
-        <button @click="openFormDemo" class="btn">📝 表单演示</button>
-        <button @click="openNestedRoutes" class="btn">🔗 嵌套路由</button>
+        <button class="btn" @click="openScrollDemo">📜 滚动演示</button>
+        <button class="btn" @click="openFormDemo">📝 表单演示</button>
+        <button class="btn" @click="openNestedRoutes">🔗 嵌套路由</button>
       </div>
       <div class="control-group">
-        <button @click="openDynamicTab" class="btn">🎲 动态标签</button>
+        <button class="btn" @click="openDynamicTab">🎲 动态标签</button>
       </div>
     </div>
   </div>

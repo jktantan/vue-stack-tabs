@@ -1,7 +1,5 @@
 import type { ITabBase } from '../model/TabModel'
 import { compressToEncodedURIComponent, decompressFromEncodedURIComponent } from 'lz-string'
-import Hex from 'hex-encoding'
-import { blake3 } from '@noble/hashes/blake3.js'
 
 /**
  * 标签信息编解码器
@@ -15,7 +13,8 @@ import { blake3 } from '@noble/hashes/blake3.js'
  * @param tabData 标签基础数据
  */
 export const encodeTabInfo = (tabData: ITabBase): string => {
-  const mode = (tabData as { iframeRefreshMode?: string }).iframeRefreshMode === 'reload' ? 'R' : 'P'
+  const mode =
+    (tabData as { iframeRefreshMode?: string }).iframeRefreshMode === 'reload' ? 'R' : 'P'
   const info = `${tabData.id}|${tabData.title}|${tabData.iframe ? 'Y' : 'N'}|${tabData.closable ? 'Y' : 'N'}|${tabData.refreshable ? 'Y' : 'N'}|${mode}`
   return compressToEncodedURIComponent(info)
 }
@@ -35,31 +34,10 @@ export const decodeTabInfo = (encoded: string): ITabBase => {
   }
 }
 
+import { ulid } from 'ulid'
+
 /**
- * 根据 tabId + path + query 生成页面缓存 ID
- * 用于 keep-alive 的 include 和 exclude，需稳定且唯一
+ * 生成页面缓存 ID (CacheName)
+ * 采用全局唯一的 ULID 确保同一个路由在栈内打开多少次都是绝对隔离的不同实例。
  */
-export const createPageId = (tabId: string, path: string, query: object): string => {
-  const queryEntries: { key: string; value: string }[] = []
-  type ObjectKey = keyof typeof query
-  for (const key in query) {
-    if (!key.startsWith('__')) {
-      queryEntries.push({
-        key,
-        value: query[key as ObjectKey]
-      })
-    }
-  }
-  queryEntries.sort((a, b) => {
-    let result = 0
-    if (a.key > b.key) {
-      result = 1
-    } else if (a.key < b.key) {
-      result = -1
-    }
-    return result
-  })
-  const msg = new TextEncoder().encode(`${tabId}|${path}|${JSON.stringify(queryEntries)}`)
-  const hash = blake3(msg)
-  return Hex.encode(hash)
-}
+export const createPageId = (): string => ulid()

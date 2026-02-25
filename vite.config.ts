@@ -11,7 +11,7 @@ import loadVersion from 'vite-plugin-package-version'
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   server: {
-    port: 5173
+    port: 8086
   },
   plugins: [
     vue(),

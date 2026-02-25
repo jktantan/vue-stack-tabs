@@ -9,10 +9,14 @@ const router = createRouter({
       component: Layout,
       children: [
         { path: '', component: () => import('./pages/Home.vue') },
-        { path: 'about', component: () => import('./pages/About.vue') }
+        { path: 'about', component: () => import('./pages/About.vue') },
+        { path: 'detail', component: () => import('./pages/Detail.vue') },
+        {
+          path: 'iframe',
+          component: () => import('vue-stack-tabs').then((m) => m.IFrame)
+        }
       ]
-    },
-    { path: '/iframe', component: { template: '<div>iframe placeholder</div>' } }
+    }
   ]
 })
 

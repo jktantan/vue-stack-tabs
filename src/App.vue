@@ -6,66 +6,47 @@
 <script setup lang="ts">
 import { useTabActions } from '@/lib'
 import { ulid } from 'ulid'
+import { onMounted, onUnmounted } from 'vue'
 const { openTab } = useTabActions()
-/** 打开 iframe 标签 */
-const openframe = (id: string) => {
+
+const handleOpen = (path: string, title: string, stableId?: string, refresh?: boolean) => {
+  // 使用稳定的 ID：如果调用方传入 stableId 则用它，否则用 path 作为唯一标识
+  // 这样确保同一个菜单项反复点击时不会不断创建新 Tab，而是激活已有的 Tab
+  const id = stableId || path.replace(/[^a-zA-Z0-9]/g, '_').slice(0, 32)
+  openTab(
+    {
+      id,
+      title,
+      path,
+      closable: true
+    },
+    refresh
+  )
+}
+
+const openframe = (path: string, id: string) => {
   openTab({
     id,
-    title: '面试',
-    path: 'http://localhost:5174/',
+    title: 'iframe 集群',
+    path,
     iframe: true
   })
 }
-/** 打开首页标签（不可关闭） */
-const openDashboard = (id: string) => {
-  openTab({
-    id,
-    title: '首页',
-    path: '/demo',
-    closable: false
-  })
+
+// 监听 iframe 传出来的事件
+const messageListener = (e: MessageEvent) => {
+  if (e.data?.type === 'openTab' && e.data?.payload) {
+    const { id, title, path, closable } = e.data.payload
+    openTab({ id: id || ulid(), title, path, closable }, e.data.refresh)
+  }
 }
-/** 打开测试2标签 */
-const openTest2 = (id: string) => {
-  const tabId = openTab({
-    id,
-    title: '测试2',
-    path: '/demo/test2?saa=234234',
-    closable: true
-  })
-  console.log('TEST2', tabId)
-}
-/** 打开测试2标签（renew 模式，清空栈后重新打开） */
-const openTest5 = (id: string) => {
-  const tabId = openTab(
-    {
-      id,
-      title: '测试2',
-      path: '/demo/test2?saa=123456',
-      closable: true
-    },
-    true
-  )
-  console.log('TEST2', tabId)
-}
-/** 打开 404 测试页 */
-const open404 = () => {
-  openTab({
-    id: ulid(),
-    title: '测试4',
-    path: '/demo/test4/aaaa',
-    closable: true
-  })
-}
-/** 打开子路由示例（试验性） */
-const openSubroute = (id: string) => {
-  openTab({
-    id,
-    title: '子路由',
-    path: '/demo/subroute',
-    closable: true
-  })
-}
+
+onMounted(() => {
+  window.addEventListener('message', messageListener)
+})
+onUnmounted(() => {
+  window.removeEventListener('message', messageListener)
+})
 </script>
 
 <template>
@@ -81,44 +62,80 @@ const openSubroute = (id: string) => {
       </div></el-header
     >
     <el-container>
-      <el-aside width="200px"
-        ><el-menu default-active="2" class="el-menu-vertical-demo">
-          <el-sub-menu index="1" title="Navigator One">
-            <template #title>
-              <span>样例</span>
-            </template>
-            <el-menu-item-group title="Group One">
-              <el-menu-item index="1-1">item one</el-menu-item>
-              <el-menu-item index="1-2">item two</el-menu-item>
-            </el-menu-item-group>
-            <el-menu-item-group title="Group Two">
-              <el-menu-item index="1-3">item three</el-menu-item>
-            </el-menu-item-group>
-            <el-sub-menu index="1-4">
-              <template #title>item four</template>
-              <el-menu-item index="1-4-1">item one</el-menu-item>
-            </el-sub-menu>
+      <el-aside width="220px">
+        <el-menu default-active="2" class="el-menu-vertical-demo">
+          <el-sub-menu index="basic">
+            <template #title><span>基础 5 页签切换测试</span></template>
+            <el-menu-item index="b1" @click="handleOpen('/demo/page1', 'Page 1')"
+              >页面 1 (输入测试)</el-menu-item
+            >
+            <el-menu-item index="b2" @click="handleOpen('/demo/page2', 'Page 2')"
+              >页面 2 (多行缓存)</el-menu-item
+            >
+            <el-menu-item index="b3" @click="handleOpen('/demo/page3', 'Page 3')"
+              >页面 3 (表单单选)</el-menu-item
+            >
+            <el-menu-item index="b4" @click="handleOpen('/demo/page4', 'Page 4')"
+              >页面 4 (下拉缓存)</el-menu-item
+            >
+            <el-menu-item index="b5" @click="handleOpen('/demo/page5', 'Page 5')"
+              >页面 5 (开关滑块)</el-menu-item
+            >
           </el-sub-menu>
-          <el-menu-item index="2" @click="openDashboard('01HR6764M0NN996S2P510E5642')">
-            <span>首页</span>
+
+          <el-sub-menu index="internal">
+            <template #title><span>内联与回退缓存测试</span></template>
+            <el-menu-item index="i0" @click="handleOpen('/demo/url-test/home', '多组件URL回退')"
+              >多层级 URL 精准回退验证</el-menu-item
+            >
+            <el-menu-item index="i1" @click="handleOpen('/demo/internal', '内部路由流转')"
+              >内部 Push/Back 验证</el-menu-item
+            >
+            <el-menu-item
+              index="i2"
+              @click="handleOpen('/demo/multi-tab?id=1', '独立页签-1', 'same1')"
+              >同路由不同参隔离 (id=1)</el-menu-item
+            >
+            <el-menu-item
+              index="i21"
+              @click="handleOpen('/demo/loading-test', 'Loading测试', 'loading')"
+              >Loading API 测试</el-menu-item
+            >
+            <el-menu-item
+              index="i3"
+              @click="handleOpen('/demo/multi-tab?id=2', '独立页签-2', 'same2')"
+              >同路由不同参隔离 (id=2)</el-menu-item
+            >
+            <el-menu-item index="i4" @click="handleOpen('/demo/scroll', '滚动条精读')"
+              >极长内容页面还原</el-menu-item
+            >
+          </el-sub-menu>
+
+          <el-sub-menu index="iframes">
+            <template #title><span>IFrame 沙盒簇测试</span></template>
+            <el-menu-item index="f1" @click="openframe('/iframe-child.html', 'iframe_1')"
+              >Iframe 内置代理 (postMessage)</el-menu-item
+            >
+            <el-menu-item index="f2" @click="openframe('https://cn.vuejs.org/', 'iframe_2')"
+              >独立外部网页并存测试</el-menu-item
+            >
+          </el-sub-menu>
+
+          <el-sub-menu index="dynamic">
+            <template #title><span>复杂 API 状态控制测试</span></template>
+            <el-menu-item index="d1" @click="handleOpen('/demo/opener', '跨界唤起')"
+              >带/不带 Refresh 换起器</el-menu-item
+            >
+            <el-menu-item index="d2" @click="handleOpen('/demo/dynamic-title', '动态变脸')"
+              >运行时自突变 Title</el-menu-item
+            >
+          </el-sub-menu>
+
+          <el-menu-item index="err" @click="handleOpen('/demo/not-exist-route', '空位')">
+            <span>缺失兜底 (抛出 404)</span>
           </el-menu-item>
-          <el-menu-item index="3" @click="openTest2('test2')">
-            <span>页面2</span>
-          </el-menu-item>
-          <el-menu-item index="4" @click="openTest5('test2')">
-            <span>页面3</span>
-          </el-menu-item>
-          <el-menu-item index="4" @click="open404">
-            <span>404</span>
-          </el-menu-item>
-          <el-menu-item index="subroute" @click="openSubroute('subroute-demo')">
-            <span>子路由 <small>(试验)</small></span>
-          </el-menu-item>
-          <el-menu-item index="5" @click="openframe('01HR6764M0X9CZKNT15QH82TXY')">
-            <span>IFrame页面</span>
-          </el-menu-item>
-        </el-menu></el-aside
-      >
+        </el-menu>
+      </el-aside>
       <el-main style="padding: 5px">
         <router-view />
       </el-main>
