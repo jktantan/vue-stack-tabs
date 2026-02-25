@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Iframe Bridge 测试页面</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        padding: 20px;
+        background: #f0f2f5;
+      }
+      .card {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+      }
+      button {
+        padding: 10px 20px;
+        background: #67c23a;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      .status {
+        margin-top: 10px;
+        color: #606266;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h2>此页面演示使用封装好的 Bridge 对接方式</h2>
+      <p>页面加载时间: <span id="time"></span></p>
+      <p>
+        使用 <code>iframeBridge.ts</code> 中提供的 <code>postOpenTab</code> 和
+        <code>onRefreshRequest</code>。
+      </p>
+
+      <div style="margin: 20px 0">
+        <button id="btnOpen">使用 Bridge 方法请求打开新 Tab</button>
+      </div>
+      <div class="status" id="status"></div>
+    </div>
+
+    <!-- 注意：在实际项目中，如果是原生 HTML 需要引入编译后的 Bridge 脚本，或者直接使用 type="module" -->
+    <script type="module">
+      // 这里的导入路径仅为本地调试示意，实际推荐将 Bridge 打包为公共库或 CDN 引用
+      import { postOpenTab, onRefreshRequest } from './src/lib/utils/iframeBridge.ts'
+
+      const timeEl = document.getElementById('time')
+      timeEl.innerText = new Date().toLocaleTimeString()
+
+      // 1. 使用 Bridge 封装的方法打开 Tab
+      document.getElementById('btnOpen').onclick = () => {
+        postOpenTab({
+          id: 'bridge_triggered_tab',
+          title: 'Bridge 弹出的新页签',
+          path: '/demo/page1',
+          closable: true
+        })
+      }
+
+      // 2. 使用 Bridge 封装的方法监听刷新请求
+      onRefreshRequest(() => {
+        console.log('[Bridge Child] Received refresh request from parent')
+        const statusEl = document.getElementById('status')
+        statusEl.innerText = '正在执行刷新 logic...'
+        setTimeout(() => {
+          location.reload()
+        }, 500)
+      })
+    </script>
+  </body>
+</html>
