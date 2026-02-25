@@ -5,7 +5,7 @@ import { useRoute } from 'vue-router'
 const t = ref()
 const { closeTabLoading } = useTabLoading()
 const { addScrollTarget, backward } = useTabRouter()
-const { reset } = useTabActions()
+const { reset, openTab } = useTabActions()
 const route = useRoute()
 onMounted(() => {
   // nextTick(() => {
@@ -23,6 +23,20 @@ const backto = () => {
 const resetTab = () => {
   reset()
 }
+const openIframeBridge = () => {
+  openTab({
+    title: 'IFrame Bridge 示例',
+    path: '/iframe-bridge.html',
+    iframe: true
+  })
+}
+const openIframeNative = () => {
+  openTab({
+    title: 'IFrame Native 示例',
+    path: '/iframe-child.html',
+    iframe: true
+  })
+}
 onUnmounted(() => {
   closeTabLoading()
 })
@@ -31,6 +45,8 @@ onUnmounted(() => {
 <template>
   <el-button @click="backto">返回 </el-button>
   <el-button @click="resetTab">重置 </el-button>
+  <el-button type="success" @click="openIframeBridge">打开 Bridge 示例 </el-button>
+  <el-button type="warning" @click="openIframeNative">打开 Native 示例 </el-button>
   <div class="dsfsdfs">
     <el-input v-model="t" />
     <el-input v-model="t" />

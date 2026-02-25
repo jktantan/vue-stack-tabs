@@ -323,37 +323,63 @@ openTab({
 })
 ```
 
-### iframe 内页面打开标签
+### iframe 页面内操作
 
-在 iframe 内的页面中，可以通过 `postMessage` 打开宿主的标签：
+在 iframe 标签页内，可以通过 `postMessage` 与宿主容器进行通信，实现打开新标签或响应刷新操作。
+
+#### 1. 使用 Bridge 工具（推荐）
+
+如果 iframe 内页能引用库代码（或引入 `iframeBridge.ts` 导出的工具），推荐使用此方式：
 
 ```ts
-import { postOpenTab } from 'vue-stack-tabs'
+import { postOpenTab, onRefreshRequest } from 'vue-stack-tabs'
 
-// 在 iframe 内调用
+// 打开标签
 postOpenTab({
   title: '新页面',
   path: '/detail',
   query: { id: '1' }
 })
-```
 
-### iframe 刷新
-
-iframe 刷新有两种模式：
-
-- `postMessage`（默认）：向 iframe 发送消息，由内页自行刷新
-- `reload`：重建 iframe DOM（适用于跨域页面）
-
-```ts
-// iframe 内页面监听刷新请求
-import { onRefreshRequest } from 'vue-stack-tabs'
-
+// 监听刷新请求
 onRefreshRequest(() => {
-  // 执行刷新逻辑
+  // 自定义刷新逻辑
   location.reload()
 })
 ```
+
+#### 2. 原生对接方式
+
+如果无法引入库工具，或希望保持零依赖，可以使用原生 API：
+
+```ts
+// 打开标签
+window.parent.postMessage(
+  {
+    type: 'vue-stack-tabs:openTab',
+    payload: {
+      title: '原生新页面',
+      path: '/detail'
+    }
+  },
+  '*'
+)
+
+// 监听刷新请求
+window.addEventListener('message', (ev) => {
+  if (ev.data?.type === 'vue-stack-tabs:refresh') {
+    // 执行刷新
+    location.reload()
+  }
+})
+```
+
+### iframe 刷新模式
+
+在 `openTab` 时可通过 `iframeRefreshMode` 指定刷新行为：
+
+- `postMessage`（默认）：宿主向 iframe 发送 `vue-stack-tabs:refresh` 消息，由内页自行决定如何刷新（动画更丝滑）。
+- `reload`：宿主直接重置 iframe 的 `src` 或 `key` 触发浏览器强制重载（适用于跨域或无法修改代码的页面）。
 
 ---
 

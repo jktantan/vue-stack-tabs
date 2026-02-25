@@ -53,23 +53,36 @@
     </div>
 
     <script>
-      document.getElementById('time').innerText = new Date().toLocaleTimeString()
+      const timeEl = document.getElementById('time')
+      const updateTime = () => {
+        timeEl.innerText = new Date().toLocaleTimeString()
+      }
+      updateTime()
 
+      // 1. 原生对接：向父窗口请求打开新标签
       function requestNewTab() {
         window.parent.postMessage(
           {
-            type: 'openTab',
+            type: 'vue-stack-tabs:openTab', // 推荐使用该标准类型，StackTabs 已支持兼容 'openTab'
             payload: {
-              id: 'iframe_triggered_tab',
-              title: 'IFrame 弹出的新页签',
+              id: 'native_triggered_tab',
+              title: '原生弹出的新页签',
               path: '/demo/page2',
               closable: true
-            },
-            refresh: true
+            }
           },
           '*'
         )
       }
+
+      // 2. 原生对接：监听父窗口发送的刷新请求
+      window.addEventListener('message', (ev) => {
+        if (ev.data?.type === 'vue-stack-tabs:refresh') {
+          console.log('[Native Child] Received refresh request from parent')
+          // 执行刷新逻辑（例如重新加载页面或局部数据更新）
+          location.reload()
+        }
+      })
     </script>
   </body>
 </html>

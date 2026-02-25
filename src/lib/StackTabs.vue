@@ -231,10 +231,20 @@ const allowedOrigins = computed(() => {
 const handleMessage = (ev: MessageEvent) => {
   if (!allowedOrigins.value.includes(ev.origin)) return
   const data = ev.data
-  if (!data || typeof data !== 'object' || data.type !== 'vue-stack-tabs:openTab') return
-  const payload = data.payload
-  if (payload && typeof payload === 'object' && payload.title && payload.path) {
-    openTab(payload)
+  // 兼容旧格式的数据（如果存在）或直接支持标准的数据格式
+  if (!data || typeof data !== 'object') return
+
+  if (data.type === 'vue-stack-tabs:openTab') {
+    const payload = data.payload
+    if (payload && typeof payload === 'object' && payload.title && payload.path) {
+      openTab(payload)
+    }
+  } else if (data.type === 'openTab') {
+    // 兼容原生旧示例中的类型名
+    const payload = data.payload
+    if (payload && typeof payload === 'object' && payload.title && payload.path) {
+      openTab(payload)
+    }
   }
 }
 

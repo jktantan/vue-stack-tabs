@@ -14,7 +14,7 @@ onMounted(() => {
 })
 const goto = () => {
   forward({
-    path: '/404'
+    path: '/demo/test2'
   })
 }
 
