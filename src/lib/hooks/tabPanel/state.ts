@@ -5,14 +5,14 @@
  * 被 useTabPanel、evict、scroll、session 导入使用
  */
 import type { ITabItem } from '../../model/TabModel'
-import { ref } from 'vue'
+import { ref, shallowRef } from 'vue'
 
 /** 当前打开的标签列表（含每个标签的页面栈） */
 export const tabs = ref<ITabItem[]>([])
 /** 初始化时传入的默认标签（用于对比 session 恢复） */
 export const defaultTabs: ITabItem[] = []
 /** keep-alive include 数组，与 Vue 的 keep-alive :include 绑定 */
-export const caches = ref<string[]>([])
+export const caches = shallowRef<string[]>([])
 /** 页面缓存 ID -> 包装后的 DefineComponent */
 export const components = new Map<string, import('vue').DefineComponent>()
 /** 待驱逐的页面缓存 ID 集合 */

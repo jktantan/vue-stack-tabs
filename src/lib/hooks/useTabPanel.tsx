@@ -19,6 +19,7 @@ import {
   onMounted,
   onUnmounted,
   ref,
+  shallowRef,
   cloneVNode
 } from 'vue'
 import type { DefineComponent, VNode } from 'vue'
@@ -411,8 +412,10 @@ export default () => {
       },
       emits: ['onLoaded'],
       setup(props, context) {
-        // 用于在当前组件活跃期内存下回退参数，离开或重返时将更新或清理，真正实现生命周期同步！
         const localBackParams = ref<Record<string, unknown> | null>(null)
+        const lastVnode = shallowRef<VNode | null>(null)
+        const lastCloned = shallowRef<VNode | null>(null)
+        const lastBackParams = shallowRef<Record<string, unknown> | null>(null)
 
         const checkAndConsumeBackParams = () => {
           try {
@@ -420,7 +423,6 @@ export default () => {
             const top = tab?.pages.peek()
             if (top && top.id === cacheName && top._backParams) {
               localBackParams.value = { ...top._backParams }
-              // 取出后阅后即焚，防止从别处循环回退时拿到过期老参
               delete top._backParams
             } else {
               localBackParams.value = null
@@ -451,7 +453,16 @@ export default () => {
         return () => {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const Node = (props as any).vnode as VNode
-          const dynamicBackProps = localBackParams.value ? { _back: localBackParams.value } : {}
+          const backParams = localBackParams.value
+
+          if (Node !== lastVnode.value || backParams !== lastBackParams.value) {
+            const dynamicBackProps = backParams ? { _back: backParams } : {}
+            lastCloned.value = Node
+              ? cloneVNode(Node, { tId: tabInfo.id, pId: cacheName, ...dynamicBackProps })
+              : null
+            lastVnode.value = Node
+            lastBackParams.value = backParams
+          }
 
           return (
             <div
@@ -459,10 +470,7 @@ export default () => {
               id={`W-${cacheName}`}
               style={[useGlobalScroll ? 'overflow:auto' : 'overflow:hidden', 'height: 100%']}
             >
-              {/* cloneVNode 附加 tId / pId 以及每次动态截留的 _back 回退参数 */}
-              {Node
-                ? cloneVNode(Node, { tId: tabInfo.id, pId: cacheName, ...(dynamicBackProps || {}) })
-                : null}
+              {lastCloned.value}
               <PageLoading tabId={tabInfo.id!} />
             </div>
           )
@@ -492,19 +500,31 @@ export default () => {
   /** 当前正在渲染的页面的缓存 Key（ULID），供 StackTabs.vue 的 :key 绑定使用 */
   const activeCacheKey = ref<string>('')
 
+  let lastRouteKey = ''
+  let lastAddPageResult: DefineComponent | null = null
+
   const addPage = (route: RouteLocationNormalizedLoaded, component: VNode): DefineComponent => {
     if (!component) return EmptyPlaceholderComponent as DefineComponent
+
+    const routeKey = route.fullPath + (route.query.__tab || '')
+    if (routeKey === lastRouteKey && lastAddPageResult) {
+      return lastAddPageResult
+    }
 
     const state = updatePageState(route)
     if ('empty' in state) return EmptyPlaceholderComponent as DefineComponent
     if ('recovered' in state) {
-      // 刷新场景：组件定义仍存活，只需重新加入 include 列表即可
       addCache(state.cacheName)
       activeCacheKey.value = state.cacheName
+      lastRouteKey = routeKey
+      lastAddPageResult = state.recovered
       return state.recovered
     }
     activeCacheKey.value = state.cacheName
-    return resolvePageComponent(state)
+    const result = resolvePageComponent(state)
+    lastRouteKey = routeKey
+    lastAddPageResult = result
+    return result
   }
 
   const renewTab = (tab: ITabData) => {

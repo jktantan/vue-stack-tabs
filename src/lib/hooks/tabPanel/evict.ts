@@ -53,7 +53,9 @@ export const markTabPagesForEvictionOnly = (tab: { pages: { list(): ITabPage[] }
  * 影响 <keep-alive> 缓存范围，决定哪些 cacheComponent 实例会被保留。
  */
 export const addCache = (cacheName: string) => {
-  if (!caches.value.includes(cacheName)) caches.value.push(cacheName)
+  if (!caches.value.includes(cacheName)) {
+    caches.value = [...caches.value, cacheName]
+  }
 }
 
 /**
@@ -63,7 +65,9 @@ export const addCache = (cacheName: string) => {
  */
 export const removeCache = (cacheName: string) => {
   const i = caches.value.indexOf(cacheName)
-  if (i >= 0) caches.value.splice(i, 1)
+  if (i >= 0) {
+    caches.value = caches.value.filter((_, idx) => idx !== i)
+  }
 }
 
 /**

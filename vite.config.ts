@@ -35,4 +35,26 @@ export default defineConfig(({ mode }) => ({
     drop: mode === 'production' ? ['console', 'debugger'] : []
     // drop: ['console','debugger']
   }
+  // optimizeDeps: {
+  //   include: [
+  //     'element-plus',
+  //     '@floating-ui/dom',
+  //     '@floating-ui/core',
+  //     '@floating-ui/utils',
+  //     '@floating-ui/utils/dom',
+  //     '@popperjs/core',
+  //     '@vueuse/core',
+  //     '@vueuse/shared',
+  //     '@ctrl/tinycolor',
+  //     'async-validator',
+  //     'normalize-wheel-es',
+  //     'memoize-one',
+  //     'lodash-es',
+  //     '@vue/devtools-kit',
+  //     '@vue/devtools-shared',
+  //     'hookable',
+  //     'birpc',
+  //     'perfect-debounce',
+  //   ]
+  // }
 }))
