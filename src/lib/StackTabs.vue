@@ -25,6 +25,7 @@ import { useTabEmitter } from '@/lib/hooks/useTabEventBus'
 const {
   tabs,
   caches,
+  refreshKey,
   iframeRefreshKeys,
   activeCacheKey,
   destroy,
@@ -293,7 +294,7 @@ onBeforeUnmount(() => {
           <keep-alive :include="caches">
             <component
               :is="tabWrapper(route, Component)"
-              :key="activeCacheKey"
+              :key="`${activeCacheKey}-${refreshKey}`"
               :vnode="Component"
               @on-loaded="onComponentLoaded"
             />

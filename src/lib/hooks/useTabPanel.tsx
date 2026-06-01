@@ -719,6 +719,8 @@ export default () => {
     }
 
     if (needsActiveRefresh) {
+      lastRouteKey = ''
+      lastAddPageResult = null
       refreshKey.value++
     }
   }
