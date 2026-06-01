@@ -18,11 +18,16 @@ export default defineConfig(({ mode }) => ({
       '@': fileURLToPath(new URL('./src', import.meta.url))
     }
   },
-  esbuild: {
-    drop: mode === 'production' ? ['console', 'debugger'] : []
-    // drop: ['console','debugger']
-  },
   build: {
+    ...(mode === 'production' && {
+      minify: 'terser',
+      terserOptions: {
+        compress: {
+          drop_console: true,
+          drop_debugger: true
+        }
+      }
+    }),
     lib: {
       entry: resolve(__dirname, 'src/lib/index.ts'),
       name: 'vue-stack-tabs',

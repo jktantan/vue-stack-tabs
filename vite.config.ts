@@ -31,10 +31,18 @@ export default defineConfig(({ mode }) => ({
       vue: 'vue/dist/vue.esm-bundler.js'
     }
   },
-  esbuild: {
-    drop: mode === 'production' ? ['console', 'debugger'] : []
-    // drop: ['console','debugger']
-  }
+  build:
+    mode === 'production'
+      ? {
+          minify: 'terser',
+          terserOptions: {
+            compress: {
+              drop_console: true,
+              drop_debugger: true
+            }
+          }
+        }
+      : {}
   // optimizeDeps: {
   //   include: [
   //     'element-plus',

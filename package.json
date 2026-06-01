@@ -134,6 +134,7 @@
     "prettier": "^3.8.3",
     "sass": "^1.100.0",
     "sass-loader": "^17.0.0",
+    "terser": "^5.48.0",
     "typescript": "~6.0.3",
     "typescript-eslint": "^8.60.0",
     "unplugin-auto-import": "^21.0.0",
