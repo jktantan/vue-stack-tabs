@@ -680,8 +680,8 @@ export default () => {
     addCache(currentPage.id)
 
     if (tab.active) {
-      // 激活状态下，增加 refreshKey 强制触发当前 Router 的重排，
-      // 由于 `<keep-alive>` 中之前记录的名字已经被驱逐出境，它会自动使用新 ID 创建一个全新页面。
+      lastRouteKey = ''
+      lastAddPageResult = null
       refreshKey.value++
     }
   }
