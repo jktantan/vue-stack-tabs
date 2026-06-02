@@ -1,5 +1,7 @@
 # vue-stack-tabs
 
+**中文** | [English](./README.en.md) | [Русский](./README.ru.md)
+
 > Vue 3 多标签页管理库，基于 Vue Router。用 Vue 作用域实现类似 iframe TabPanel 的效果——**每个 Tab 间组件作用域互不干扰**。
 
 ## ✨ 特性

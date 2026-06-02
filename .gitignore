@@ -44,3 +44,4 @@ playgrounds/*/node_modules
 playgrounds/*/dist
 playgrounds/*/.nuxt
 playgrounds/*/.output
+/pnpm-workspace.yaml
