@@ -47,7 +47,7 @@ export default function useTabRouter() {
   const route = useRoute()
   const router = useRouter()
   const emitter = useTabEmitter()
-  const { getTab, evictPageCache, addPageScroller } = useTabPanel()
+  const { getTab, evictPageCache, addPageScroller, active: activateTab } = useTabPanel()
 
   /**
    * 当前标签的编码信息字符串，存于 URL query.__tab。
@@ -77,6 +77,30 @@ export default function useTabRouter() {
     const targetQuery = (to.query || {}) as Record<string, string>
 
     if (tab) {
+      // 栈顶去重：如果目标 URL+参数与栈顶完全一致，不重复压栈。
+      // 已激活则静默跳过；未激活则仅激活该 tab，避免同一页面在栈中不断叠加。
+      const top = tab.pages.peek()
+      if (top && top.path === to.path) {
+        const topQuery = { ...(top.query || {}) }
+        const tq = { ...targetQuery }
+        delete topQuery.__tab
+        delete topQuery._back
+        delete tq.__tab
+        delete tq._back
+
+        const isSameQuery =
+          Object.keys(tq).length === 0 ||
+          (Object.keys(tq).length === Object.keys(topQuery).length &&
+            Object.keys(tq).every((k) => String(tq[k] ?? '') === String(topQuery[k] ?? '')))
+
+        if (isSameQuery) {
+          if (!tab.active) {
+            activateTab(tab.id)
+          }
+          return
+        }
+      }
+
       // 【核心重构：数据前置压栈】
       // 生成崭新独立的 CacheName，并推入专属页面栈
       const newPageId = createPageId()
