@@ -69,20 +69,9 @@
     "test:packaged": "pnpm run lib:build && node scripts/verify-packaged.mjs"
   },
   "dependencies": {
-    "@juggle/resize-observer": "^3.4.0",
-    "@mdit/plugin-tasklist": "^0.23.2",
-    "@noble/hashes": "^2.2.0",
-    "dayjs": "^1.11.21",
     "defu": "^6.1.7",
-    "hex-encoding": "^2.0.3",
-    "js-base64": "^3.7.8",
-    "lz-string": "^1.5.0",
     "mitt": "^3.0.1",
-    "normalize.css": "^8.0.1",
     "throttle-debounce": "^5.0.2",
-    "uint8-encoding": "^2.0.1",
-    "ulid": "^3.0.2",
-    "vitepress": "^1.6.4",
     "vue": "^3.5.35",
     "vue-i18n-lite": "^1.0.2",
     "vue-router": "^5.1.0"
@@ -94,6 +83,7 @@
     "@floating-ui/core": "^1.7.5",
     "@floating-ui/dom": "^1.7.6",
     "@floating-ui/utils": "^0.2.11",
+    "@mdit/plugin-tasklist": "^0.23.2",
     "@popperjs/core": "^2.11.8",
     "@rushstack/eslint-patch": "^1.16.1",
     "@tsconfig/node20": "^20.1.9",
@@ -119,6 +109,7 @@
     "@vueuse/shared": "^14.3.0",
     "async-validator": "^4.2.5",
     "birpc": "^4.0.0",
+    "dayjs": "^1.11.21",
     "element-plus": "^2.14.1",
     "eslint": "^10.4.1",
     "eslint-plugin-vue": "^10.9.1",
@@ -129,6 +120,7 @@
     "lodash-unified": "^1.0.3",
     "memoize-one": "^6.0.0",
     "normalize-wheel-es": "^1.2.0",
+    "normalize.css": "^8.0.1",
     "npm-run-all2": "^9.0.1",
     "perfect-debounce": "^2.1.0",
     "prettier": "^3.8.3",
@@ -142,6 +134,7 @@
     "vite": "^8.0.14",
     "vite-plugin-dts": "5.0.1",
     "vite-plugin-package-version": "^1.1.0",
+    "vitepress": "^1.6.4",
     "vitest": "^4.1.7",
     "vue-tsc": "^3.3.3"
   }

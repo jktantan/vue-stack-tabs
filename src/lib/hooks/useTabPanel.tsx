@@ -25,7 +25,6 @@ import {
 import type { DefineComponent, VNode } from 'vue'
 import { useRouter } from 'vue-router'
 import type { RouteLocationNormalizedLoaded } from 'vue-router'
-import { ulid } from 'ulid'
 import { encodeTabInfo, createPageId, decodeTabInfo } from '../utils/tabInfoEncoder'
 import { defu } from 'defu'
 import { Stack } from '../model/TabModel'
@@ -97,8 +96,13 @@ export default () => {
    */
   const initialize = (staticTabs: ITabData[]) => {
     for (const item of staticTabs) {
-      const fullItem = defu(item, { id: ulid(), refreshable: true, closable: true, iframe: false })
-      const tabId = fullItem.id ?? ulid()
+      const fullItem = defu(item, {
+        id: crypto.randomUUID(),
+        refreshable: true,
+        closable: true,
+        iframe: false
+      })
+      const tabId = fullItem.id ?? crypto.randomUUID()
       fullItem.id = tabId
       const uri = parseUrl(fullItem.path)
       const config = defu(fullItem, {
@@ -169,7 +173,7 @@ export default () => {
   const parseTabInfoFromRoute = (route: RouteLocationNormalizedLoaded): ITabBase => {
     if (route.query.__tab) return decodeTabInfo(route.query.__tab as string)
     const tabInfo: ITabBase = {
-      id: ulid(),
+      id: crypto.randomUUID(),
       title: t('VueStackTab.undefined'),
       closable: true,
       refreshable: true,

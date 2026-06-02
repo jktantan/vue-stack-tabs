@@ -1,8 +1,6 @@
 import { useRouter } from 'vue-router'
 import { throttle } from 'throttle-debounce'
 import { defu } from 'defu'
-import { ulid } from 'ulid'
-
 import useTabPanel from './useTabPanel'
 import { encodeTabInfo } from '../utils/tabInfoEncoder'
 import { parseUrl, isCrossOriginUrl } from '../utils/urlParser'
@@ -58,7 +56,7 @@ export default function useTabActions() {
       defaults.iframeRefreshMode = (tab.iframeRefreshMode ?? 'postMessage') as IframeRefreshMode
     }
     const info = defu(tab, defaults)
-    if (!info.id) info.id = ulid()
+    if (!info.id) info.id = crypto.randomUUID()
     return info
   }
 

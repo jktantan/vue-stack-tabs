@@ -51,7 +51,6 @@
 
 <script lang="ts" setup>
 import { computed, ref, reactive, onMounted, watch, onUnmounted } from 'vue'
-import { ResizeObserver } from '@juggle/resize-observer'
 import type { ScrollData, DragData } from '@/lib/model/TabModel'
 import {
   scrollTo as scrollToUtil,
