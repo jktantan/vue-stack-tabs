@@ -18,10 +18,9 @@
           <tab-header-item
             v-for="(item, index) in tabs"
             :key="item.id"
-            :contextmenu="contextmenu"
             :item="item as ITabItem"
-            @contextmenu.prevent="
-              (e: MouseEvent) => showContextMenu(e, item as unknown as ITabItem, index, tabs.length)
+            @contextmenu="
+              (e: MouseEvent) => handleTabContextMenu(e, item as unknown as ITabItem, index, tabs.length)
             "
             @click.middle.prevent="handleCloseTab(item as ITabItem)"
             @close="handleCloseTab"
@@ -45,6 +44,7 @@
         :tab-item="contextMenuData.item as ITabItem"
         :max="contextMenuData.max"
         :index="contextMenuData.index"
+        :context-menu="normalizedContextMenu"
         @close="handleCloseContextMenu"
       />
     </transition>
@@ -61,7 +61,7 @@
 import { inject, computed, ref, nextTick } from 'vue'
 import type { TransitionProps } from 'vue'
 import { TabScrollMode } from '../../model/TabModel'
-import type { ITabItem } from '../../model/TabModel'
+import type { IContextMenu, ITabItem } from '../../model/TabModel'
 import ContextMenu from '../ContextMenu/index.vue'
 import useContextMenu from '../../hooks/useContextMenu'
 import useTabActions from '../../hooks/useTabActions'
@@ -102,6 +102,22 @@ const props = withDefaults(
 )
 const { closeTab, activeTab, tabs } = useTabActions()
 
+/** 右键菜单是否启用；仅 false 明确禁用，其余旧对象值保持启用以兼容历史写法 */
+const isContextMenuEnabled = computed<boolean>(() => props.contextmenu !== false)
+
+/** 自定义菜单数组；非数组对象按历史宽类型兼容为默认菜单，不抛错 */
+const normalizedContextMenu = computed<IContextMenu[]>(() => {
+  return Array.isArray(props.contextmenu) ? props.contextmenu : []
+})
+
+/** 右键标签：禁用时不阻止浏览器默认菜单，启用时打开组件菜单 */
+const handleTabContextMenu = (e: MouseEvent, item: ITabItem, index: number, max: number) => {
+  if (!isContextMenuEnabled.value) return
+
+  e.preventDefault()
+  showContextMenu(e, item, index, max)
+}
+
 /** 标签列表 transition 的 props，支持 string 或对象 */
 const tabTransitionProps = computed<TransitionProps>(() =>
   typeof props.tabTransition === 'string'
@@ -114,8 +130,9 @@ const isScrollButton = computed<boolean>(() => {
   return props.tabScrollMode === TabScrollMode.BOTH || props.tabScrollMode === TabScrollMode.BUTTON
 })
 /** 是否支持滚轮滚动 */
-const isScrollWheel =
-  props.tabScrollMode === TabScrollMode.BOTH || props.tabScrollMode === TabScrollMode.WHEEL
+const isScrollWheel = computed<boolean>(() => {
+  return props.tabScrollMode === TabScrollMode.BOTH || props.tabScrollMode === TabScrollMode.WHEEL
+})
 
 /** 关闭指定标签，并关闭右键菜单 */
 const handleCloseTab = (item: ITabItem) => {

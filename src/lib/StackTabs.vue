@@ -21,7 +21,7 @@ import TabHeader from './components/TabHeader/index.vue'
 import useTabPanel from './hooks/useTabPanel'
 import useTabActions from './hooks/useTabActions'
 import { useI18n } from 'vue-i18n-lite'
-import { useTabEmitter } from '@/lib/hooks/useTabEventBus'
+import { TabEventType, useTabEmitter } from '@/lib/hooks/useTabEventBus'
 const {
   tabs,
   caches,
@@ -111,8 +111,8 @@ const forwardHandler = () => {
 const backwardHandler = () => {
   pageSwitch.value = props.pageTransitionBack
 }
-emitter.on('FORWARD', forwardHandler)
-emitter.on('BACKWARD', backwardHandler)
+emitter.on(TabEventType.FORWARD, forwardHandler)
+emitter.on(TabEventType.BACKWARD, backwardHandler)
 
 /** iframe 标签列表，computed 避免重复 filter */
 const iframeTabs = computed(() => tabs.value.filter((item) => item.iframe))
@@ -203,8 +203,7 @@ const setIframeRef = (id: string, el: HTMLIFrameElement | null) => {
 }
 
 /** postMessage 刷新：向 iframe 发送消息，由其自行刷新 */
-const handleRefreshIframePostMessage = (payload: unknown) => {
-  const tabId = payload as string
+const handleRefreshIframePostMessage = (tabId: string) => {
   const iframe = iframeElRefs[tabId]
   if (iframe?.contentWindow) {
     try {
@@ -249,10 +248,7 @@ const handleMessage = (ev: MessageEvent) => {
   }
 }
 
-;(emitter as { on: (t: string, h: (p: unknown) => void) => void }).on(
-  'REFRESH_IFRAME_POSTMESSAGE',
-  handleRefreshIframePostMessage
-)
+emitter.on(TabEventType.REFRESH_IFRAME_POSTMESSAGE, handleRefreshIframePostMessage)
 
 onBeforeMount(() => {
   setSessionPrefix(props.sessionPrefix)
@@ -261,12 +257,9 @@ onBeforeMount(() => {
 })
 onBeforeUnmount(() => {
   window.removeEventListener('message', handleMessage)
-  ;(emitter as { off: (t: string, h: (p: unknown) => void) => void }).off(
-    'REFRESH_IFRAME_POSTMESSAGE',
-    handleRefreshIframePostMessage
-  )
-  emitter.off('FORWARD', forwardHandler)
-  emitter.off('BACKWARD', backwardHandler)
+  emitter.off(TabEventType.REFRESH_IFRAME_POSTMESSAGE, handleRefreshIframePostMessage)
+  emitter.off(TabEventType.FORWARD, forwardHandler)
+  emitter.off(TabEventType.BACKWARD, backwardHandler)
   destroy()
 })
 </script>
@@ -280,7 +273,14 @@ onBeforeUnmount(() => {
     }"
     :class="{ 'stack-tab__maximum': maximum }"
   >
-    <tab-header :space="space" :tab-transition="tabTransition" :max="max" @active="onTabActive">
+    <tab-header
+      :space="space"
+      :tab-transition="tabTransition"
+      :tab-scroll-mode="tabScrollMode"
+      :contextmenu="contextmenu"
+      :max="max"
+      @active="onTabActive"
+    >
       <template #leftButton>
         <slot name="leftButton" />
       </template>

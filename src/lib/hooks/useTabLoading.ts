@@ -10,17 +10,18 @@ import { TabEventType, useTabEmitter } from '../hooks/useTabEventBus'
 export default () => {
   const emitter = useTabEmitter()
   const { attrs } = getCurrentInstance() as ComponentInternalInstance
+  const getTabId = () => String(attrs.tId ?? '')
   onUnmounted(() => {
     closeTabLoading()
   })
   /** 显示加载遮罩 */
   const openTabLoading = () => {
-    emitter.emit(TabEventType.PAGE_LOADING, { tId: attrs.tId, value: true })
+    emitter.emit(TabEventType.PAGE_LOADING, { tId: getTabId(), value: true })
   }
 
   /** 隐藏加载遮罩 */
   const closeTabLoading = () => {
-    emitter.emit(TabEventType.PAGE_LOADING, { tId: attrs.tId, value: false })
+    emitter.emit(TabEventType.PAGE_LOADING, { tId: getTabId(), value: false })
   }
   return { openTabLoading, closeTabLoading }
 }

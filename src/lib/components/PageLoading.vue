@@ -24,18 +24,15 @@ const props = defineProps<{
 const emitter = useTabEmitter()
 /** 是否显示 loading 遮罩 */
 const isLoading = ref<boolean>(false)
-/** PAGE_LOADING 事件 payload */
-type PageLoadingPayload = { tId: string; value: boolean }
 /** 处理 PAGE_LOADING 事件，仅当 tId 匹配时更新 */
-const handleLoadingEvent = (payload: PageLoadingPayload) => {
+const handleLoadingEvent = (payload: { tId: string; value: boolean }) => {
   if (payload.tId === props.tabId) {
     isLoading.value = payload.value
   }
 }
-const eventType = TabEventType.PAGE_LOADING as unknown as Parameters<typeof emitter.on>[0]
-emitter.on(eventType, handleLoadingEvent as (e: unknown) => void)
+emitter.on(TabEventType.PAGE_LOADING, handleLoadingEvent)
 onUnmounted(() => {
-  emitter.off(eventType, handleLoadingEvent as (e: unknown) => void)
+  emitter.off(TabEventType.PAGE_LOADING, handleLoadingEvent)
 })
 </script>
 <style scoped></style>

@@ -5,9 +5,10 @@
 -->
 <script setup lang="ts">
 import { useTabActions } from '@/lib'
-import { ulid } from 'ulid'
 import { onMounted, onUnmounted } from 'vue'
 const { openTab } = useTabActions()
+
+const createFallbackTabId = () => crypto.randomUUID()
 
 const handleOpen = (path: string, title: string, stableId?: string, refresh?: boolean) => {
   // 使用稳定的 ID：如果调用方传入 stableId 则用它，否则用 path 作为唯一标识
@@ -37,7 +38,7 @@ const openframe = (path: string, id: string) => {
 const messageListener = (e: MessageEvent) => {
   if (e.data?.type === 'openTab' && e.data?.payload) {
     const { id, title, path, closable } = e.data.payload
-    openTab({ id: id || ulid(), title, path, closable }, e.data.refresh)
+    openTab({ id: id || createFallbackTabId(), title, path, closable }, e.data.refresh)
   }
 }
 

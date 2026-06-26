@@ -6,14 +6,9 @@ import { useRoute, useRouter } from 'vue-router'
 
 import useTabPanel from './useTabPanel'
 import { parseUrl } from '../utils/urlParser'
-import { useTabEmitter } from './useTabEventBus'
+import { TabEventType, useTabEmitter } from './useTabEventBus'
 
 import { createPageId } from '../utils/tabInfoEncoder'
-
-/** StackTabs 监听此事件切换前进动画 */
-const ROUTER_EVENT_FORWARD = 'FORWARD'
-/** StackTabs 监听此事件切换后退动画 */
-const ROUTER_EVENT_BACKWARD = 'BACKWARD'
 
 /**
  * useTabRouter - 标签内路由 Hook
@@ -113,7 +108,7 @@ export default function useTabRouter() {
     }
 
     const query = defu({ __tab: tabInfo }, to.query)
-    emitter.emit(ROUTER_EVENT_FORWARD)
+    emitter.emit(TabEventType.FORWARD)
     router.push({ path: to.path, query })
   }
 
@@ -229,7 +224,7 @@ export default function useTabRouter() {
       target._backParams = backQuery
     }
 
-    emitter.emit(ROUTER_EVENT_BACKWARD)
+    emitter.emit(TabEventType.BACKWARD)
 
     // 阶段 2：先导航，再清理回收站
     // 对于 targetQuery 只需要带一个能够给框架定锚的 __tab。其他参数其实已经在 target.query 里。

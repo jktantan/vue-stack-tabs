@@ -1,16 +1,19 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { getCurrentInstance, ref } from 'vue'
 import useTabPanel from '@/lib/hooks/useTabPanel'
-import { useRoute } from 'vue-router'
 
-const { tabs, getCacheName } = useTabPanel()
-const route = useRoute()
+const { tabs } = useTabPanel()
+const instance = getCurrentInstance()
 const newTitle = ref('动态变更的标题')
 
+const getCurrentPageId = () => {
+  return (instance?.attrs.pId ?? instance?.props.pId) as string | undefined
+}
+
 const changeTitle = () => {
-  const cacheName = getCacheName(route)
-  const currentTab = tabs.value.find((tab: any) =>
-    tab.pages.list().some((p: any) => p.id === cacheName)
+  const cacheName = getCurrentPageId()
+  const currentTab = tabs.value.find((tab) =>
+    tab.pages.list().some((page) => page.id === cacheName)
   )
 
   if (currentTab) {

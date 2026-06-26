@@ -50,10 +50,9 @@ const handleTabActiveEvent = (payload: TabActivePayload) => {
     handleActivate(payload.isRoute ?? true)
   }
 }
-const eventType = TabEventType.TAB_ACTIVE as unknown as Parameters<typeof emitter.on>[0]
-emitter.on(eventType, handleTabActiveEvent as (e: unknown) => void)
+emitter.on(TabEventType.TAB_ACTIVE, handleTabActiveEvent)
 onUnmounted(() => {
-  emitter.off(eventType, handleTabActiveEvent as (e: unknown) => void)
+  emitter.off(TabEventType.TAB_ACTIVE, handleTabActiveEvent)
 })
 /** 显示标题，空时用 i18n 占位 */
 const title = computed<string>(() => {

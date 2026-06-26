@@ -664,10 +664,7 @@ export default () => {
           [id]: (iframeRefreshKeys.value[id] ?? 0) + 1
         }
       } else {
-        ;(emitter as { emit: (t: string, p: string) => void }).emit(
-          'REFRESH_IFRAME_POSTMESSAGE',
-          id
-        )
+        emitter.emit(TabEventType.REFRESH_IFRAME_POSTMESSAGE, id)
       }
       return
     }
@@ -702,10 +699,7 @@ export default () => {
             [tab.id]: (iframeRefreshKeys.value[tab.id] ?? 0) + 1
           }
         } else {
-          ;(emitter as { emit: (t: string, p: string) => void }).emit(
-            'REFRESH_IFRAME_POSTMESSAGE',
-            tab.id
-          )
+          emitter.emit(TabEventType.REFRESH_IFRAME_POSTMESSAGE, tab.id)
         }
       } else {
         const currentPage = tab.pages.peek()
@@ -737,7 +731,7 @@ export default () => {
    * @param route - 是否执行 router.push
    */
   const active = (id: string, route = true) => {
-    emitter.emit('FORWARD')
+    emitter.emit(TabEventType.FORWARD)
     const target = getTab(id)
     if (!target) return
     if (target.active) return

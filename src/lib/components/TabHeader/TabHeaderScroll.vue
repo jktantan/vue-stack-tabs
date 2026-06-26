@@ -70,8 +70,8 @@ const scrollDragging = ref<boolean>(false)
 const isDisabledLeftButton = ref<boolean>(false)
 /** 右箭头是否禁用（已到最右） */
 const isDisabledRightButton = ref<boolean>(false)
-/** 是否有横向滚动条（内容超出时显示左右箭头） */
-const isScrollButtonVisible = ref<boolean>(true)
+/** 是否显示左右滚动按钮：必须启用按钮模式且内容横向溢出 */
+const isScrollButtonVisible = ref<boolean>(false)
 /** 外层滚动区域，用于 ResizeObserver */
 const headerScroll = ref<HTMLElement>()
 const props = withDefaults(
@@ -108,12 +108,19 @@ watch(scrollData, (data) => {
   updateScrollButtonState(data)
 })
 
-/** 根据滚动位置更新左右箭头禁用状态及滚动条可见性 */
+watch(
+  () => props.isScrollButton,
+  () => updateScrollButtonState(scrollData)
+)
+
+/** 根据滚动位置更新左右箭头禁用状态及滚动按钮可见性 */
 const updateScrollButtonState = (data: ScrollData) => {
+  const hasHorizontalOverflow = data.scrollWidth > data.clientWidth
+
   isDisabledLeftButton.value = data.scrollLeft <= 10
   isDisabledRightButton.value =
     data.clientWidth + data.scrollLeft - data.scrollWidth >= -10
-  isScrollButtonVisible.value = data.scrollWidth !== data.clientWidth
+  isScrollButtonVisible.value = props.isScrollButton && hasHorizontalOverflow
 }
 
 /** 内容是否超出容器宽度，需要显示滚动条 */
@@ -172,8 +179,10 @@ const handleScrollButtonClick = (delta: number) => {
 }
 
 const handleWheelScroll = (e: WheelEvent) => {
+  if (!props.isScrollWheel || !container.value) return
+
   const isScrollUp = e.deltaY < 0
-  scrollTo(container.value!.scrollLeft + (isScrollUp ? -props.space : props.space))
+  scrollTo(container.value.scrollLeft + (isScrollUp ? -props.space : props.space))
 }
 
 const handleScrollbarDragStart = (e: MouseEvent) => {
