@@ -12,24 +12,20 @@
 -->
 <script lang="ts" setup>
 import { computed, onBeforeMount, onBeforeUnmount, provide, reactive, ref, watch } from 'vue'
-import type { TransitionProps, DefineComponent, VNode } from 'vue'
-import { type RouteLocationNormalizedLoaded } from 'vue-router'
+import type { TransitionProps } from 'vue'
 import { getMaxZIndex } from './utils/scrollUtils'
 import { isInvalidIframeUrl } from './utils/urlParser'
 import { type ITabData, TabScrollMode } from './model/TabModel'
 import TabHeader from './components/TabHeader/index.vue'
+import StackKeepAlive from './components/StackKeepAlive/StackKeepAlive.vue'
 import useTabPanel from './hooks/useTabPanel'
 import useTabActions from './hooks/useTabActions'
 import { useI18n } from 'vue-i18n-lite'
 import { TabEventType, useTabEmitter } from '@/lib/hooks/useTabEventBus'
 const {
   tabs,
-  caches,
-  refreshKey,
   iframeRefreshKeys,
-  activeCacheKey,
   destroy,
-  addPage,
   initialize,
   setMaxSize,
   setGlobalScroll,
@@ -87,10 +83,6 @@ const { setIFramePath, openTab } = useTabActions()
 setIFramePath(props.iframePath)
 setGlobalScroll(props.globalScroll)
 changeLocale(props.i18n)
-/** 将 router-view 的 Component 包装为带缓存 id 的页面组件，交给 addPage 注册到对应标签 */
-const tabWrapper = (route: RouteLocationNormalizedLoaded, component: VNode): DefineComponent => {
-  return addPage(route, component)
-}
 /** 标签激活时向外转发 */
 const onTabActive = (id: string) => {
   emit('onActive', id)
@@ -289,18 +281,7 @@ onBeforeUnmount(() => {
       </template>
     </tab-header>
     <div class="stack-tab__container">
-      <router-view v-slot="{ Component, route }">
-        <transition :name="pageSwitch" appear mode="out-in">
-          <keep-alive :include="caches">
-            <component
-              :is="tabWrapper(route, Component)"
-              :key="`${activeCacheKey}-${refreshKey}`"
-              :vnode="Component"
-              @on-loaded="onComponentLoaded"
-            />
-          </keep-alive>
-        </transition>
-      </router-view>
+      <StackKeepAlive :transition-name="pageSwitch" @loaded="onComponentLoaded" />
       <transition-group :name="pageTransition" tag="div" class="stack-tab__iframes" appear>
         <Transition
           v-for="frame of iframeTabs"
