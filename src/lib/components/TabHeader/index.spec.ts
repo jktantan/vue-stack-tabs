@@ -154,9 +154,41 @@ async function triggerTabContextMenu(wrapper: ReturnType<typeof mountHeader>) {
 }
 
 beforeEach(() => {
-  activeTabMock.mockClear()
-  closeTabMock.mockClear()
+  activeTabMock.mockReset()
+  closeTabMock.mockReset()
+  activeTabMock.mockResolvedValue(undefined)
   tabs.value = [makeTab()]
+})
+
+describe('TabHeader active', () => {
+  it('activeTab 成功后才 emit active', async () => {
+    const wrapper = mountHeader()
+
+    await wrapper.find('.stack-tab__item').trigger('click')
+    await nextTick()
+
+    expect(activeTabMock).toHaveBeenCalledWith('tab-1', true)
+    expect(wrapper.emitted('active')).toEqual([['tab-1']])
+  })
+
+  it('activeTab 失败时捕获错误且不 emit active', async () => {
+    activeTabMock.mockRejectedValue(new Error('navigation aborted'))
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    const wrapper = mountHeader()
+
+    await wrapper.find('.stack-tab__item').trigger('click')
+    await nextTick()
+    await nextTick()
+
+    expect(activeTabMock).toHaveBeenCalledWith('tab-1', true)
+    expect(wrapper.emitted('active')).toBeUndefined()
+    expect(warnSpy).toHaveBeenCalledWith(
+      '[vue-stack-tabs] Failed to activate tab:',
+      expect.any(Error)
+    )
+
+    warnSpy.mockRestore()
+  })
 })
 
 describe('TabHeader contextmenu', () => {

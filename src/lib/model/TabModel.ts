@@ -1,3 +1,5 @@
+import type { LocationQueryRaw } from 'vue-router'
+
 /**
  * TabModel - 标签页数据模型
  *
@@ -48,7 +50,7 @@ export interface ITabData extends ITabBase {
   // tab name
   title: string
   path: string
-  query?: Record<string, string>
+  query?: LocationQueryRaw
 }
 /** iframe 刷新方式：postMessage 由 iframe 内页自行刷新（不重建 DOM，动画正常）；reload 强制重载 iframe */
 export type IframeRefreshMode = 'postMessage' | 'reload'
@@ -80,7 +82,7 @@ export interface ITabPage {
   id: string
   tabId: string
   path: string
-  query?: Record<string, string>
+  query?: LocationQueryRaw
   /** 该页面从别的页面被后退唤醒时附带的临时闭包参数，不污染 URL */
   _backParams?: Record<string, unknown>
 }

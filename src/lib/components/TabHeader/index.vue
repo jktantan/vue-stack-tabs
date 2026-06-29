@@ -20,7 +20,8 @@
             :key="item.id"
             :item="item as ITabItem"
             @contextmenu="
-              (e: MouseEvent) => handleTabContextMenu(e, item as unknown as ITabItem, index, tabs.length)
+              (e: MouseEvent) =>
+                handleTabContextMenu(e, item as unknown as ITabItem, index, tabs.length)
             "
             @click.middle.prevent="handleCloseTab(item as ITabItem)"
             @close="handleCloseTab"
@@ -143,7 +144,11 @@ const handleCloseTab = (item: ITabItem) => {
 }
 
 /** 激活指定标签，滚动到可视区域，并触发路由跳转 */
-const handleActivateTab = (item: ITabItem, clickedTabElement: HTMLElement | undefined, isRoute: boolean) => {
+const handleActivateTab = (
+  item: ITabItem,
+  clickedTabElement: HTMLElement | undefined,
+  isRoute: boolean
+) => {
   if (scrollContainerRef.value && clickedTabElement) {
     nextTick(() => {
       if (!scrollContainerRef.value!.isInView(clickedTabElement)) {
@@ -151,8 +156,11 @@ const handleActivateTab = (item: ITabItem, clickedTabElement: HTMLElement | unde
       }
     })
   }
-  activeTab(item.id, isRoute)
-  emit('active', item.id)
+  Promise.resolve(activeTab(item.id, isRoute))
+    .then(() => emit('active', item.id))
+    .catch((error: unknown) => {
+      console.warn('[vue-stack-tabs] Failed to activate tab:', error)
+    })
 }
 </script>
 

@@ -1,5 +1,47 @@
 import { createI18n } from 'vue-i18n-lite'
 
+export interface LocaleMessageOption {
+  locale: string
+  messages?: Record<string, unknown>
+}
+
+const DANGEROUS_MESSAGE_KEYS = new Set(['__proto__', 'constructor', 'prototype'])
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value)
+
+const mergeMessageRecord = (
+  baseMessage: Record<string, unknown>,
+  overrideMessage: Record<string, unknown>
+): Record<string, unknown> => {
+  const mergedMessage = { ...baseMessage }
+  for (const [key, value] of Object.entries(overrideMessage)) {
+    if (DANGEROUS_MESSAGE_KEYS.has(key)) continue
+    const existing = mergedMessage[key]
+    mergedMessage[key] =
+      isRecord(existing) && isRecord(value) ? mergeMessageRecord(existing, value) : value
+  }
+  return mergedMessage
+}
+
+export const mergeLocaleMessages = (
+  baseMessages: Record<string, Record<string, unknown>>,
+  localeI18n?: LocaleMessageOption[]
+): Record<string, Record<string, unknown>> => {
+  const combinedMessages = { ...baseMessages }
+  if (!localeI18n) return combinedMessages
+
+  for (const item of localeI18n) {
+    if (!item.messages || DANGEROUS_MESSAGE_KEYS.has(item.locale)) continue
+    combinedMessages[item.locale] = mergeMessageRecord(
+      combinedMessages[item.locale] ?? {},
+      item.messages
+    )
+  }
+
+  return combinedMessages
+}
+
 export default () => {
   // 引入lang目录下文件
   // 此处使用了 VITE 的 import.meta.globEager。非 VITE 的 可以使用 require.context
@@ -54,17 +96,11 @@ export default () => {
     return message
   }
   // const localeI18n = inject('locales') as { locale: string; messages: object }
-  const getI18n = (localeI18n?: { locale: string; messages: Record<string, unknown> }[]) => {
-    const combinateMessage = { ...allLangs() }
-    if (localeI18n) {
-      for (const l of localeI18n) {
-        combinateMessage[l.locale] = l.messages
-      }
-      // combinateMessage = { ...allLangs(), ...localeI18n.messages }
-    }
+  const getI18n = (localeI18n?: LocaleMessageOption[]) => {
+    const combinateMessage = mergeLocaleMessages(allLangs(), localeI18n)
 
     return createI18n({
-      locale: 'zh-CN',
+      locale: localeI18n?.[0]?.locale ?? 'zh-CN',
       fallbackLocale: 'en',
       messages: combinateMessage as Record<string, Record<string, string>>
     })

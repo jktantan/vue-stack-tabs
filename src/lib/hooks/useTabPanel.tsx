@@ -23,14 +23,21 @@ import {
   cloneVNode
 } from 'vue'
 import type { DefineComponent, VNode } from 'vue'
-import { useRouter } from 'vue-router'
+import { isNavigationFailure, useRouter } from 'vue-router'
 import type { RouteLocationNormalizedLoaded } from 'vue-router'
 import { encodeTabInfo, createPageId, decodeTabInfo } from '../utils/tabInfoEncoder'
 import { defu } from 'defu'
 import { Stack } from '../model/TabModel'
-import { parseUrl, isCrossOriginUrl } from '../utils/urlParser'
+import {
+  parseUrl,
+  isCrossOriginUrl,
+  omitStackTabsReservedQuery,
+  toSafeTabUrl,
+  decodeSafeTabUrl
+} from '../utils/urlParser'
 import PageLoading from '../components/PageLoading.vue'
 import { TabEventType, useTabEmitter } from './useTabEventBus'
+import { runNavigationTransaction } from './tabPanel/navigationTransaction'
 import { useI18n } from 'vue-i18n-lite'
 
 import {
@@ -63,6 +70,7 @@ import {
   saveActiveTabToSession,
   clearSession,
   restoreTabFromSession,
+  restoreActiveTabSession,
   getSessionKey
 } from './tabPanel/session'
 
@@ -73,6 +81,12 @@ const EmptyPlaceholderComponent = defineComponent({
   setup() {
     return () => null
   }
+})
+
+const cloneTabPage = (page: ITabPage): ITabPage => ({
+  ...page,
+  query: page.query ? { ...page.query } : undefined,
+  _backParams: page._backParams ? { ...page._backParams } : undefined
 })
 
 /** 规范化路径（nginx 等可能加尾部斜杠） */
@@ -115,7 +129,7 @@ export default () => {
         id: cacheName,
         tabId,
         path: uri.path,
-        query: defu(uri.query, { __tab: encodeTabInfo(fullItem) })
+        query: defu(omitStackTabsReservedQuery(uri.query), { __tab: encodeTabInfo(fullItem) })
       }
       const pages = new Stack<ITabPage>()
       pages.push(page)
@@ -141,6 +155,7 @@ export default () => {
     const storedTabJson = sessionStorage.getItem(getSessionKey())
     const restoredTab = restoreTabFromSession(storedTabJson)
     if (restoredTab && !tabs.value.some((t) => t.id === restoredTab!.id)) {
+      if (restoredTab.url) restoredTab.url = toSafeTabUrl(restoredTab.url)
       if (restoredTab.iframe && restoredTab.url && restoredTab.iframeRefreshMode === undefined) {
         restoredTab.iframeRefreshMode = isCrossOriginUrl(restoredTab.url) ? 'reload' : 'postMessage'
       }
@@ -219,7 +234,7 @@ export default () => {
         refreshable: tabInfo.refreshable!,
         iframe: tabInfo.iframe!,
         iframeRefreshMode: tabInfo.iframeRefreshMode ?? 'postMessage',
-        url: decodeURIComponent(src as string),
+        url: decodeSafeTabUrl(src),
         active: true,
         pages
       } as unknown as ITabItem
@@ -533,10 +548,23 @@ export default () => {
 
   const renewTab = (tab: ITabData) => {
     const currentTab = getTab(tab.id!)
-    if (!currentTab) return
+    if (!currentTab) return undefined
+
+    const pageSnapshot = currentTab.pages.list().map(cloneTabPage)
+    const cacheSnapshot = [...caches.value]
+    const componentSnapshot = new Map(components)
+
     markTabPagesForEvictionOnly(currentTab)
     evictMarkedCaches()
     currentTab.pages.clear()
+
+    return () => {
+      currentTab.pages.clear()
+      for (const page of pageSnapshot) currentTab.pages.push(cloneTabPage(page))
+      caches.value = [...cacheSnapshot]
+      components.clear()
+      for (const [id, component] of componentSnapshot) components.set(id, component)
+    }
   }
 
   const removeTab = (id: string): string => {
@@ -733,31 +761,57 @@ export default () => {
   const active = (id: string, route = true) => {
     emitter.emit(TabEventType.FORWARD)
     const target = getTab(id)
-    if (!target) return
-    if (target.active) return
+    if (!target) return Promise.resolve()
+    if (target.active) return Promise.resolve()
 
-    for (const tab of tabs.value) {
-      tab.active = tab.id === id
-    }
-    saveActiveTabToSession(target as ITabItem)
-    // 强制触发 tabs 响应式更新，确保 TabHeader 高亮与 iframe 进入动画 timing 正确
-    tabs.value = tabs.value.slice()
-    if (route) {
-      const top = target.pages.peek()
-      if (top) {
-        // 切换 Tab 走路由时，必须将 __tab 编码信息注入 query，
-        // 否则 parseTabInfoFromRoute 找不到对应 Tab，会新建匿名标签！
-        const __tab = encodeTabInfo({
-          id: target.id,
-          title: target.title,
-          closable: target.closable,
-          refreshable: target.refreshable,
-          iframe: target.iframe
-        })
-        const query = defu({ __tab }, top.query || {})
-        router.push({ path: top.path, query })
+    const top = target.pages.peek()
+    const activateTarget = () => {
+      for (const tab of tabs.value) {
+        tab.active = tab.id === id
       }
+      saveActiveTabToSession(target as ITabItem)
+      // 强制触发 tabs 响应式更新，确保 TabHeader 高亮与 iframe 进入动画 timing 正确
+      tabs.value = tabs.value.slice()
     }
+
+    if (!route) {
+      activateTarget()
+      return Promise.resolve()
+    }
+    if (!top) {
+      activateTarget()
+      return Promise.resolve()
+    }
+
+    // 切换 Tab 走路由时，必须将 __tab 编码信息注入 query，
+    // 否则 parseTabInfoFromRoute 找不到对应 Tab，会新建匿名标签！
+    const __tab = encodeTabInfo({
+      id: target.id,
+      title: target.title,
+      closable: target.closable,
+      refreshable: target.refreshable,
+      iframe: target.iframe
+    })
+    const query = defu({ __tab }, top.query || {})
+
+    return runNavigationTransaction({
+      apply: () => {
+        const activeStates = tabs.value.map((tab) => ({ id: tab.id, active: tab.active }))
+        const sessionSnapshot = window.sessionStorage.getItem(getSessionKey())
+        activateTarget()
+        return { activeStates, sessionSnapshot }
+      },
+      navigate: () => router.push({ path: top.path, query }),
+      rollback: (snapshot) => {
+        for (const tab of tabs.value) {
+          tab.active = snapshot.activeStates.find((item) => item.id === tab.id)?.active ?? false
+        }
+        tabs.value = tabs.value.slice()
+        restoreActiveTabSession(snapshot.sessionSnapshot)
+      },
+      isFailureResult: isNavigationFailure,
+      rejectFailureResult: true
+    })
   }
 
   const reset = () => removeAllTabs()

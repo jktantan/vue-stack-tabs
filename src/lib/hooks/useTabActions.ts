@@ -1,11 +1,16 @@
-import { useRouter } from 'vue-router'
-import { throttle } from 'throttle-debounce'
+import { isNavigationFailure, useRouter } from 'vue-router'
+import type { LocationQueryRaw } from 'vue-router'
 import { defu } from 'defu'
 import useTabPanel from './useTabPanel'
 import { encodeTabInfo } from '../utils/tabInfoEncoder'
-import { parseUrl, isCrossOriginUrl } from '../utils/urlParser'
+import {
+  parseUrl,
+  isCrossOriginUrl,
+  isAllowedTabUrl,
+  omitStackTabsReservedQuery
+} from '../utils/urlParser'
 import type { ITabData, IframeRefreshMode } from '../model/TabModel'
-import { TabEventType, useTabEmitter } from './useTabEventBus'
+import { runNavigationTransaction } from './tabPanel/navigationTransaction'
 
 /** iframe 占位路由的 path，由 StackTabs 通过 setIFramePath 注入 */
 let iframePath: string
@@ -25,7 +30,6 @@ let iframePath: string
  */
 export default function useTabActions() {
   const router = useRouter()
-  const emitter = useTabEmitter()
   const {
     active,
     hasTab,
@@ -60,47 +64,68 @@ export default function useTabActions() {
     return info
   }
 
-  /** 打开新标签；renew=true 时若已存在则清空该标签的页面栈后重新打开；500ms 节流 */
-  const openTab = throttle(500, (tab: ITabData, renew = false) => {
+  /** 打开新标签；renew=true 时若已存在则清空该标签的页面栈后重新打开 */
+  const openTab = (tab: ITabData, renew = false): Promise<string | undefined> => {
     return new Promise<string | undefined>((resolve, reject) => {
       const tabInfo = prepareTabInfo(tab)
 
-      if (hasTab(tabInfo.id!) && !renew) {
-        emitter.emit(TabEventType.TAB_ACTIVE, { id: tabInfo.id! })
-        resolve(tabInfo.id)
+      const isExistingTab = Boolean(tabInfo.id && hasTab(tabInfo.id))
+
+      if (isExistingTab && !renew) {
+        Promise.resolve(active(tabInfo.id!)).then(() => resolve(tabInfo.id), reject)
         return
       }
 
-      if (tabInfo.id && renew && hasTab(tabInfo.id)) {
-        renewTab(tab)
+      let rollbackRenew: (() => void) | undefined
+      let refreshKeySnapshot: number | undefined
+
+      if (tabInfo.id && renew && isExistingTab) {
         const currentTab = getTab(tab.id!)
-        if (currentTab?.active) refreshKey.value++
+        rollbackRenew = renewTab(tab)
+        if (currentTab?.active) {
+          refreshKeySnapshot = refreshKey.value
+          refreshKey.value++
+        }
       }
 
-      if (!canAddTab()) {
+      if (!isExistingTab && !canAddTab()) {
         reject(new Error('Max Size'))
         return
       }
 
-      navigateToTab(tab, tabInfo)
-      resolve(tabInfo.id)
+      navigateToTab(tab, tabInfo).then(
+        () => resolve(tabInfo.id),
+        (error) => {
+          rollbackRenew?.()
+          if (refreshKeySnapshot !== undefined) refreshKey.value = refreshKeySnapshot
+          reject(error)
+        }
+      )
     })
-  })
+  }
 
   /** 执行路由跳转到标签对应页面（普通路由或 iframe 占位路由） */
   const navigateToTab = (tab: ITabData, tabInfo: ITabData) => {
     const __tab = encodeTabInfo(tabInfo)
-    let query = defu({ __tab }, tab.query) as Record<string, string>
+    let query = defu(omitStackTabsReservedQuery(tab.query), { __tab }) as LocationQueryRaw
     let path: string
     if (!tab.iframe) {
       const url = parseUrl(tab.path)
       path = url.path
-      query = defu(url.query, query)
+      query = defu(omitStackTabsReservedQuery(url.query), query, { __tab }) as LocationQueryRaw
     } else {
       query['__src'] = encodeURIComponent(tab.path as string)
       path = iframePath
     }
-    router.push({ path, query })
+    query['__tab'] = __tab
+    if (!isAllowedTabUrl(tab.path)) return Promise.reject(new Error('Invalid tab URL'))
+    return runNavigationTransaction({
+      apply: () => undefined,
+      navigate: () => router.push({ path, query }),
+      rollback: () => undefined,
+      isFailureResult: isNavigationFailure,
+      rejectFailureResult: true
+    })
   }
 
   /** 设置 iframe 占位路由的 path，由 StackTabs 在挂载时调用 */
@@ -116,7 +141,7 @@ export default function useTabActions() {
   /** iframe 标签在新窗口打开（无法嵌入时降级） */
   const openInNewWindow = (id: string) => {
     const tab = getTab(id)
-    if (tab?.iframe && tab.url) {
+    if (tab?.iframe && tab.url && isAllowedTabUrl(tab.url)) {
       window.open(tab.url, '_blank', 'noopener,noreferrer')
     }
   }

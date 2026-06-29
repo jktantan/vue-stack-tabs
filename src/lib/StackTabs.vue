@@ -14,7 +14,8 @@
 import { computed, onBeforeMount, onBeforeUnmount, provide, reactive, ref, watch } from 'vue'
 import type { TransitionProps } from 'vue'
 import { getMaxZIndex } from './utils/scrollUtils'
-import { isInvalidIframeUrl } from './utils/urlParser'
+import { isAllowedTabUrl, toSafeTabUrl } from './utils/urlParser'
+import { applyStackTabsLocale } from './i18n/stackTabsLocale'
 import { type ITabData, TabScrollMode } from './model/TabModel'
 import TabHeader from './components/TabHeader/index.vue'
 import StackKeepAlive from './components/StackKeepAlive/StackKeepAlive.vue'
@@ -22,6 +23,7 @@ import useTabPanel from './hooks/useTabPanel'
 import useTabActions from './hooks/useTabActions'
 import { useI18n } from 'vue-i18n-lite'
 import { TabEventType, useTabEmitter } from '@/lib/hooks/useTabEventBus'
+import { getPostMessageTargetOrigin, isStackTabsOpenTabMessage } from './utils/stackTabsMessage'
 const {
   tabs,
   iframeRefreshKeys,
@@ -68,7 +70,7 @@ const props = withDefaults(
     tabScrollMode: TabScrollMode.BOTH,
     width: '100%',
     height: '100%',
-    i18n: 'zh-CN',
+    i18n: undefined,
     space: 300,
     globalScroll: false,
     sessionPrefix: '',
@@ -82,7 +84,7 @@ provide('maximum', maximum)
 const { setIFramePath, openTab } = useTabActions()
 setIFramePath(props.iframePath)
 setGlobalScroll(props.globalScroll)
-changeLocale(props.i18n)
+applyStackTabsLocale(changeLocale, props.i18n)
 /** 标签激活时向外转发 */
 const onTabActive = (id: string) => {
   emit('onActive', id)
@@ -113,7 +115,7 @@ const iframeTabs = computed(() => tabs.value.filter((item) => item.iframe))
 const iframeEverActivated = reactive<Record<string, boolean>>({})
 /** 当前激活且有有效 URL 的 iframe 列表（供 watch 复用，减少重复 filter） */
 const activeIframesWithUrl = computed(() =>
-  iframeTabs.value.filter((f) => f.active && (f.url ?? '') && !isInvalidIframeUrl(f.url ?? ''))
+  iframeTabs.value.filter((f) => f.active && (f.url ?? '') && isAllowedTabUrl(f.url ?? ''))
 )
 watch(
   activeIframesWithUrl,
@@ -128,9 +130,8 @@ watch(
  * @returns 实际加载的 URL
  */
 const getIframeSrc = (frame: { id: string; url?: string }) => {
-  const url = frame.url ?? ''
-  if (isInvalidIframeUrl(url)) return 'about:blank'
-  return iframeEverActivated[frame.id] ? url : 'about:blank'
+  const safeUrl = toSafeTabUrl(frame.url ?? '')
+  return iframeEverActivated[frame.id] ? safeUrl : 'about:blank'
 }
 
 /** iframe 的 key：postMessage 模式仅用 id（不重建，动画正常）；reload 模式含 refreshKeys */
@@ -197,12 +198,20 @@ const setIframeRef = (id: string, el: HTMLIFrameElement | null) => {
 /** postMessage 刷新：向 iframe 发送消息，由其自行刷新 */
 const handleRefreshIframePostMessage = (tabId: string) => {
   const iframe = iframeElRefs[tabId]
+  const tab = tabs.value.find((item) => item.id === tabId)
   if (iframe?.contentWindow) {
     try {
       console.log(
         `[vue-stack-tabs] Sending 'vue-stack-tabs:refresh' postMessage to iframe: ${tabId}`
       )
-      iframe.contentWindow.postMessage({ type: 'vue-stack-tabs:refresh' }, '*')
+      const targetOrigin = getPostMessageTargetOrigin(tab?.url ?? '')
+      if (!targetOrigin) {
+        console.warn(
+          `[vue-stack-tabs] Skip refresh postMessage because iframe URL is invalid: ${tabId}`
+        )
+        return
+      }
+      iframe.contentWindow.postMessage({ type: 'vue-stack-tabs:refresh' }, targetOrigin)
     } catch (e) {
       console.warn(`[vue-stack-tabs] Failed to send refresh postMessage to iframe: ${tabId}`, e)
     }
@@ -219,25 +228,20 @@ const allowedOrigins = computed(() => {
   const extra = props.iframeAllowedOrigins ?? []
   return [origin, ...extra].filter(Boolean)
 })
-/** 处理 iframe 发来的 postMessage，校验 origin 后调用 openTab */
+/** 校验 postMessage 来源必须是当前实例管理的 iframe */
+const isManagedIframeSource = (source: Parameters<typeof isStackTabsOpenTabMessage>[0]['source']) =>
+  Object.values(iframeElRefs).some((iframe) => iframe?.contentWindow === source)
+
+/** 处理 iframe 发来的 postMessage，校验 origin/source/payload 后调用 openTab */
 const handleMessage = (ev: MessageEvent) => {
   if (!allowedOrigins.value.includes(ev.origin)) return
-  const data = ev.data
-  // 兼容旧格式的数据（如果存在）或直接支持标准的数据格式
-  if (!data || typeof data !== 'object') return
 
-  if (data.type === 'vue-stack-tabs:openTab') {
-    const payload = data.payload
-    if (payload && typeof payload === 'object' && payload.title && payload.path) {
-      openTab(payload)
-    }
-  } else if (data.type === 'openTab') {
-    // 兼容原生旧示例中的类型名
-    const payload = data.payload
-    if (payload && typeof payload === 'object' && payload.title && payload.path) {
-      openTab(payload)
-    }
-  }
+  const payload = isStackTabsOpenTabMessage(ev, isManagedIframeSource)
+  if (!payload) return
+
+  openTab(payload).catch((error: unknown) => {
+    console.warn('[vue-stack-tabs] Failed to open tab from iframe message:', error)
+  })
 }
 
 emitter.on(TabEventType.REFRESH_IFRAME_POSTMESSAGE, handleRefreshIframePostMessage)

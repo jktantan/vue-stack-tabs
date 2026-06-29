@@ -43,6 +43,7 @@ export function onRefreshRequest(callback: () => void = () => window.location.re
   if (typeof window === 'undefined') return () => {}
 
   const handler = (ev: MessageEvent) => {
+    if (ev.source !== window.parent) return
     if (ev.data?.type === MSG_REFRESH) {
       callback()
     }

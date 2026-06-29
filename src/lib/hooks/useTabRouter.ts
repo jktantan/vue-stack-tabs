@@ -1,14 +1,35 @@
 import { defu } from 'defu'
 import { getCurrentInstance } from 'vue'
 import type { ComponentInternalInstance } from 'vue'
-import type { RouteLocationPathRaw } from 'vue-router'
-import { useRoute, useRouter } from 'vue-router'
+import type { LocationQueryRaw, RouteLocationPathRaw } from 'vue-router'
+import type { ITabPage } from '../model/TabModel'
+import { isNavigationFailure, useRoute, useRouter } from 'vue-router'
 
 import useTabPanel from './useTabPanel'
 import { parseUrl } from '../utils/urlParser'
 import { TabEventType, useTabEmitter } from './useTabEventBus'
 
+import { runNavigationTransaction } from './tabPanel/navigationTransaction'
+
 import { createPageId } from '../utils/tabInfoEncoder'
+
+const clonePage = (page: ITabPage): ITabPage => ({
+  ...page,
+  query: page.query ? { ...page.query } : undefined,
+  _backParams: page._backParams ? { ...page._backParams } : undefined
+})
+
+interface PageStackLike {
+  clear: () => void
+  push: (page: ITabPage) => void
+}
+
+const restorePages = (stack: PageStackLike, pages: ITabPage[]) => {
+  stack.clear()
+  for (const page of pages) {
+    stack.push(clonePage(page))
+  }
+}
 
 /**
  * useTabRouter - 标签内路由 Hook
@@ -57,6 +78,8 @@ export default function useTabRouter() {
     addPageScroller(pageId, ...selectors)
   }
 
+  let navigationVersion = 0
+
   /**
    * 前进：将新路由推入该标签的 pages 栈，并触发前进动画。
    *
@@ -69,7 +92,7 @@ export default function useTabRouter() {
    */
   const forward = (to: RouteLocationPathRaw) => {
     const tab = getTab(tabId)
-    const targetQuery = (to.query || {}) as Record<string, string>
+    const targetQuery = (to.query || {}) as LocationQueryRaw
 
     if (tab) {
       // 栈顶去重：如果目标 URL+参数与栈顶完全一致，不重复压栈。
@@ -95,21 +118,41 @@ export default function useTabRouter() {
           return
         }
       }
-
-      // 【核心重构：数据前置压栈】
-      // 生成崭新独立的 CacheName，并推入专属页面栈
-      const newPageId = createPageId()
-      tab.pages.push({
-        id: newPageId,
-        tabId: tab.id,
-        path: to.path,
-        query: targetQuery
-      })
     }
 
     const query = defu({ __tab: tabInfo }, to.query)
+    const transactionVersion = ++navigationVersion
     emitter.emit(TabEventType.FORWARD)
-    router.push({ path: to.path, query })
+
+    let optimisticPageId = ''
+    runNavigationTransaction({
+      apply: () => {
+        const snapshot = tab ? tab.pages.list().map(clonePage) : []
+        if (tab) {
+          optimisticPageId = createPageId()
+          tab.pages.push({
+            id: optimisticPageId,
+            tabId: tab.id,
+            path: to.path,
+            query: targetQuery
+          })
+        }
+        return snapshot
+      },
+      navigate: () => router.push({ path: to.path, query }),
+      rollback: (snapshot) => {
+        if (tab) restorePages(tab.pages, snapshot)
+      },
+      isFailureResult: isNavigationFailure,
+      isCurrent: () => navigationVersion === transactionVersion,
+      cleanupStale: () => {
+        if (!tab || !optimisticPageId) return
+        const pages = tab.pages.list().filter((page) => page.id !== optimisticPageId)
+        restorePages(tab.pages, pages)
+      }
+    }).catch((error: unknown) => {
+      console.warn('[vue-stack-tabs] forward navigation failed:', error)
+    })
   }
 
   /**
@@ -208,6 +251,7 @@ export default function useTabRouter() {
 
     // 阶段 1：仅从 pages 栈弹出，收集 ID 入回收站
     // （keep-alive 驱逐推迟到导航完成后，这就相当于您的回收站概念）
+    const originalPages = stack.list().map(clonePage)
     const recyclingBin: string[] = []
     for (let i = 0; i < steps; i++) {
       const popped = stack.pop()
@@ -216,7 +260,10 @@ export default function useTabRouter() {
 
     // 弹出后，栈顶即为目标回退页
     const target = stack.peek()
-    if (!target) return false
+    if (!target) {
+      restorePages(stack, originalPages)
+      return false
+    }
 
     if (backQuery) {
       // 按照需求，将回退参数挂载在 _backParams 这个只活在页表栈的内存变量上
@@ -229,13 +276,28 @@ export default function useTabRouter() {
     // 阶段 2：先导航，再清理回收站
     // 对于 targetQuery 只需要带一个能够给框架定锚的 __tab。其他参数其实已经在 target.query 里。
     const targetQueryWithTab = defu({ __tab: tabInfo }, target.query || {})
+    const transactionVersion = ++navigationVersion
 
-    // 用编程式导航发起回退路由
-    router.push({ path: target.path, query: targetQueryWithTab }).then(() => {
-      // 导航完成且微任务结束后，说明新目标已稳坐栈顶，此时清理回收站安全
-      for (const id of recyclingBin) {
-        evictPageCache(id)
+    runNavigationTransaction({
+      apply: () => originalPages,
+      navigate: () => router.push({ path: target.path, query: targetQueryWithTab }),
+      rollback: (snapshot) => restorePages(stack, snapshot),
+      isFailureResult: isNavigationFailure,
+      isCurrent: () => navigationVersion === transactionVersion,
+      commit: () => {
+        // 导航完成且微任务结束后，说明新目标已稳坐栈顶，此时清理回收站安全
+        for (const id of recyclingBin) {
+          evictPageCache(id)
+        }
+      },
+      cleanupStale: () => {
+        const activePageIds = new Set(stack.list().map((page) => page.id))
+        for (const id of recyclingBin) {
+          if (!activePageIds.has(id)) evictPageCache(id)
+        }
       }
+    }).catch((error: unknown) => {
+      console.warn('[vue-stack-tabs] backward navigation failed:', error)
     })
     return true
   }

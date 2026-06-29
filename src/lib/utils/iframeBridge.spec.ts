@@ -23,15 +23,29 @@ describe('iframeBridge', () => {
   })
 
   describe('onRefreshRequest', () => {
-    it('注册监听并返回取消函数', () => {
+    it('只接受 window.parent 发来的刷新消息', () => {
       const cb = vi.fn()
       const off = onRefreshRequest(cb)
-      expect(typeof off).toBe('function')
-      window.dispatchEvent(new MessageEvent('message', { data: { type: MSG_REFRESH } }))
-      expect(cb).toHaveBeenCalled()
-      off()
-      window.dispatchEvent(new MessageEvent('message', { data: { type: MSG_REFRESH } }))
+      const otherSource = window.open('', '_blank')
+
+      window.dispatchEvent(
+        new MessageEvent('message', {
+          data: { type: MSG_REFRESH },
+          source: otherSource
+        })
+      )
+      expect(cb).not.toHaveBeenCalled()
+
+      window.dispatchEvent(
+        new MessageEvent('message', {
+          data: { type: MSG_REFRESH },
+          source: window.parent
+        })
+      )
       expect(cb).toHaveBeenCalledTimes(1)
+
+      otherSource?.close()
+      off()
     })
   })
 })

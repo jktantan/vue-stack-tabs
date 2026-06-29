@@ -22,12 +22,17 @@ export const clearSession = () => {
   window.sessionStorage.removeItem(getSessionKey())
 }
 
+/** 恢复 sessionStorage 中的激活标签原始内容，用于导航失败回滚 */
+export const restoreActiveTabSession = (storedJson: string | null) => {
+  if (storedJson === null) {
+    clearSession()
+    return
+  }
+  window.sessionStorage.setItem(getSessionKey(), storedJson)
+}
+
 /** 从 sessionStorage 解析恢复的标签（含 Stack 反序列化） */
-export const restoreTabFromSession = (
-  storedJson: string | null
-): ITabItem | null => {
+export const restoreTabFromSession = (storedJson: string | null): ITabItem | null => {
   if (storedJson == null) return null
-  return JSON.parse(storedJson, (k, v) =>
-    k === 'pages' ? new Stack<ITabPage>(v) : v
-  ) as ITabItem
+  return JSON.parse(storedJson, (k, v) => (k === 'pages' ? new Stack<ITabPage>(v) : v)) as ITabItem
 }

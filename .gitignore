@@ -28,6 +28,7 @@ coverage
 *.sw?
 
 *.tsbuildinfo
+.claude/
 /pnpm-lock.yaml
 /components.d.ts
 /auto-imports.d.ts
