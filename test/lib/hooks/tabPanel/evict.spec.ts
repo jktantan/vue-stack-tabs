@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import type { StackTabsRuntimeContext } from '../stackTabsContext'
-import { createStackTabsRuntimeContext } from '../stackTabsContext'
-import { createTabPanelEviction } from './evict'
-import { Stack } from '../../model/TabModel'
-import type { ITabPage } from '../../model/TabModel'
+import type { StackTabsRuntimeContext } from '@/lib/hooks/stackTabsContext'
+import { createStackTabsRuntimeContext } from '@/lib/hooks/stackTabsContext'
+import { createTabPanelEviction } from '@/lib/hooks/tabPanel/evict'
+import { Stack } from '@/lib/model/TabModel'
+import type { ITabPage } from '@/lib/model/TabModel'
 
 let context: StackTabsRuntimeContext
 let eviction: ReturnType<typeof createTabPanelEviction>

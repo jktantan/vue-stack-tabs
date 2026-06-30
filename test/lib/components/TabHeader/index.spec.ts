@@ -4,10 +4,10 @@ import mitt from 'mitt'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h, nextTick, ref } from 'vue'
 import type { Component } from 'vue'
-import type { IContextMenu, ITabItem } from '../../model/TabModel'
-import { maximumKey } from '../../hooks/stackTabsContext'
-import { tabEmitterKey } from '../../hooks/useTabEventBus'
-import TabHeader from './index.vue'
+import type { IContextMenu, ITabItem } from '@/lib/model/TabModel'
+import { maximumKey } from '@/lib/hooks/stackTabsContext'
+import { tabEmitterKey } from '@/lib/hooks/useTabEventBus'
+import TabHeader from '@/lib/components/TabHeader/index.vue'
 
 const activeTabMock = vi.fn()
 const closeTabMock = vi.fn()
@@ -19,7 +19,7 @@ vi.mock('vue-i18n-lite', () => ({
   })
 }))
 
-vi.mock('../../hooks/useTabActions', () => ({
+vi.mock('@/lib/hooks/useTabActions', () => ({
   default: () => ({
     activeTab: activeTabMock,
     closeTab: closeTabMock,

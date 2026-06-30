@@ -12,13 +12,13 @@ export default defineConfig({
   },
   test: {
     environment: 'node',
-    include: ['src/**/*.{test,spec}.{ts,tsx}'],
+    include: ['test/**/*.{test,spec}.{ts,tsx}'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'text-summary', 'html'],
       include: ['src/lib/**/*.{ts,tsx}'],
       exclude: [
-        'src/lib/**/*.spec.{ts,tsx}',
+        'test/**/*.{test,spec}.{ts,tsx}',
         'src/lib/**/*.d.ts',
         'src/lib/i18n/**',
         'src/lib/versionLogger.ts',

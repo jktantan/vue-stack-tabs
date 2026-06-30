@@ -2,7 +2,7 @@
  * @vitest-environment happy-dom
  */
 import { describe, it, expect, vi } from 'vitest'
-import { MSG_REFRESH, MSG_OPEN_TAB, postOpenTab, onRefreshRequest } from './iframeBridge'
+import { MSG_REFRESH, MSG_OPEN_TAB, postOpenTab, onRefreshRequest } from '@/lib/utils/iframeBridge'
 
 describe('iframeBridge', () => {
   it('MSG_REFRESH 和 MSG_OPEN_TAB 为预期常量', () => {

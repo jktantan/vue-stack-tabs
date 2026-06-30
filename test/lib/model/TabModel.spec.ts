@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { Stack } from './TabModel'
+import { Stack } from '@/lib/model/TabModel'
 
 describe('Stack', () => {
   it('push 与 peek', () => {

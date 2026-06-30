@@ -5,7 +5,7 @@ import {
   isInvalidIframeUrl,
   parseUrl,
   toSafeTabUrl
-} from './urlParser'
+} from '@/lib/utils/urlParser'
 
 describe('tab URL allowlist', () => {
   it('允许相对路径、http、https 和 about:blank', () => {
@@ -70,12 +70,12 @@ describe('decodeSafeTabUrl', () => {
 
 describe('isCrossOriginUrl', () => {
   it('相对路径返回 false', async () => {
-    const { isCrossOriginUrl } = await import('./urlParser')
+    const { isCrossOriginUrl } = await import('@/lib/utils/urlParser')
     expect(isCrossOriginUrl('/demo')).toBe(false)
   })
 
   it('空或非 http(s) 返回 false', async () => {
-    const { isCrossOriginUrl } = await import('./urlParser')
+    const { isCrossOriginUrl } = await import('@/lib/utils/urlParser')
     expect(isCrossOriginUrl('')).toBe(false)
     expect(isCrossOriginUrl('javascript:void(0)')).toBe(false)
   })

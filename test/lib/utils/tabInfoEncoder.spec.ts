@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { encodeTabInfo, decodeTabInfo, createPageId } from './tabInfoEncoder'
-import type { ITabBase } from '../model/TabModel'
+import { encodeTabInfo, decodeTabInfo, createPageId } from '@/lib/utils/tabInfoEncoder'
+import type { ITabBase } from '@/lib/model/TabModel'
 
 describe('tabInfoEncoder', () => {
   const tabData: ITabBase = {

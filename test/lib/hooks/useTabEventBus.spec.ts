@@ -4,8 +4,8 @@ import {
   getActiveStackTabsRuntimeContext,
   registerStackTabsRuntimeContext,
   unregisterStackTabsRuntimeContext
-} from './stackTabsContext'
-import { TabEventType, useTabEmitter } from './useTabEventBus'
+} from '@/lib/hooks/stackTabsContext'
+import { TabEventType, useTabEmitter } from '@/lib/hooks/useTabEventBus'
 
 describe('TabEventType', () => {
   it('包含已有页面加载和页签激活事件名', () => {

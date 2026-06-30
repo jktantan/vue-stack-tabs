@@ -4,8 +4,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { RouteLocationNormalizedLoaded } from 'vue-router'
 import type { DefineComponent } from 'vue'
-import { decodeTabInfo } from '../utils/tabInfoEncoder'
-import type { ITabItem } from '../model/TabModel'
+import { decodeTabInfo } from '@/lib/utils/tabInfoEncoder'
+import type { ITabItem } from '@/lib/model/TabModel'
 
 const push = vi.fn()
 const emit = vi.fn()
@@ -20,7 +20,7 @@ vi.mock('vue-i18n-lite', () => ({
   useI18n: () => ({ t: (key: string) => key })
 }))
 
-vi.mock('./useTabEventBus', () => ({
+vi.mock('@/lib/hooks/useTabEventBus', () => ({
   TabEventType: {
     PAGE_LOADING: 'PAGE_LOADING',
     TAB_ACTIVE: 'TAB_ACTIVE',
@@ -46,7 +46,7 @@ function mockRoute(path: string, matchedPath?: string): RouteLocationNormalizedL
 }
 
 async function withRuntimeContext() {
-  const contextModule = await import('./stackTabsContext')
+  const contextModule = await import('@/lib/hooks/stackTabsContext')
   const active = contextModule.getActiveStackTabsRuntimeContext()
   if (active) contextModule.unregisterStackTabsRuntimeContext(active)
 
@@ -61,19 +61,19 @@ async function withRuntimeContext() {
 
 describe('normalizePathForCache', () => {
   it('当 matched.path 无尾斜杠且 route.path 有尾斜杠时，返回规范化 path', async () => {
-    const { normalizePathForCache } = await import('./useTabPanel')
+    const { normalizePathForCache } = await import('@/lib/hooks/useTabPanel')
     const r = mockRoute('/dashboard/', '/dashboard')
     expect(normalizePathForCache(r)).toBe('/dashboard')
   })
 
   it('路径与 matched 一致时返回规范化 path', async () => {
-    const { normalizePathForCache } = await import('./useTabPanel')
+    const { normalizePathForCache } = await import('@/lib/hooks/useTabPanel')
     const r = mockRoute('/home', '/home')
     expect(normalizePathForCache(r)).toBe('/home')
   })
 
   it('路径与 matched 不一致时返回原 path', async () => {
-    const { normalizePathForCache } = await import('./useTabPanel')
+    const { normalizePathForCache } = await import('@/lib/hooks/useTabPanel')
     const r = mockRoute('/detail/1', '/detail/:id')
     expect(normalizePathForCache(r)).toBe('/detail/1')
   })
@@ -90,7 +90,7 @@ describe('useTabPanel', () => {
 
   it('initialize 忽略 defaultTabs path query 中的保留 __tab，保留普通 query', async () => {
     const runtime = await withRuntimeContext()
-    const { default: useTabPanel } = await import('./useTabPanel')
+    const { default: useTabPanel } = await import('@/lib/hooks/useTabPanel')
     const panel = useTabPanel()
 
     panel.initialize([
@@ -115,8 +115,8 @@ describe('useTabPanel', () => {
 
   it('initialize 恢复 session iframe tab 时清洗非法 url', async () => {
     const runtime = await withRuntimeContext()
-    const { Stack } = await import('../model/TabModel')
-    const { default: useTabPanel } = await import('./useTabPanel')
+    const { Stack } = await import('@/lib/model/TabModel')
+    const { default: useTabPanel } = await import('@/lib/hooks/useTabPanel')
     const panel = useTabPanel()
     window.sessionStorage.setItem(
       'stacktab-active-tab',
@@ -144,8 +144,8 @@ describe('useTabPanel', () => {
 
   it('从路由 __src 创建 iframe tab 时清洗非法 url', async () => {
     const runtime = await withRuntimeContext()
-    const { encodeTabInfo } = await import('../utils/tabInfoEncoder')
-    const { default: useTabPanel } = await import('./useTabPanel')
+    const { encodeTabInfo } = await import('@/lib/utils/tabInfoEncoder')
+    const { default: useTabPanel } = await import('@/lib/hooks/useTabPanel')
     const panel = useTabPanel()
     const route = {
       ...mockRoute('/iframe'),
@@ -167,8 +167,8 @@ describe('useTabPanel', () => {
 
   it('从路由 malformed __src 创建 iframe tab 时降级为 about:blank', async () => {
     const runtime = await withRuntimeContext()
-    const { encodeTabInfo } = await import('../utils/tabInfoEncoder')
-    const { default: useTabPanel } = await import('./useTabPanel')
+    const { encodeTabInfo } = await import('@/lib/utils/tabInfoEncoder')
+    const { default: useTabPanel } = await import('@/lib/hooks/useTabPanel')
     const panel = useTabPanel()
     const route = {
       ...mockRoute('/iframe'),
@@ -190,7 +190,7 @@ describe('useTabPanel', () => {
   it('renewTab 返回的回滚函数会恢复 pages、cache 与 component', async () => {
     const runtime = await withRuntimeContext()
     const { defineComponent } = await import('vue')
-    const { default: useTabPanel } = await import('./useTabPanel')
+    const { default: useTabPanel } = await import('@/lib/hooks/useTabPanel')
     const panel = useTabPanel()
     const component = defineComponent({
       name: 'RenewRollbackComponent',
@@ -221,7 +221,7 @@ describe('useTabPanel', () => {
   it('active 路由导航失败时回滚 active 状态与 session', async () => {
     const runtime = await withRuntimeContext()
     const failure = { type: 'aborted' }
-    const { default: useTabPanel } = await import('./useTabPanel')
+    const { default: useTabPanel } = await import('@/lib/hooks/useTabPanel')
     const panel = useTabPanel()
 
     panel.initialize([
@@ -243,7 +243,7 @@ describe('useTabPanel', () => {
 
   it('addPage 不原地修改 route.query，且 page.query 保存拷贝', async () => {
     const runtime = await withRuntimeContext()
-    const { default: useTabPanel } = await import('./useTabPanel')
+    const { default: useTabPanel } = await import('@/lib/hooks/useTabPanel')
     const panel = useTabPanel()
     const route = mockRoute('/external')
     const originalQuery = route.query
@@ -269,7 +269,7 @@ describe('useTabPanel', () => {
 
   it('addPage 会浅拷贝 route.query 中的数组值', async () => {
     const runtime = await withRuntimeContext()
-    const { default: useTabPanel } = await import('./useTabPanel')
+    const { default: useTabPanel } = await import('@/lib/hooks/useTabPanel')
     const panel = useTabPanel()
     const originalTags = ['a', 'b']
     const route = {
@@ -296,7 +296,7 @@ describe('useTabPanel', () => {
 
   it('无 __tab 路由刷新后再次 addPage 会复用当前激活 tab 身份', async () => {
     const runtime = await withRuntimeContext()
-    const { default: useTabPanel } = await import('./useTabPanel')
+    const { default: useTabPanel } = await import('@/lib/hooks/useTabPanel')
     const panel = useTabPanel()
     const route = mockRoute('/external')
 

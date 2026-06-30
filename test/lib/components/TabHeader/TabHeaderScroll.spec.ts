@@ -3,7 +3,7 @@ import { mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h, nextTick } from 'vue'
 import type { Component } from 'vue'
-import TabHeaderScroll from './TabHeaderScroll.vue'
+import TabHeaderScroll from '@/lib/components/TabHeader/TabHeaderScroll.vue'
 
 vi.mock('@/lib/utils/scrollUtils', () => ({
   scrollTo: ({ wrap, left, top }: { wrap: HTMLElement | null; left?: number; top?: number }) => {
