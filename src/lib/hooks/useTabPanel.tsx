@@ -547,7 +547,10 @@ export default () => {
   let lastRouteKey = ''
   let lastAddPageResult: DefineComponent | null = null
 
-  const addPage = (route: RouteLocationNormalizedLoaded, component: VNode): DefineComponent => {
+  const addPage = (
+    route: RouteLocationNormalizedLoaded,
+    component?: VNode | null
+  ): DefineComponent => {
     if (!component) return EmptyPlaceholderComponent as DefineComponent
 
     const routeKey = route.fullPath + (route.query.__tab || '')

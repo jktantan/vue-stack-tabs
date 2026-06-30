@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
-import { mount } from '@vue/test-utils'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { enableAutoUnmount, mount } from '@vue/test-utils'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h, nextTick, ref } from 'vue'
 import type { Component, VNode } from 'vue'
 import type { RouteLocationNormalizedLoaded } from 'vue-router'
@@ -10,6 +10,8 @@ const caches = ref<string[]>([])
 const refreshKey = ref(0)
 const activeCacheKey = ref('')
 const addPageMock = vi.fn()
+
+enableAutoUnmount(afterEach)
 
 vi.mock('@/lib/hooks/useTabPanel', () => ({
   default: () => ({
@@ -144,14 +146,37 @@ describe('StackKeepAlive', () => {
     expect(wrapper.find('[data-test="wrapped-page"]').attributes('data-has-vnode')).toBe('true')
   })
 
-  it('activeCacheKey 和 refreshKey 变化时重建缓存页实例', async () => {
+  it('activeCacheKey 变化时重建缓存页实例但不重复调用 addPage', async () => {
     const wrapper = mountKeepAlive()
+    await nextTick()
+
+    expect(addPageMock).toHaveBeenCalledTimes(1)
 
     const firstInstanceId = wrapper
       .find('[data-test="wrapped-page"]')
       .attributes('data-instance-id')
 
     activeCacheKey.value = 'cache-b'
+    await nextTick()
+
+    const secondInstanceId = wrapper
+      .find('[data-test="wrapped-page"]')
+      .attributes('data-instance-id')
+
+    expect(secondInstanceId).not.toBe(firstInstanceId)
+    expect(addPageMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('refreshKey 变化时重建缓存页实例并重新调用 addPage', async () => {
+    const wrapper = mountKeepAlive()
+    await nextTick()
+
+    expect(addPageMock).toHaveBeenCalledTimes(1)
+
+    const firstInstanceId = wrapper
+      .find('[data-test="wrapped-page"]')
+      .attributes('data-instance-id')
+
     refreshKey.value = 8
     await nextTick()
 
@@ -160,6 +185,7 @@ describe('StackKeepAlive', () => {
       .attributes('data-instance-id')
 
     expect(secondInstanceId).not.toBe(firstInstanceId)
+    expect(addPageMock).toHaveBeenCalledTimes(2)
   })
 
   it('把缓存页 onLoaded 事件转发为 loaded', async () => {
