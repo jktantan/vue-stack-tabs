@@ -6,7 +6,7 @@ import type { ITabPage } from '../model/TabModel'
 import { isNavigationFailure, useRoute, useRouter } from 'vue-router'
 
 import useTabPanel from './useTabPanel'
-import { parseUrl } from '../utils/urlParser'
+import { parseUrl, cloneLocationQuery } from '../utils/urlParser'
 import { TabEventType, useTabEmitter } from './useTabEventBus'
 
 import { runNavigationTransaction } from './tabPanel/navigationTransaction'
@@ -15,7 +15,7 @@ import { createPageId } from '../utils/tabInfoEncoder'
 
 const clonePage = (page: ITabPage): ITabPage => ({
   ...page,
-  query: page.query ? { ...page.query } : undefined,
+  query: page.query ? cloneLocationQuery(page.query) : undefined,
   _backParams: page._backParams ? { ...page._backParams } : undefined
 })
 
@@ -134,7 +134,7 @@ export default function useTabRouter() {
             id: optimisticPageId,
             tabId: tab.id,
             path: to.path,
-            query: targetQuery
+            query: cloneLocationQuery(targetQuery)
           })
         }
         return snapshot
@@ -219,9 +219,6 @@ export default function useTabRouter() {
         const page = pages[i]
         const isSamePath = page?.path === parsed.path
         const isSameQuery = isQueryMatch(page?.query)
-        console.log(
-          `[vue-stack-tabs backward] Checking pop candidate ${i}: path=${page?.path}, isSamePath=${isSamePath}, isSameQuery=${isSameQuery}`
-        )
         if (isSamePath && isSameQuery) {
           found = true
           break

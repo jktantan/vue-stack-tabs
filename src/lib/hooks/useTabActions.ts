@@ -11,9 +11,7 @@ import {
 } from '../utils/urlParser'
 import type { ITabData, IframeRefreshMode } from '../model/TabModel'
 import { runNavigationTransaction } from './tabPanel/navigationTransaction'
-
-/** iframe 占位路由的 path，由 StackTabs 通过 setIFramePath 注入 */
-let iframePath: string
+import { resolveStackTabsRuntimeContext } from './stackTabsContext'
 
 /**
  * useTabActions - 标签操作对外 Hook
@@ -30,6 +28,7 @@ let iframePath: string
  */
 export default function useTabActions() {
   const router = useRouter()
+  const runtimeContext = resolveStackTabsRuntimeContext()
   const {
     active,
     hasTab,
@@ -107,17 +106,27 @@ export default function useTabActions() {
   /** 执行路由跳转到标签对应页面（普通路由或 iframe 占位路由） */
   const navigateToTab = (tab: ITabData, tabInfo: ITabData) => {
     const __tab = encodeTabInfo(tabInfo)
-    let query = defu(omitStackTabsReservedQuery(tab.query), { __tab }) as LocationQueryRaw
+    const tabQuery = omitStackTabsReservedQuery(tab.query)
+    let query = defu(tabQuery, { __tab }) as LocationQueryRaw
     let path: string
+
     if (!tab.iframe) {
       const url = parseUrl(tab.path)
       path = url.path
       query = defu(omitStackTabsReservedQuery(url.query), query, { __tab }) as LocationQueryRaw
+      query = {
+        ...query,
+        __tab
+      }
     } else {
-      query['__src'] = encodeURIComponent(tab.path as string)
-      path = iframePath
+      query = {
+        ...query,
+        __src: encodeURIComponent(tab.path as string),
+        __tab
+      }
+      path = runtimeContext.iframePath.value
     }
-    query['__tab'] = __tab
+
     if (!isAllowedTabUrl(tab.path)) return Promise.reject(new Error('Invalid tab URL'))
     return runNavigationTransaction({
       apply: () => undefined,
@@ -130,7 +139,7 @@ export default function useTabActions() {
 
   /** 设置 iframe 占位路由的 path，由 StackTabs 在挂载时调用 */
   const setIFramePath = (path: string) => {
-    iframePath = path
+    runtimeContext.iframePath.value = path
   }
 
   /** 获取当前页面的缓存容器 DOM（用于某些需要直接操作 DOM 的场景） */

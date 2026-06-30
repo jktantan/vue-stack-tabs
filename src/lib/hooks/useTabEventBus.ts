@@ -1,6 +1,7 @@
+import type { InjectionKey } from 'vue'
+import { hasInjectionContext, inject } from 'vue'
 import type { Emitter, EventType } from 'mitt'
-import mitt from 'mitt'
-import { type App, inject } from 'vue'
+import { resolveStackTabsRuntimeContext } from './stackTabsContext'
 
 declare module '@vue/runtime-core' {
   export interface ComponentCustomProperties {
@@ -25,18 +26,19 @@ export interface TabEventPayloadMap extends Record<EventType, unknown> {
   [TabEventType.REFRESH_IFRAME_POSTMESSAGE]: string
 }
 
-/** 全局标签事件总线，用于跨组件通信（激活、加载等） */
-const eventBus = mitt<TabEventPayloadMap>()
+export const tabEmitterKey: InjectionKey<Emitter<TabEventPayloadMap>> = Symbol('tabEmitter')
 
 const plugin = {
-  install(app: App) {
-    app.provide('tabEmitter', eventBus)
+  install(): void {
+    // 事件总线由唯一 <VueStackTabs> runtime context 提供。
+    // 保留 no-op plugin 仅避免内部迁移期间破坏旧安装链路。
   }
 }
 
 /** 获取标签事件总线，用于组件间通信 */
 export const useTabEmitter = (): Emitter<TabEventPayloadMap> => {
-  return inject('tabEmitter') as Emitter<TabEventPayloadMap>
+  const injected = hasInjectionContext() ? inject(tabEmitterKey, null) : null
+  return injected ?? resolveStackTabsRuntimeContext().eventBus
 }
 
 export default plugin

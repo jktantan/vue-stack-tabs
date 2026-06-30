@@ -8,15 +8,17 @@ Configure the module in `nuxt.config.ts`:
 export default defineNuxtConfig({
   modules: ['vue-stack-tabs/nuxt'],
   vueStackTabs: {
-    locale: 'zh-CN'  // or 'en'
+    locale: 'zh-CN' // or 'en'
   }
 })
 ```
 
 The module automatically:
 
-- Registers the VueStackTabs component
+- Registers the global `VueStackTabs` component through the Vue plugin
 - Auto-imports composables (`useTabActions`, `useTabRouter`, `useTabLoading`)
+
+Nuxt apps also support only one `<VueStackTabs>` instance.
 
 ## Option 2: Manual Plugin
 

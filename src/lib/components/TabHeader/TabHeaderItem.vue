@@ -30,7 +30,7 @@
 -->
 <script setup lang="ts">
 import { computed, ref, onUnmounted } from 'vue'
-import type { ITabItem } from '@/lib/model/TabModel'
+import type { ITabItem } from '../../model/TabModel'
 import { TabEventType, useTabEmitter } from '../../hooks/useTabEventBus'
 import { useI18n } from 'vue-i18n-lite'
 const emit = defineEmits(['close', 'active'])

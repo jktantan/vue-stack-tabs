@@ -48,6 +48,8 @@ app.use(VueStackTabs)
 app.mount('#app')
 ```
 
+> `vue-stack-tabs` 每个 Vue app 只支持一个 `<VueStackTabs>` 实例。默认导入 `VueStackTabs` 是 Vue plugin，用于 `app.use(VueStackTabs)`；如果需要本地组件导入，请使用 named export。
+
 ### 2. 配置路由
 
 标签页依赖 Vue Router，需要一个承载 `<VueStackTabs>` 的父路由：
@@ -98,6 +100,12 @@ const defaultTabs: ITabData[] = [
   }
 ]
 </script>
+```
+
+如果需要本地组件导入，推荐使用 `VueStackTabs` named export；`StackTab` named export 会继续保留作为兼容别名：
+
+```ts
+import { VueStackTabs as VueStackTabsComponent } from 'vue-stack-tabs'
 ```
 
 ### 4. 打开标签

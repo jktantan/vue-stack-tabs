@@ -51,12 +51,12 @@
 
 <script lang="ts" setup>
 import { computed, ref, reactive, onMounted, watch, onUnmounted } from 'vue'
-import type { ScrollData, DragData } from '@/lib/model/TabModel'
+import type { ScrollData, DragData } from '../../model/TabModel'
 import {
   scrollTo as scrollToUtil,
   scrollIntoView as scrollIntoViewUtil
-} from '@/lib/utils/scrollUtils'
-import TabHeaderButton from '@/lib/components/TabHeader/TabHeaderButton.vue'
+} from '../../utils/scrollUtils'
+import TabHeaderButton from './TabHeaderButton.vue'
 
 /** 标签列表滚动容器 */
 const container = ref<HTMLElement | null>(null)
@@ -118,8 +118,7 @@ const updateScrollButtonState = (data: ScrollData) => {
   const hasHorizontalOverflow = data.scrollWidth > data.clientWidth
 
   isDisabledLeftButton.value = data.scrollLeft <= 10
-  isDisabledRightButton.value =
-    data.clientWidth + data.scrollLeft - data.scrollWidth >= -10
+  isDisabledRightButton.value = data.clientWidth + data.scrollLeft - data.scrollWidth >= -10
   isScrollButtonVisible.value = props.isScrollButton && hasHorizontalOverflow
 }
 
@@ -154,21 +153,16 @@ const updateScrollState = () => {
 
 /** 确保激活的标签在可视区域内 */
 const ensureActiveTabInView = () => {
-  const activeTabEl = container.value?.querySelector('.stack-tab__item.is-active') as HTMLElement | null
+  const activeTabEl = container.value?.querySelector(
+    '.stack-tab__item.is-active'
+  ) as HTMLElement | null
   if (activeTabEl && !isInView(activeTabEl)) {
     scrollIntoView(activeTabEl)
   }
 }
 
-const scrollContainerResizeObserver = new ResizeObserver(() => {
-  updateScrollState()
-  ensureActiveTabInView()
-})
-
-const tabListResizeObserver = new ResizeObserver(() => {
-  if (!hasScroller.value) ensureActiveTabInView()
-  updateScrollState()
-})
+let scrollContainerResizeObserver: ResizeObserver | null = null
+let tabListResizeObserver: ResizeObserver | null = null
 /** 滚动到指定 left 位置 */
 const scrollTo = (left: number, smooth = true) => {
   scrollToUtil({ wrap: container.value, left, top: 0, smooth })
@@ -221,13 +215,26 @@ const handleScrollbarDragEnd = () => {
 }
 
 onMounted(() => {
-  scrollContainerResizeObserver.observe(headerScroll.value as Element)
+  if (typeof ResizeObserver === 'undefined') return
+
+  scrollContainerResizeObserver = new ResizeObserver(() => {
+    updateScrollState()
+    ensureActiveTabInView()
+  })
+  tabListResizeObserver = new ResizeObserver(() => {
+    if (!hasScroller.value) ensureActiveTabInView()
+    updateScrollState()
+  })
+
+  if (headerScroll.value) scrollContainerResizeObserver.observe(headerScroll.value)
   const tabNav = container.value?.querySelector('.stack-tab__nav')
-  tabListResizeObserver.observe(tabNav!)
+  if (tabNav) tabListResizeObserver.observe(tabNav)
 })
 onUnmounted(() => {
-  scrollContainerResizeObserver.disconnect()
-  tabListResizeObserver.disconnect()
+  scrollContainerResizeObserver?.disconnect()
+  tabListResizeObserver?.disconnect()
+  scrollContainerResizeObserver = null
+  tabListResizeObserver = null
 })
 
 const scrollIntoView = (el: HTMLElement) => {

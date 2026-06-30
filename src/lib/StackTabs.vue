@@ -11,7 +11,17 @@
   - keep-alive include=caches，exclude=excludedCacheIdsForRefresh（刷新时排除）
 -->
 <script lang="ts" setup>
-import { computed, onBeforeMount, onBeforeUnmount, provide, reactive, ref, watch } from 'vue'
+import {
+  computed,
+  getCurrentInstance,
+  inject,
+  onBeforeMount,
+  onBeforeUnmount,
+  provide,
+  reactive,
+  ref,
+  watch
+} from 'vue'
 import type { TransitionProps } from 'vue'
 import { getMaxZIndex } from './utils/scrollUtils'
 import { isAllowedTabUrl, toSafeTabUrl } from './utils/urlParser'
@@ -22,18 +32,15 @@ import StackKeepAlive from './components/StackKeepAlive/StackKeepAlive.vue'
 import useTabPanel from './hooks/useTabPanel'
 import useTabActions from './hooks/useTabActions'
 import { useI18n } from 'vue-i18n-lite'
-import { TabEventType, useTabEmitter } from '@/lib/hooks/useTabEventBus'
+import { TabEventType, tabEmitterKey } from './hooks/useTabEventBus'
+import {
+  createStackTabsRuntimeContext,
+  maximumKey,
+  registerStackTabsRuntimeContext,
+  stackTabsContextKey,
+  unregisterStackTabsRuntimeContext
+} from './hooks/stackTabsContext'
 import { getPostMessageTargetOrigin, isStackTabsOpenTabMessage } from './utils/stackTabsMessage'
-const {
-  tabs,
-  iframeRefreshKeys,
-  destroy,
-  initialize,
-  setMaxSize,
-  setGlobalScroll,
-  setSessionPrefix
-} = useTabPanel()
-/** keep-alive 的 include 列表；excludedCacheIdsForRefresh 为刷新时临时 exclude，触发重挂载 */
 const emit = defineEmits(['onActive', 'onPageLoaded'])
 const props = withDefaults(
   defineProps<{
@@ -78,25 +85,72 @@ const props = withDefaults(
   }
 )
 const { changeLocale, t } = useI18n()
+const runtimeContext =
+  inject(stackTabsContextKey, null) ??
+  createStackTabsRuntimeContext({
+    iframePath: props.iframePath,
+    maxTabCount: props.max,
+    useGlobalScroll: props.globalScroll,
+    sessionPrefix: props.sessionPrefix
+  })
+const stackTabsApp = getCurrentInstance()?.appContext.app
+const isRuntimeContextOwner = registerStackTabsRuntimeContext(
+  runtimeContext,
+  stackTabsApp ? { app: stackTabsApp } : undefined
+)
+if (isRuntimeContextOwner) {
+  provide(stackTabsContextKey, runtimeContext)
+  provide(tabEmitterKey, runtimeContext.eventBus)
+}
 /** 是否最大化显示，通过 provide 向下传递 */
 const maximum = ref<boolean>(false)
-provide('maximum', maximum)
-const { setIFramePath, openTab } = useTabActions()
-setIFramePath(props.iframePath)
-setGlobalScroll(props.globalScroll)
-applyStackTabsLocale(changeLocale, props.i18n)
+if (isRuntimeContextOwner) {
+  provide(maximumKey, maximum)
+}
+const panelApi = isRuntimeContextOwner
+  ? useTabPanel()
+  : {
+      tabs: runtimeContext.tabs,
+      iframeRefreshKeys: runtimeContext.iframeRefreshKeys,
+      destroy: () => undefined,
+      initialize: () => undefined,
+      setMaxSize: () => undefined,
+      setGlobalScroll: () => undefined,
+      setSessionPrefix: () => undefined
+    }
+const {
+  tabs,
+  iframeRefreshKeys,
+  destroy,
+  initialize,
+  setMaxSize,
+  setGlobalScroll,
+  setSessionPrefix
+} = panelApi
+const tabActions = isRuntimeContextOwner
+  ? useTabActions()
+  : {
+      setIFramePath: () => undefined,
+      openTab: () => Promise.resolve(undefined)
+    }
+const { setIFramePath, openTab } = tabActions
+if (isRuntimeContextOwner) {
+  setIFramePath(props.iframePath)
+  setGlobalScroll(props.globalScroll)
+  setMaxSize(props.max)
+  applyStackTabsLocale(changeLocale, props.i18n)
+}
 /** 标签激活时向外转发 */
 const onTabActive = (id: string) => {
   emit('onActive', id)
 }
-setMaxSize(props.max)
 /** 页面组件加载完成时向外转发 */
 const onComponentLoaded = () => {
   emit('onPageLoaded')
 }
 /** 当前页面转场动画名，前进/后退时由 useTabRouter 发出 FORWARD/BACKWARD 事件切换 */
 const pageSwitch = ref<string>(props.pageTransition)
-const emitter = useTabEmitter()
+const emitter = runtimeContext.eventBus
 /** 前进时使用 pageTransition */
 const forwardHandler = () => {
   pageSwitch.value = props.pageTransition
@@ -105,8 +159,10 @@ const forwardHandler = () => {
 const backwardHandler = () => {
   pageSwitch.value = props.pageTransitionBack
 }
-emitter.on(TabEventType.FORWARD, forwardHandler)
-emitter.on(TabEventType.BACKWARD, backwardHandler)
+if (isRuntimeContextOwner) {
+  emitter.on(TabEventType.FORWARD, forwardHandler)
+  emitter.on(TabEventType.BACKWARD, backwardHandler)
+}
 
 /** iframe 标签列表，computed 避免重复 filter */
 const iframeTabs = computed(() => tabs.value.filter((item) => item.iframe))
@@ -201,9 +257,6 @@ const handleRefreshIframePostMessage = (tabId: string) => {
   const tab = tabs.value.find((item) => item.id === tabId)
   if (iframe?.contentWindow) {
     try {
-      console.log(
-        `[vue-stack-tabs] Sending 'vue-stack-tabs:refresh' postMessage to iframe: ${tabId}`
-      )
       const targetOrigin = getPostMessageTargetOrigin(tab?.url ?? '')
       if (!targetOrigin) {
         console.warn(
@@ -244,23 +297,34 @@ const handleMessage = (ev: MessageEvent) => {
   })
 }
 
-emitter.on(TabEventType.REFRESH_IFRAME_POSTMESSAGE, handleRefreshIframePostMessage)
+if (isRuntimeContextOwner) {
+  emitter.on(TabEventType.REFRESH_IFRAME_POSTMESSAGE, handleRefreshIframePostMessage)
+}
 
 onBeforeMount(() => {
+  if (!isRuntimeContextOwner) return
   setSessionPrefix(props.sessionPrefix)
   initialize(props.defaultTabs)
   window.addEventListener('message', handleMessage)
 })
 onBeforeUnmount(() => {
+  for (const timeoutId of loadTimeoutIds.values()) clearTimeout(timeoutId)
+  loadTimeoutIds.clear()
+  if (!isRuntimeContextOwner) return
   window.removeEventListener('message', handleMessage)
   emitter.off(TabEventType.REFRESH_IFRAME_POSTMESSAGE, handleRefreshIframePostMessage)
   emitter.off(TabEventType.FORWARD, forwardHandler)
   emitter.off(TabEventType.BACKWARD, backwardHandler)
   destroy()
+  unregisterStackTabsRuntimeContext(
+    runtimeContext,
+    stackTabsApp ? { app: stackTabsApp } : undefined
+  )
 })
 </script>
 <template>
   <div
+    v-if="isRuntimeContextOwner"
     class="stack-tab"
     :style="{
       width: width,

@@ -1,4 +1,4 @@
-import { addPlugin, addImports, createResolver, defineNuxtModule } from '@nuxt/kit'
+import { addPlugin, addImports, createResolver, defineNuxtModule } from 'nuxt/kit'
 
 export interface ModuleOptions {
   /** 默认语言 */
@@ -21,8 +21,7 @@ export default defineNuxtModule<ModuleOptions>({
     }
 
     addPlugin({
-      src: resolve('./runtime/plugin.client'),
-      mode: 'client'
+      src: resolve('./runtime/plugin')
     })
 
     addImports([

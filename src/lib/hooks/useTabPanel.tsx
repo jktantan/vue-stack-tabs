@@ -33,46 +33,18 @@ import {
   isCrossOriginUrl,
   omitStackTabsReservedQuery,
   toSafeTabUrl,
-  decodeSafeTabUrl
+  decodeSafeTabUrl,
+  cloneLocationQuery
 } from '../utils/urlParser'
 import PageLoading from '../components/PageLoading.vue'
 import { TabEventType, useTabEmitter } from './useTabEventBus'
 import { runNavigationTransaction } from './tabPanel/navigationTransaction'
 import { useI18n } from 'vue-i18n-lite'
 
-import {
-  tabs,
-  defaultTabs,
-  caches,
-  components,
-  tabIdsToEvict,
-  refreshKey,
-  iframeRefreshKeys,
-  isInitialized,
-  maxTabCount,
-  useGlobalScroll,
-  cacheIdsToEvict,
-  setMaxTabCount,
-  setUseGlobalScroll,
-  setSessionPrefix
-} from './tabPanel/state'
-import {
-  markCacheForEviction,
-  markTabPagesForEviction,
-  markTabPagesForEvictionOnly,
-  addCache,
-  removeCache,
-  evictMarkedCaches,
-  evictPageCache
-} from './tabPanel/evict'
-import { restoreScroller, saveScroller, removeScroller, addPageScroller } from './tabPanel/scroll'
-import {
-  saveActiveTabToSession,
-  clearSession,
-  restoreTabFromSession,
-  restoreActiveTabSession,
-  getSessionKey
-} from './tabPanel/session'
+import { resolveStackTabsRuntimeContext } from './stackTabsContext'
+import { createTabPanelEviction } from './tabPanel/evict'
+import { createTabPanelScroll } from './tabPanel/scroll'
+import { createTabPanelSession } from './tabPanel/session'
 
 /* eslint-disable vue/one-component-per-file */
 /** 占位组件：当路由组件为空或标签已被标记删除时返回 */
@@ -85,8 +57,13 @@ const EmptyPlaceholderComponent = defineComponent({
 
 const cloneTabPage = (page: ITabPage): ITabPage => ({
   ...page,
-  query: page.query ? { ...page.query } : undefined,
+  query: page.query ? cloneLocationQuery(page.query) : undefined,
   _backParams: page._backParams ? { ...page._backParams } : undefined
+})
+
+const cloneRouteQuery = (route: RouteLocationNormalizedLoaded, tabInfo: ITabBase) => ({
+  ...cloneLocationQuery(route.query),
+  __tab: route.query.__tab ?? encodeTabInfo(tabInfo)
 })
 
 /** 规范化路径（nginx 等可能加尾部斜杠） */
@@ -101,6 +78,36 @@ export default () => {
   const router = useRouter()
   const emitter = useTabEmitter()
   const { t } = useI18n()
+  const runtimeContext = resolveStackTabsRuntimeContext()
+  const {
+    tabs,
+    defaultTabs,
+    caches,
+    components,
+    tabIdsToEvict,
+    refreshKey,
+    iframeRefreshKeys,
+    isInitialized,
+    cacheIdsToEvict
+  } = runtimeContext
+  const {
+    markCacheForEviction,
+    markTabPagesForEviction,
+    markTabPagesForEvictionOnly,
+    addCache,
+    removeCache,
+    evictMarkedCaches,
+    evictPageCache
+  } = createTabPanelEviction(runtimeContext)
+  const { restoreScroller, saveScroller, removeScroller, addPageScroller } =
+    createTabPanelScroll(runtimeContext)
+  const {
+    saveActiveTabToSession,
+    clearSession,
+    restoreTabFromSession,
+    restoreActiveTabSession,
+    getSessionKey
+  } = createTabPanelSession(runtimeContext)
 
   const size = (): number => tabs.value.length
 
@@ -148,8 +155,8 @@ export default () => {
       }
 
       addCache(cacheName)
-      defaultTabs.push(tab)
-      tabs.value.push({ ...tab })
+      defaultTabs.value = [...defaultTabs.value, tab]
+      tabs.value = [...tabs.value, { ...tab }]
     }
 
     const storedTabJson = sessionStorage.getItem(getSessionKey())
@@ -175,7 +182,9 @@ export default () => {
   }
 
   const hasTab = (id: string) => tabs.value.some((t) => t.id === id)
-  const canAddTab = () => maxTabCount <= 0 || (maxTabCount > 0 && maxTabCount > tabs.value.length)
+  const canAddTab = () =>
+    runtimeContext.maxTabCount.value <= 0 ||
+    (runtimeContext.maxTabCount.value > 0 && runtimeContext.maxTabCount.value > tabs.value.length)
 
   const addTab = (tab: ITabItem) => {
     tabs.value.push(tab)
@@ -184,18 +193,31 @@ export default () => {
 
   const getTab = (id: string) => tabs.value.find((t) => t.id === id) ?? null
 
-  /** 从路由解析 tabInfo，若无则创建默认并写入 query */
+  /** 从路由解析 tabInfo，若无则创建默认信息，调用方负责把编码信息写入内部 page.query */
   const parseTabInfoFromRoute = (route: RouteLocationNormalizedLoaded): ITabBase => {
     if (route.query.__tab) return decodeTabInfo(route.query.__tab as string)
-    const tabInfo: ITabBase = {
+
+    const path = normalizePathForCache(route)
+    const activeTab = tabs.value.find((tab) => tab.active)
+    const activePage = activeTab?.pages.peek()
+    if (activeTab && activePage?.path === path) {
+      return {
+        id: activeTab.id,
+        title: activeTab.title,
+        closable: activeTab.closable,
+        refreshable: activeTab.refreshable,
+        iframe: activeTab.iframe,
+        iframeRefreshMode: activeTab.iframeRefreshMode
+      }
+    }
+
+    return {
       id: crypto.randomUUID(),
       title: t('VueStackTab.undefined'),
       closable: true,
       refreshable: true,
       iframe: false
     }
-    route.query.__tab = encodeTabInfo(tabInfo)
-    return tabInfo
   }
 
   /**
@@ -332,7 +354,7 @@ export default () => {
               id: cacheName,
               tabId: tabInfo.id!,
               path: route.path, // 保持原 query 等参数
-              query: route.query as Record<string, string>
+              query: cloneRouteQuery(route, tabInfo)
             }
           }
         } else {
@@ -342,7 +364,7 @@ export default () => {
             id: cacheName,
             tabId: tabInfo.id!,
             path: route.path, // 保持原 query 等参数
-            query: route.query as Record<string, string>
+            query: cloneRouteQuery(route, tabInfo)
           }
         }
       }
@@ -353,7 +375,7 @@ export default () => {
         id: cacheName,
         tabId: tabInfo.id!,
         path: route.path,
-        query: route.query as Record<string, string>
+        query: cloneRouteQuery(route, tabInfo)
       }
     }
 
@@ -487,7 +509,10 @@ export default () => {
             <div
               class="cache-page-wrapper"
               id={`W-${cacheName}`}
-              style={[useGlobalScroll ? 'overflow:auto' : 'overflow:hidden', 'height: 100%']}
+              style={[
+                runtimeContext.useGlobalScroll.value ? 'overflow:auto' : 'overflow:hidden',
+                'height: 100%'
+              ]}
             >
               {lastCloned.value}
               <PageLoading tabId={tabInfo.id!} />
@@ -817,12 +842,16 @@ export default () => {
   const reset = () => removeAllTabs()
 
   const destroy = () => {
-    tabs.value.length = 0
+    tabs.value = []
+    defaultTabs.value = []
     cacheIdsToEvict.clear()
     tabIdsToEvict.clear()
     iframeRefreshKeys.value = {}
-    caches.value.length = 0
+    caches.value = []
     components.clear()
+    runtimeContext.scrollPositionsByPageId.clear()
+    runtimeContext.isInitialized.value = false
+    runtimeContext.refreshKey.value = 0
     clearSession()
   }
 
@@ -832,7 +861,9 @@ export default () => {
     refreshKey,
     activeCacheKey,
     isInitialized,
-    setMaxSize: setMaxTabCount,
+    setMaxSize: (value: number) => {
+      runtimeContext.maxTabCount.value = value
+    },
     canAddTab,
     initialize,
     size,
@@ -862,8 +893,12 @@ export default () => {
     refreshAllTabs,
     iframeRefreshKeys,
     addPageScroller,
-    setGlobalScroll: setUseGlobalScroll,
+    setGlobalScroll: (value: boolean) => {
+      runtimeContext.useGlobalScroll.value = value
+    },
     clearSession,
-    setSessionPrefix
+    setSessionPrefix: (value: string) => {
+      runtimeContext.sessionPrefix.value = value
+    }
   }
 }

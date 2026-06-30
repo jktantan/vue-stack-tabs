@@ -1,52 +1,49 @@
 /**
- * tabPanel/state - 标签页核心共享状态
+ * tabPanel/state - 标签页运行时状态 factory
  *
- * 职责：集中管理 tabs、caches、components、驱逐集合、滚动位置等
- * 被 useTabPanel、evict、scroll、session 导入使用
+ * 职责：创建 tabs、caches、components、驱逐集合、滚动位置等运行时状态。
+ * 注意：本文件不导出模块级可变状态；每个 Vue app 只有一个 StackTabsRuntimeContext 持有这些状态。
  */
-import type { ITabItem } from '../../model/TabModel'
+import type { DefineComponent, Ref, ShallowRef } from 'vue'
 import { ref, shallowRef } from 'vue'
+import type { ITabItem } from '../../model/TabModel'
 
-/** 当前打开的标签列表（含每个标签的页面栈） */
-export const tabs = ref<ITabItem[]>([])
-/** 初始化时传入的默认标签（用于对比 session 恢复） */
-export const defaultTabs: ITabItem[] = []
-/** keep-alive include 数组，与 Vue 的 keep-alive :include 绑定 */
-export const caches = shallowRef<string[]>([])
-/** 页面缓存 ID -> 包装后的 DefineComponent */
-export const components = new Map<string, import('vue').DefineComponent>()
-/** 待驱逐的页面缓存 ID 集合 */
-export const cacheIdsToEvict = new Set<string>()
-/** 待驱逐的标签 ID 集合 */
-export const tabIdsToEvict = new Set<string>()
-/** 刷新计数器，变更时触发 component :key 变化 */
-export const refreshKey = ref<number>(0)
-/** 刷新时临时加入 keep-alive exclude 的缓存 ID */
-// 改用 ULID 的新架构，无需黑名单隔离机制
-/** pageCacheId -> Map<selector, { top, left }> 滚动位置存储 */
-export const scrollPositionsByPageId = new Map<string, Map<string, { top: number; left: number }>>()
-/** 是否已完成初始化 */
-export const isInitialized = ref<boolean>(false)
+export interface ScrollPosition {
+  top: number
+  left: number
+}
 
-/** sessionStorage 中存储当前激活标签的 key 前缀 */
+export interface TabPanelRuntimeState {
+  tabs: Ref<ITabItem[]>
+  defaultTabs: Ref<ITabItem[]>
+  caches: ShallowRef<string[]>
+  components: Map<string, DefineComponent>
+  cacheIdsToEvict: Set<string>
+  tabIdsToEvict: Set<string>
+  refreshKey: Ref<number>
+  scrollPositionsByPageId: Map<string, Map<string, ScrollPosition>>
+  isInitialized: Ref<boolean>
+  iframeRefreshKeys: Ref<Record<string, number>>
+  maxTabCount: Ref<number>
+  useGlobalScroll: Ref<boolean>
+  sessionPrefix: Ref<string>
+}
+
+/** sessionStorage 中存储当前激活标签的 key 后缀 */
 export const SESSION_TAB_NAME = 'stacktab-active-tab'
 
-/** iframe 标签 tabId -> 刷新序号，变更时触发 iframe 重载 */
-export const iframeRefreshKeys = ref<Record<string, number>>({})
-
-/** 最大标签数量，0 表示不限制 */
-export let maxTabCount = 0
-/** 是否使用页面级滚动 */
-export let useGlobalScroll = false
-/** sessionStorage key 前缀 */
-export let sessionPrefix = ''
-
-export const setMaxTabCount = (n: number) => {
-  maxTabCount = n
-}
-export const setUseGlobalScroll = (v: boolean) => {
-  useGlobalScroll = v
-}
-export const setSessionPrefix = (p: string) => {
-  sessionPrefix = p
-}
+export const createTabPanelRuntimeState = (): TabPanelRuntimeState => ({
+  tabs: ref<ITabItem[]>([]) as Ref<ITabItem[]>,
+  defaultTabs: ref<ITabItem[]>([]) as Ref<ITabItem[]>,
+  caches: shallowRef<string[]>([]),
+  components: new Map<string, DefineComponent>(),
+  cacheIdsToEvict: new Set<string>(),
+  tabIdsToEvict: new Set<string>(),
+  refreshKey: ref<number>(0),
+  scrollPositionsByPageId: new Map<string, Map<string, ScrollPosition>>(),
+  isInitialized: ref<boolean>(false),
+  iframeRefreshKeys: ref<Record<string, number>>({}),
+  maxTabCount: ref<number>(0),
+  useGlobalScroll: ref<boolean>(false),
+  sessionPrefix: ref<string>('')
+})

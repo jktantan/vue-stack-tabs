@@ -8,13 +8,16 @@ import type { App } from 'vue'
 import i18n, { type LocaleMessageOption } from './i18n'
 import StackTab from './StackTabs.vue'
 import logVersion from './versionLogger'
+import { createStackTabsRuntimeContext, stackTabsContextKey } from './hooks/stackTabsContext'
+import { tabEmitterKey } from './hooks/useTabEventBus'
 import IFrame from './iframe.vue'
 import useTabLoading from './hooks/useTabLoading'
 import useTabRouter from './hooks/useTabRouter'
 import useTabActions from './hooks/useTabActions'
-import TabHeaderButton from '@/lib/components/TabHeader/TabHeaderButton.vue'
-import useTabEventBus from '@/lib/hooks/useTabEventBus'
+import TabHeaderButton from './components/TabHeader/TabHeaderButton.vue'
 import './assets/style/index.scss'
+
+export type VueStackTabsPluginOptions = LocaleMessageOption[]
 //
 // const i18n = createI18n({
 //   legacy: false,
@@ -30,12 +33,23 @@ declare module '@vue/runtime-core' {
   }
 }
 
-export { IFrame, useTabActions, useTabLoading, useTabRouter, TabHeaderButton, StackTab }
+export {
+  IFrame,
+  useTabActions,
+  useTabLoading,
+  useTabRouter,
+  TabHeaderButton,
+  StackTab,
+  StackTab as VueStackTabs
+}
 export { postOpenTab, onRefreshRequest, MSG_REFRESH, MSG_OPEN_TAB } from './utils/iframeBridge'
 export type { IframeOpenTabPayload } from './utils/iframeBridge'
 export default {
-  install(Vue: App, options?: LocaleMessageOption[]): void {
+  install(Vue: App, options?: VueStackTabsPluginOptions): void {
     logVersion(import.meta.env.PACKAGE_VERSION)
-    Vue.component('VueStackTabs', StackTab).use(useTabEventBus).use(i18n().getI18n(options))
+    const runtimeContext = createStackTabsRuntimeContext()
+    Vue.provide(stackTabsContextKey, runtimeContext)
+    Vue.provide(tabEmitterKey, runtimeContext.eventBus)
+    Vue.component('VueStackTabs', StackTab).use(i18n().getI18n(options))
   }
 }

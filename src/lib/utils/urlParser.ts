@@ -99,6 +99,14 @@ export function parseUrl(uri: string): { path: string; query: LocationQueryRaw }
   return { path: pathPart, query }
 }
 
+export function cloneLocationQuery(query: LocationQueryRaw = {}): LocationQueryRaw {
+  const cloned: LocationQueryRaw = {}
+  for (const [key, value] of Object.entries(query)) {
+    cloned[key] = Array.isArray(value) ? [...value] : value
+  }
+  return cloned
+}
+
 export function omitStackTabsReservedQuery(query: LocationQueryRaw = {}): LocationQueryRaw {
   const sanitized: LocationQueryRaw = {}
   for (const [key, value] of Object.entries(query)) {

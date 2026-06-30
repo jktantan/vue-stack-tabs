@@ -1,38 +1,53 @@
 /**
  * tabPanel/session - Session 持久化
  *
- * 职责：将当前激活标签保存到 sessionStorage，刷新后恢复
+ * 职责：基于当前 StackTabsRuntimeContext 将当前激活标签保存到 sessionStorage，刷新后恢复。
  */
-import type { ITabItem } from '../../model/TabModel'
+import type { ITabItem, ITabPage } from '../../model/TabModel'
 import { Stack } from '../../model/TabModel'
-import type { ITabPage } from '../../model/TabModel'
-import { SESSION_TAB_NAME, sessionPrefix } from './state'
+import type { StackTabsRuntimeContext } from '../stackTabsContext'
+import { SESSION_TAB_NAME } from './state'
 
-/** 获取 sessionStorage 的 key */
-export const getSessionKey = () => sessionPrefix + SESSION_TAB_NAME
-
-/** 将当前激活的标签保存到 sessionStorage */
-export const saveActiveTabToSession = (tab: ITabItem) => {
-  if (!tab.id) return
-  window.sessionStorage.setItem(getSessionKey(), JSON.stringify(tab))
+export interface TabPanelSessionApi {
+  getSessionKey: () => string
+  saveActiveTabToSession: (tab: ITabItem) => void
+  clearSession: () => void
+  restoreActiveTabSession: (storedJson: string | null) => void
+  restoreTabFromSession: (storedJson: string | null) => ITabItem | null
 }
 
-/** 清除 sessionStorage 中的激活标签 */
-export const clearSession = () => {
-  window.sessionStorage.removeItem(getSessionKey())
-}
+export const createTabPanelSession = (context: StackTabsRuntimeContext): TabPanelSessionApi => {
+  const getSessionKey = (): string => context.sessionPrefix.value + SESSION_TAB_NAME
 
-/** 恢复 sessionStorage 中的激活标签原始内容，用于导航失败回滚 */
-export const restoreActiveTabSession = (storedJson: string | null) => {
-  if (storedJson === null) {
-    clearSession()
-    return
+  const saveActiveTabToSession = (tab: ITabItem): void => {
+    if (!tab.id) return
+    window.sessionStorage.setItem(getSessionKey(), JSON.stringify(tab))
   }
-  window.sessionStorage.setItem(getSessionKey(), storedJson)
-}
 
-/** 从 sessionStorage 解析恢复的标签（含 Stack 反序列化） */
-export const restoreTabFromSession = (storedJson: string | null): ITabItem | null => {
-  if (storedJson == null) return null
-  return JSON.parse(storedJson, (k, v) => (k === 'pages' ? new Stack<ITabPage>(v) : v)) as ITabItem
+  const clearSession = (): void => {
+    window.sessionStorage.removeItem(getSessionKey())
+  }
+
+  const restoreActiveTabSession = (storedJson: string | null): void => {
+    if (storedJson === null) {
+      clearSession()
+      return
+    }
+    window.sessionStorage.setItem(getSessionKey(), storedJson)
+  }
+
+  const restoreTabFromSession = (storedJson: string | null): ITabItem | null => {
+    if (storedJson == null) return null
+    return JSON.parse(storedJson, (key, value) =>
+      key === 'pages' ? new Stack<ITabPage>(value) : value
+    ) as ITabItem
+  }
+
+  return {
+    getSessionKey,
+    saveActiveTabToSession,
+    clearSession,
+    restoreActiveTabSession,
+    restoreTabFromSession
+  }
 }

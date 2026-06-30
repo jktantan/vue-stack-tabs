@@ -70,9 +70,10 @@ import TabHeaderItem from './TabHeaderItem.vue'
 import TabHeaderScroll from './TabHeaderScroll.vue'
 import TabHeaderButton from './TabHeaderButton.vue'
 import { useI18n } from 'vue-i18n-lite'
+import { maximumKey } from '../../hooks/stackTabsContext'
 const { t } = useI18n()
 /** 是否最大化，由上层 provide */
-const maximum = inject<boolean>('maximum')
+const maximum = inject(maximumKey, ref(false))
 const emit = defineEmits(['active'])
 /** 滚动容器 ref，用于调用 scrollIntoView / isInView */
 const scrollContainerRef = ref<InstanceType<typeof TabHeaderScroll>>()

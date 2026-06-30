@@ -5,6 +5,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h, nextTick, ref } from 'vue'
 import type { Component } from 'vue'
 import type { IContextMenu, ITabItem } from '../../model/TabModel'
+import { maximumKey } from '../../hooks/stackTabsContext'
+import { tabEmitterKey } from '../../hooks/useTabEventBus'
 import TabHeader from './index.vue'
 
 const activeTabMock = vi.fn()
@@ -115,7 +117,7 @@ function makeTab(overrides: Partial<ITabItem> = {}): ITabItem {
   }
 }
 
-function mountHeader(props: Record<string, unknown> = {}) {
+function mountHeader(props: Record<string, unknown> = {}, maximum = ref(false)) {
   return mount(TabHeader, {
     props: {
       space: 300,
@@ -123,8 +125,8 @@ function mountHeader(props: Record<string, unknown> = {}) {
     },
     global: {
       provide: {
-        maximum: ref(false),
-        tabEmitter: mitt()
+        [maximumKey as symbol]: maximum,
+        [tabEmitterKey as symbol]: mitt()
       },
       stubs: {
         TabHeaderScroll: TabHeaderScrollStub as Component,
@@ -161,6 +163,15 @@ beforeEach(() => {
 })
 
 describe('TabHeader active', () => {
+  it('maximum 按钮切换 typed maximumKey 提供的 ref', async () => {
+    const maximum = ref(false)
+    const wrapper = mountHeader({}, maximum)
+
+    await wrapper.findComponent({ name: 'TabHeaderButton' }).trigger('click')
+
+    expect(maximum.value).toBe(true)
+  })
+
   it('activeTab 成功后才 emit active', async () => {
     const wrapper = mountHeader()
 
