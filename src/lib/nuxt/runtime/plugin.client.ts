@@ -1,3 +1,4 @@
+import { defineNuxtPlugin, useRuntimeConfig } from 'nuxt/app'
 import VueStackTabs from 'vue-stack-tabs'
 
 export default defineNuxtPlugin((nuxtApp) => {
