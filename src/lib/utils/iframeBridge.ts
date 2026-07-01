@@ -12,6 +12,14 @@ export const MSG_REFRESH = 'vue-stack-tabs:refresh'
 /** 打开标签消息：iframe -> 父，payload 为 ITabData */
 export const MSG_OPEN_TAB = 'vue-stack-tabs:openTab'
 
+export interface IframeBridgeOptions {
+  targetOrigin?: string
+}
+
+export interface RefreshRequestOptions {
+  allowedOrigins?: string[]
+}
+
 export interface IframeOpenTabPayload {
   id?: string
   title: string
