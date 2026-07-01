@@ -33,14 +33,6 @@ export interface IframeOpenTabPayload {
   iframeRefreshMode?: 'postMessage' | 'reload'
 }
 
-export interface IframeBridgeOptions {
-  targetOrigin?: string
-}
-
-export interface RefreshRequestOptions {
-  allowedOrigins?: string[]
-}
-
 /**
  * 在 iframe 内调用：向父窗口请求打开新标签
  * @param payload 标签数据，至少需 title、path
