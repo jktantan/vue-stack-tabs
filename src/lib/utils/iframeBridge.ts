@@ -37,7 +37,10 @@ export interface IframeOpenTabPayload {
  * 在 iframe 内调用：向父窗口请求打开新标签
  * @param payload 标签数据，至少需 title、path
  */
-export function postOpenTab(payload: IframeOpenTabPayload, options: IframeBridgeOptions = {}): void {
+export function postOpenTab(
+  payload: IframeOpenTabPayload,
+  options: IframeBridgeOptions = {}
+): void {
   if (typeof window === 'undefined' || !window.parent) return
   window.parent.postMessage(
     { type: MSG_OPEN_TAB, payload },
