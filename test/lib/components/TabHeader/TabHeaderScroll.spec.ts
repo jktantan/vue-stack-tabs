@@ -14,6 +14,12 @@ vi.mock('@/lib/utils/scrollUtils', () => ({
   scrollIntoView: vi.fn()
 }))
 
+vi.mock('vue-i18n-lite', () => ({
+  useI18n: () => ({
+    t: (key: string) => key
+  })
+}))
+
 class ResizeObserverMock {
   observe = vi.fn()
   disconnect = vi.fn()
@@ -25,7 +31,9 @@ const TabHeaderButtonStub = defineComponent({
   name: 'TabHeaderButton',
   props: {
     iconClass: String,
-    disabled: Boolean
+    disabled: Boolean,
+    title: String,
+    ariaLabel: String
   },
   emits: ['click'],
   setup(props, { emit }) {
@@ -36,6 +44,8 @@ const TabHeaderButtonStub = defineComponent({
           type: 'button',
           class: ['tab-header-button-stub', props.iconClass],
           disabled: props.disabled,
+          title: props.title,
+          'aria-label': props.ariaLabel || props.title,
           onClick: () => emit('click')
         },
         props.iconClass
@@ -116,6 +126,21 @@ describe('TabHeaderScroll scroll mode gates', () => {
 
     expect(container.scrollLeft).toBe(0)
     expect(wrapper.findAll('.tab-header-button-stub')).toHaveLength(2)
+  })
+
+  it('左右滚动按钮具有非空可访问名称', async () => {
+    const { wrapper } = await mountScrollableHeaderScroll({
+      isScrollWheel: false,
+      isScrollButton: true
+    })
+
+    const buttons = wrapper.findAll('.tab-header-button-stub')
+
+    expect(buttons).toHaveLength(2)
+    expect(buttons[0].attributes('aria-label')).toBe('VueStackTab.scrollLeft')
+    expect(buttons[0].attributes('title')).toBe('VueStackTab.scrollLeft')
+    expect(buttons[1].attributes('aria-label')).toBe('VueStackTab.scrollRight')
+    expect(buttons[1].attributes('title')).toBe('VueStackTab.scrollRight')
   })
 
   it('BOTH 模式：左右按钮显示，滚轮也可滚动', async () => {

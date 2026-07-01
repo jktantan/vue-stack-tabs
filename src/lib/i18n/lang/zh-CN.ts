@@ -11,6 +11,8 @@ export default {
     restore: '还原',
     undefined: '未命名',
     loading: '加载中',
-    openInNewWindow: '在新窗口打开'
+    openInNewWindow: '在新窗口打开',
+    scrollLeft: '向左滚动',
+    scrollRight: '向右滚动'
   }
 }

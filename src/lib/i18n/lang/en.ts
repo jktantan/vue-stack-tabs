@@ -11,6 +11,8 @@ export default {
     restore: 'restore',
     undefined: 'undefined',
     loading: 'loading',
-    openInNewWindow: 'Open in new window'
+    openInNewWindow: 'Open in new window',
+    scrollLeft: 'Scroll left',
+    scrollRight: 'Scroll right'
   }
 }
