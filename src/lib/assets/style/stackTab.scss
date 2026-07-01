@@ -75,6 +75,9 @@
       cursor: pointer;
       display: flex;
       align-items: center;
+      border: 0;
+      font: inherit;
+      appearance: none;
 
       //按钮禁用样式
       &[disabled] {
@@ -216,6 +219,22 @@
       }
     }
 
+    &-tab {
+      display: flex;
+      flex: 1 1 auto;
+      min-width: 0;
+      height: 100%;
+      padding: 0;
+      color: inherit;
+      cursor: inherit;
+      background: transparent;
+      border: 0;
+      font: inherit;
+      text-align: inherit;
+      appearance: none;
+      align-items: center;
+    }
+
     /*
     页签标题
      */
@@ -247,6 +266,10 @@
       width: 0;
       background-color: $stack-tab-text-color;
       transition: $stack-tab__trans;
+      border: 0;
+      font: inherit;
+      appearance: none;
+      padding: 0;
 
       &:hover {
         background-color: $stack-tab-color-primary;

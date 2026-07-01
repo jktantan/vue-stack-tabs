@@ -12,6 +12,9 @@
           key="tab-list-transition"
           tag="ul"
           class="stack-tab__nav"
+          role="tablist"
+          :aria-label="t('VueStackTab.tabs')"
+          @keydown="handleTabListKeydown"
           v-bind="tabTransitionProps"
           appear
         >
@@ -111,6 +114,29 @@ const isContextMenuEnabled = computed<boolean>(() => props.contextmenu !== false
 const normalizedContextMenu = computed<IContextMenu[]>(() => {
   return Array.isArray(props.contextmenu) ? props.contextmenu : []
 })
+
+const TABLIST_NAVIGATION_KEYS = ['ArrowRight', 'ArrowDown', 'ArrowLeft', 'ArrowUp', 'Home', 'End']
+
+const getNextTabFocusIndex = (key: string, currentIndex: number, tabCount: number) => {
+  if (key === 'Home') return 0
+  if (key === 'End') return tabCount - 1
+  if (key === 'ArrowRight' || key === 'ArrowDown') return (currentIndex + 1) % tabCount
+  if (key === 'ArrowLeft' || key === 'ArrowUp') return (currentIndex - 1 + tabCount) % tabCount
+  return currentIndex
+}
+
+const handleTabListKeydown = (event: KeyboardEvent) => {
+  if (!TABLIST_NAVIGATION_KEYS.includes(event.key)) return
+
+  const tabList = event.currentTarget as HTMLElement
+  const tabButtons = Array.from(tabList.querySelectorAll<HTMLElement>('[role="tab"]'))
+  const currentIndex = tabButtons.indexOf(event.target as HTMLElement)
+
+  if (currentIndex === -1 || tabButtons.length === 0) return
+
+  event.preventDefault()
+  tabButtons[getNextTabFocusIndex(event.key, currentIndex, tabButtons.length)].focus()
+}
 
 /** 右键标签：禁用时不阻止浏览器默认菜单，启用时打开组件菜单 */
 const handleTabContextMenu = (e: MouseEvent, item: ITabItem, index: number, max: number) => {
