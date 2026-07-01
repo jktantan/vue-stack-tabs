@@ -20,6 +20,19 @@ describe('iframeBridge', () => {
       )
       spy.mockRestore()
     })
+
+    it('postOpenTab 使用显式 targetOrigin 发送消息', () => {
+      const spy = vi.spyOn(window.parent, 'postMessage').mockImplementation(() => undefined)
+
+      postOpenTab({ title: 'secure', path: '/secure' }, { targetOrigin: 'https://parent.example.com' })
+
+      expect(spy).toHaveBeenCalledWith(
+        { type: MSG_OPEN_TAB, payload: { title: 'secure', path: '/secure' } },
+        'https://parent.example.com'
+      )
+
+      spy.mockRestore()
+    })
   })
 
   describe('onRefreshRequest', () => {
@@ -45,6 +58,38 @@ describe('iframeBridge', () => {
       expect(cb).toHaveBeenCalledTimes(1)
 
       otherSource?.close()
+      off()
+    })
+
+    it('onRefreshRequest 配置 allowedOrigins 后拒绝不匹配的父窗口消息', () => {
+      const cb = vi.fn()
+      const off = onRefreshRequest(cb, { allowedOrigins: ['https://trusted.example.com'] })
+
+      window.dispatchEvent(
+        new MessageEvent('message', {
+          data: { type: MSG_REFRESH },
+          source: window.parent,
+          origin: 'https://evil.example.com'
+        })
+      )
+
+      expect(cb).not.toHaveBeenCalled()
+      off()
+    })
+
+    it('onRefreshRequest 配置 allowedOrigins 后接受匹配的父窗口消息', () => {
+      const cb = vi.fn()
+      const off = onRefreshRequest(cb, { allowedOrigins: ['https://trusted.example.com'] })
+
+      window.dispatchEvent(
+        new MessageEvent('message', {
+          data: { type: MSG_REFRESH },
+          source: window.parent,
+          origin: 'https://trusted.example.com'
+        })
+      )
+
+      expect(cb).toHaveBeenCalledTimes(1)
       off()
     })
   })
