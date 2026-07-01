@@ -32,6 +32,7 @@
       class="stack-tab__icon-close-fill stack-tab__item-button"
       :title="t('VueStackTab.close')"
       :aria-label="`${t('VueStackTab.close')} ${title}`"
+      :tabindex="item.active ? 0 : -1"
       @click.stop="handleClose"
     />
   </li>

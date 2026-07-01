@@ -40,20 +40,4 @@ describe('TabHeaderButton accessibility', () => {
 
     expect(wrapper.get('button').attributes('aria-label')).toBe('最大化标签容器')
   })
-
-  it('为内置方向图标提供非空默认 aria-label', () => {
-    const leftWrapper = mount(TabHeaderButton, {
-      props: {
-        iconClass: 'stack-tab__icon-left-arrow'
-      }
-    })
-    const rightWrapper = mount(TabHeaderButton, {
-      props: {
-        iconClass: 'stack-tab__icon-right-arrow'
-      }
-    })
-
-    expect(leftWrapper.get('button').attributes('aria-label')).toBe('Scroll tabs left')
-    expect(rightWrapper.get('button').attributes('aria-label')).toBe('Scroll tabs right')
-  })
 })

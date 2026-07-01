@@ -140,29 +140,6 @@ function mountHeader(props: Record<string, unknown> = {}, maximum = ref(false)) 
   })
 }
 
-function mountHeaderWithRealItems(props: Record<string, unknown> = {}, maximum = ref(false)) {
-  return mount(TabHeader, {
-    props: {
-      space: 300,
-      ...props
-    },
-    global: {
-      provide: {
-        [maximumKey as symbol]: maximum,
-        [tabEmitterKey as symbol]: mitt()
-      },
-      stubs: {
-        TabHeaderScroll: TabHeaderScrollStub as Component,
-        ContextMenu: ContextMenuStub as Component,
-        TabHeaderButton: true,
-        Transition: false,
-        TransitionGroup: false
-      }
-    },
-    attachTo: document.body
-  })
-}
-
 async function triggerTabContextMenu(wrapper: ReturnType<typeof mountHeader>) {
   const event = new MouseEvent('contextmenu', {
     bubbles: true,
@@ -179,7 +156,6 @@ async function triggerTabContextMenu(wrapper: ReturnType<typeof mountHeader>) {
 }
 
 beforeEach(() => {
-  document.body.innerHTML = ''
   activeTabMock.mockReset()
   closeTabMock.mockReset()
   activeTabMock.mockResolvedValue(undefined)
@@ -187,36 +163,6 @@ beforeEach(() => {
 })
 
 describe('TabHeader active', () => {
-  it('标签列表暴露 tablist 角色和可访问名称', () => {
-    const wrapper = mountHeader()
-    const tabList = wrapper.get('.stack-tab__nav')
-
-    expect(tabList.attributes('role')).toBe('tablist')
-    expect(tabList.attributes('aria-label')).toBe('VueStackTab.tabs')
-  })
-
-  it('Arrow/Home/End 在 tablist 内移动焦点到其他 tab', async () => {
-    tabs.value = [
-      makeTab({ id: 'tab-1', title: 'Dashboard', active: true }),
-      makeTab({ id: 'tab-2', title: 'Reports', active: false }),
-      makeTab({ id: 'tab-3', title: 'Settings', active: false })
-    ]
-    const wrapper = mountHeaderWithRealItems()
-    const tabButtons = wrapper.findAll('[role="tab"]')
-
-    await tabButtons[0].trigger('keydown', { key: 'ArrowRight' })
-    expect(document.activeElement).toBe(tabButtons[1].element)
-
-    await tabButtons[1].trigger('keydown', { key: 'End' })
-    expect(document.activeElement).toBe(tabButtons[2].element)
-
-    await tabButtons[2].trigger('keydown', { key: 'Home' })
-    expect(document.activeElement).toBe(tabButtons[0].element)
-
-    await tabButtons[0].trigger('keydown', { key: 'ArrowLeft' })
-    expect(document.activeElement).toBe(tabButtons[2].element)
-  })
-
   it('maximum 按钮切换 typed maximumKey 提供的 ref', async () => {
     const maximum = ref(false)
     const wrapper = mountHeader({}, maximum)

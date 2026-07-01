@@ -47,13 +47,8 @@ const props = withDefaults(
   }
 )
 
-const DEFAULT_ICON_LABELS: Record<string, string> = {
-  'stack-tab__icon-left-arrow': 'Scroll tabs left',
-  'stack-tab__icon-right-arrow': 'Scroll tabs right'
-}
-
 const resolvedAriaLabel = computed<string>(() => {
-  return props.ariaLabel || props.title || DEFAULT_ICON_LABELS[props.iconClass] || ''
+  return props.ariaLabel || props.title
 })
 </script>
 

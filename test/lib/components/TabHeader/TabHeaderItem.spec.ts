@@ -92,4 +92,11 @@ describe('TabHeaderItem accessibility', () => {
 
     expect(wrapper.emitted('close')).toHaveLength(1)
   })
+
+  it('inactive tab 的关闭按钮不进入普通 Tab 顺序', () => {
+    const wrapper = mountItem(makeTab({ active: false, closable: true }))
+    const closeButton = wrapper.get('button.stack-tab__item-button')
+
+    expect(closeButton.attributes('tabindex')).toBe('-1')
+  })
 })
