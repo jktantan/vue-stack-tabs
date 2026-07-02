@@ -12,8 +12,11 @@
           key="tab-list-transition"
           tag="ul"
           class="stack-tab__nav"
+          role="tablist"
+          aria-orientation="horizontal"
           v-bind="tabTransitionProps"
           appear
+          @keydown="handleTabListKeydown"
         >
           <tab-header-item
             v-for="(item, index) in tabs"
@@ -33,7 +36,8 @@
     <slot name="rightButton" />
     <tab-header-button
       :icon-class="maximum ? 'stack-tab__icon-restore' : 'stack-tab__icon-fullscreen'"
-      :title="t('VueStackTab.maximum')"
+      :title="maximum ? t('VueStackTab.restore') : t('VueStackTab.maximum')"
+      :aria-label="maximum ? t('VueStackTab.restore') : t('VueStackTab.maximum')"
       @click="maximum = !maximum"
     />
     <transition name="stack-tab-zoom" appear>
@@ -126,6 +130,45 @@ const tabTransitionProps = computed<TransitionProps>(() =>
     ? ({ name: props.tabTransition } as TransitionProps)
     : (props.tabTransition as TransitionProps)
 )
+
+const getActiveTabIndex = (): number => tabs.value.findIndex((tab) => tab.active)
+
+const activateTabByIndex = (index: number) => {
+  const item = tabs.value[index]
+  if (!item) return
+  handleActivateTab(item as ITabItem, undefined, true)
+}
+
+const handleTabListKeydown = (event: KeyboardEvent) => {
+  const count = tabs.value.length
+  if (count <= 0) return
+
+  const currentIndex = getActiveTabIndex()
+  const safeIndex = currentIndex >= 0 ? currentIndex : 0
+
+  if (event.key === 'ArrowRight') {
+    event.preventDefault()
+    activateTabByIndex((safeIndex + 1) % count)
+    return
+  }
+
+  if (event.key === 'ArrowLeft') {
+    event.preventDefault()
+    activateTabByIndex((safeIndex - 1 + count) % count)
+    return
+  }
+
+  if (event.key === 'Home') {
+    event.preventDefault()
+    activateTabByIndex(0)
+    return
+  }
+
+  if (event.key === 'End') {
+    event.preventDefault()
+    activateTabByIndex(count - 1)
+  }
+}
 
 /** 是否显示左右滚动按钮 */
 const isScrollButton = computed<boolean>(() => {

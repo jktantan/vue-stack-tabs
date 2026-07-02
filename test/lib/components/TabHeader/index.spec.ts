@@ -243,3 +243,56 @@ describe('TabHeader contextmenu', () => {
     expect(customMenuCallback).toHaveBeenCalledWith('tab-1')
   })
 })
+
+describe('TabHeader keyboard navigation', () => {
+  it('tablist 使用正确角色', () => {
+    tabs.value = [makeTab({ id: 'tab-1', title: 'One', active: true })]
+    const wrapper = mountHeader()
+    const tablist = wrapper.get('[role="tablist"]')
+
+    expect(tablist.attributes('aria-orientation')).toBe('horizontal')
+  })
+
+  it('ArrowRight 激活下一个 tab，ArrowLeft 激活上一个 tab', async () => {
+    tabs.value = [
+      makeTab({ id: 'tab-1', title: 'One', active: true }),
+      makeTab({ id: 'tab-2', title: 'Two', active: false }),
+      makeTab({ id: 'tab-3', title: 'Three', active: false })
+    ]
+    const wrapper = mountHeader()
+    const tablist = wrapper.get('[role="tablist"]')
+
+    await tablist.trigger('keydown', { key: 'ArrowRight' })
+    await nextTick()
+    expect(activeTabMock).toHaveBeenLastCalledWith('tab-2', true)
+
+    tabs.value = [
+      makeTab({ id: 'tab-1', title: 'One', active: false }),
+      makeTab({ id: 'tab-2', title: 'Two', active: true }),
+      makeTab({ id: 'tab-3', title: 'Three', active: false })
+    ]
+    await nextTick()
+
+    await tablist.trigger('keydown', { key: 'ArrowLeft' })
+    await nextTick()
+    expect(activeTabMock).toHaveBeenLastCalledWith('tab-1', true)
+  })
+
+  it('Home 和 End 激活首尾 tab', async () => {
+    tabs.value = [
+      makeTab({ id: 'tab-1', title: 'One', active: false }),
+      makeTab({ id: 'tab-2', title: 'Two', active: true }),
+      makeTab({ id: 'tab-3', title: 'Three', active: false })
+    ]
+    const wrapper = mountHeader()
+    const tablist = wrapper.get('[role="tablist"]')
+
+    await tablist.trigger('keydown', { key: 'Home' })
+    await nextTick()
+    expect(activeTabMock).toHaveBeenLastCalledWith('tab-1', true)
+
+    await tablist.trigger('keydown', { key: 'End' })
+    await nextTick()
+    expect(activeTabMock).toHaveBeenLastCalledWith('tab-3', true)
+  })
+})
