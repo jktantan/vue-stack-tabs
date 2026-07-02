@@ -142,15 +142,27 @@ describe('ContextMenu accessibility', () => {
     expect(document.activeElement).toBe(items.at(-1)?.element)
   })
 
-  it('未设置 key 的重复自定义菜单使用唯一 fallback key', () => {
+  it('自定义菜单分隔线使用 separator 语义', () => {
+    const wrapper = mountMenu([
+      {
+        key: 'pin-tab',
+        title: 'Pin tab',
+        callback: vi.fn(),
+        disabled: () => false
+      }
+    ])
+
+    const separator = wrapper.get('[role="separator"]')
+
+    expect(separator.classes()).toContain('divider')
+    expect(separator.attributes('aria-orientation')).toBe('horizontal')
+  })
+
+  it('未设置 key 的自定义菜单 fallback key 不包含 index', () => {
     const wrapper = mountMenu([
       {
         title: 'Duplicate',
-        callback: vi.fn(),
-        disabled: () => false
-      },
-      {
-        title: 'Duplicate',
+        icon: 'stack-tab__icon-pin svg-mask',
         callback: vi.fn(),
         disabled: () => false
       }
@@ -158,8 +170,7 @@ describe('ContextMenu accessibility', () => {
 
     const keys = wrapper.findAll('[data-menu-key]').map((item) => item.attributes('data-menu-key'))
 
-    expect(keys).toHaveLength(2)
-    expect(new Set(keys).size).toBe(2)
+    expect(keys).toEqual(['Duplicate-stack-tab__icon-pin svg-mask'])
   })
 
   it('自定义菜单使用稳定 key 并点击后关闭菜单', async () => {

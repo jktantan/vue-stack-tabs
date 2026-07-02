@@ -65,11 +65,13 @@
     <div
       v-if="contextMenu !== undefined && contextMenu.length > 0"
       class="divider div-transparent"
+      role="separator"
+      aria-orientation="horizontal"
     ></div>
     <context-menu-item
-      v-for="(item, menuIndex) in contextMenu"
-      :key="getCustomMenuKey(item, menuIndex)"
-      :data-menu-key="getCustomMenuKey(item, menuIndex)"
+      v-for="item in contextMenu"
+      :key="getCustomMenuKey(item)"
+      :data-menu-key="getCustomMenuKey(item)"
       :icon="item.icon"
       :title="item.title"
       :disabled="item.disabled(tabItem)"
@@ -170,8 +172,7 @@ const handleMenuKeydown = (event: KeyboardEvent) => {
   }
 }
 
-const getCustomMenuKey = (item: IContextMenu, index: number): string =>
-  item.key ?? `${item.title}-${item.icon ?? ''}-${index}`
+const getCustomMenuKey = (item: IContextMenu): string => item.key ?? `${item.title}-${item.icon ?? ''}`
 
 /** 挂载后修正菜单位置，避免超出右边界 */
 onMounted(() => {

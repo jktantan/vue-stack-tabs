@@ -28,15 +28,6 @@ withDefaults(
 </script>
 
 <style lang="scss" scoped>
-.stack-tab__contextmenu-item {
-  padding: 0;
-  color: inherit;
-  font: inherit;
-  text-align: inherit;
-  background: transparent;
-  border: 0;
-}
-
 .stack-tab__contextmenu-title {
   margin-left: 8px;
 }

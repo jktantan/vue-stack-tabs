@@ -1,7 +1,11 @@
 // @vitest-environment happy-dom
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import ContextMenuItem from '@/lib/components/ContextMenu/ContextMenuItem.vue'
+
+const stackTabStyles = readFileSync(resolve(process.cwd(), 'src/lib/assets/style/stackTab.scss'), 'utf8')
 
 describe('ContextMenuItem accessibility', () => {
   it('渲染为 menuitem button', () => {
@@ -26,5 +30,13 @@ describe('ContextMenuItem accessibility', () => {
     })
 
     expect(wrapper.get('button').attributes()).toHaveProperty('disabled')
+  })
+
+  it('button 原生 reset 放在全局菜单样式层', () => {
+    expect(stackTabStyles).toContain('font: inherit')
+    expect(stackTabStyles).toContain('border: 0')
+    expect(stackTabStyles).toContain('appearance: none')
+    expect(stackTabStyles).toContain('background: transparent')
+    expect(stackTabStyles).toContain('text-align: inherit')
   })
 })

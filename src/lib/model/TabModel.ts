@@ -86,7 +86,7 @@ export interface ITabPage {
   /** 该页面从别的页面被后退唤醒时附带的临时闭包参数，不污染 URL */
   _backParams?: Record<string, unknown>
 }
-/** 右键菜单项：稳定 key、图标、标题、回调、禁用条件 */
+/** 右键菜单项：重复或动态菜单应提供稳定 key，避免 fallback 标题/图标重复 */
 export interface IContextMenu {
   key?: string
   icon?: string
