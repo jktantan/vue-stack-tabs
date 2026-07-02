@@ -185,14 +185,105 @@ describe('StackTabs iframe security and states', () => {
     expect(openInNewWindowMock).toHaveBeenCalledWith('frame-1')
   })
 
-  it('reload refresh key 变化后重新进入 loading', async () => {
+  it('未激活 iframe 的 about:blank load 不会阻止首次真实激活 loading', async () => {
+    tabs.value = [makeIframeTab({ active: false })]
     const wrapper = mountStackTabs()
-    await wrapper.get('iframe.stack-tab__iframe').trigger('load')
-    expect(wrapper.find('.stack-tab__iframe-loading').exists()).toBe(false)
 
-    iframeRefreshKeys.value = { 'frame-1': 1 }
+    await wrapper.get('iframe.stack-tab__iframe').trigger('load')
+    tabs.value = [makeIframeTab({ active: true })]
     await wrapper.vm.$nextTick()
 
     expect(wrapper.find('.stack-tab__iframe-loading').exists()).toBe(true)
+  })
+
+  it('postMessage 模式的错误态重试也会强制重建 iframe', async () => {
+    tabs.value = [makeIframeTab({ iframeRefreshMode: 'postMessage' })]
+    const wrapper = mountStackTabs({ iframeLoadTimeout: 50 })
+    const beforeSrc = wrapper.get('iframe.stack-tab__iframe').attributes('src')
+
+    vi.advanceTimersByTime(51)
+    await wrapper.vm.$nextTick()
+    await wrapper.get('.stack-tab__iframe-error-retry').trigger('click')
+    await wrapper.vm.$nextTick()
+    await wrapper.vm.$nextTick()
+
+    const iframeSrcs = wrapper
+      .findAll('iframe.stack-tab__iframe')
+      .map((iframe) => iframe.attributes('src') ?? '')
+    const iframeRefreshKeyAttrs = wrapper
+      .findAll('iframe.stack-tab__iframe')
+      .map((iframe) => iframe.attributes('data-refresh-key') ?? '')
+    expect(wrapper.find('.stack-tab__iframe-loading').exists()).toBe(true)
+    expect(iframeRefreshKeys.value['frame-1']).toBe(1)
+    expect(beforeSrc).not.toContain('__stack_tabs_refresh=1')
+    expect(iframeSrcs).toContain('https://example.com/reports?__stack_tabs_refresh=1')
+    expect(iframeRefreshKeyAttrs).toContain('1')
+  })
+
+  it('retry 后外部 refresh key 变化会使用最新 iframe src', async () => {
+    const wrapper = mountStackTabs({ iframeLoadTimeout: 50 })
+
+    vi.advanceTimersByTime(51)
+    await wrapper.vm.$nextTick()
+    await wrapper.get('.stack-tab__iframe-error-retry').trigger('click')
+    await wrapper.vm.$nextTick()
+    await wrapper.vm.$nextTick()
+
+    const retrySrcs = wrapper
+      .findAll('iframe.stack-tab__iframe')
+      .map((iframe) => iframe.attributes('src') ?? '')
+    expect(retrySrcs).toContain('https://example.com/reports?__stack_tabs_refresh=1')
+
+    iframeRefreshKeys.value = { 'frame-1': 2 }
+    await wrapper.vm.$nextTick()
+    await wrapper.vm.$nextTick()
+
+    const refreshedSrcs = wrapper
+      .findAll('iframe.stack-tab__iframe')
+      .map((iframe) => iframe.attributes('src') ?? '')
+    expect(refreshedSrcs).toContain('https://example.com/reports?__stack_tabs_refresh=2')
+  })
+
+  it('retry 追加 refresh key 时保留相对 iframe URL 形态', async () => {
+    tabs.value = [makeIframeTab({ url: 'settings/profile?section=billing#usage' })]
+    const wrapper = mountStackTabs({ iframeLoadTimeout: 50 })
+
+    vi.advanceTimersByTime(51)
+    await wrapper.vm.$nextTick()
+    await wrapper.get('.stack-tab__iframe-error-retry').trigger('click')
+    await wrapper.vm.$nextTick()
+    await wrapper.vm.$nextTick()
+
+    const iframeSrcs = wrapper
+      .findAll('iframe.stack-tab__iframe')
+      .map((iframe) => iframe.attributes('src') ?? '')
+    expect(iframeSrcs).toContain(
+      'settings/profile?section=billing&__stack_tabs_refresh=1#usage'
+    )
+  })
+
+  it('retry 后 DOM 替换前的旧 iframe load 不会结束新 iframe loading', async () => {
+    const wrapper = mountStackTabs({ iframeLoadTimeout: 50 })
+    const staleIframe = wrapper.get('iframe.stack-tab__iframe')
+
+    vi.advanceTimersByTime(51)
+    await wrapper.vm.$nextTick()
+    const clickPromise = wrapper.get('.stack-tab__iframe-error-retry').trigger('click')
+    await staleIframe.trigger('load')
+    await clickPromise
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.find('.stack-tab__iframe-loading').exists()).toBe(true)
+  })
+
+  it('关闭 iframe tab 后清理 pending timeout，不再显示 stale 错误态', async () => {
+    const wrapper = mountStackTabs({ iframeLoadTimeout: 50 })
+
+    tabs.value = []
+    await wrapper.vm.$nextTick()
+    vi.advanceTimersByTime(51)
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.find('.stack-tab__iframe-error').exists()).toBe(false)
   })
 })
