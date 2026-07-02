@@ -35,5 +35,6 @@ describe('PageLoading accessibility', () => {
     const status = wrapper.get('[role="status"]')
     expect(status.attributes('aria-live')).toBe('polite')
     expect(status.attributes('aria-label')).toBe('VueStackTab.loading')
+    expect(wrapper.get('.stack-tab-loading--spin').attributes('aria-hidden')).toBe('true')
   })
 })
