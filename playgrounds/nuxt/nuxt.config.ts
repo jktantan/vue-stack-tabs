@@ -4,26 +4,26 @@ import { dirname } from 'node:path'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const rootDir = resolve(__dirname, '../..')
-const isSourceMode = process.env.USE_SOURCE === '1'
+const isPackageMode = process.env.USE_PACKAGE === '1'
 
 export default defineNuxtConfig({
-  modules: [isSourceMode ? resolve(rootDir, 'src/lib/nuxt/module.ts') : 'vue-stack-tabs/nuxt'],
+  modules: [isPackageMode ? 'vue-stack-tabs/nuxt' : resolve(rootDir, 'src/lib/nuxt/module.ts')],
   vueStackTabs: { locale: 'zh-CN' },
   vite: {
     resolve: {
-      alias: isSourceMode
+      alias: isPackageMode
         ? {
-            'vue-stack-tabs': resolve(rootDir, 'src/lib/index.ts'),
             '@': resolve(rootDir, 'src')
           }
         : {
+            'vue-stack-tabs': resolve(rootDir, 'src/lib/index.ts'),
             '@': resolve(rootDir, 'src')
           }
     }
   },
   css: [
-    isSourceMode
-      ? resolve(rootDir, 'src/lib/assets/style/index.scss')
-      : 'vue-stack-tabs/dist/style.css'
+    isPackageMode
+      ? 'vue-stack-tabs/dist/style.css'
+      : resolve(rootDir, 'src/lib/assets/style/index.scss')
   ]
 })

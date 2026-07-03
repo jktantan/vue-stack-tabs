@@ -37,13 +37,7 @@
 
 ```ts
 import VueStackTabs from 'vue-stack-tabs'
-import {
-  VueStackTabs as VueStackTabsComponent,
-  StackTab,
-  useTabActions,
-  useTabRouter,
-  useTabLoading
-} from 'vue-stack-tabs'
+import { VueStackTabs, StackTab, useTabActions, useTabRouter, useTabLoading } from 'vue-stack-tabs'
 import 'vue-stack-tabs/dist/style.css'
 ```
 

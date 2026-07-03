@@ -94,7 +94,11 @@ async function verifyPackageExportsFromTempProject() {
     await runNodeScript(
       `
         import pkg from './node_modules/vue-stack-tabs/package.json' with { type: 'json' }
-        if (pkg.exports['.'].require) throw new Error('CommonJS require export should not exist')
+        for (const [exportPath, exportConfig] of Object.entries(pkg.exports)) {
+          if (typeof exportConfig === 'object' && exportConfig?.require) {
+            throw new Error('CommonJS require export should not exist: ' + exportPath)
+          }
+        }
         if (!pkg.exports['./iframe-bridge']) throw new Error('iframe bridge export missing')
         if (!pkg.exports['./nuxt']) throw new Error('Nuxt export missing')
         await import('vue-stack-tabs')
@@ -146,7 +150,7 @@ async function main() {
       root
     )
     console.log(`\n[4/4] ${name}: pnpm run build...`)
-    await run('pnpm', ['--dir', cwd, 'run', 'build'], root, { USE_SOURCE: '' })
+    await run('pnpm', ['--dir', cwd, 'run', 'build'], root, { USE_PACKAGE: '1' })
     console.log(`${name} 构建成功`)
     cleanPlaygroundBuildOutputs(cwd)
   }
