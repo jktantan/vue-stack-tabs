@@ -41,6 +41,7 @@ import {
   unregisterStackTabsRuntimeContext
 } from './hooks/stackTabsContext'
 import { getPostMessageTargetOrigin, isStackTabsOpenTabMessage } from './utils/stackTabsMessage'
+import { getStackTabPanelId, getStackTabTabId } from './utils/stackTabsA11y'
 type StackTabsIframeReferrerPolicy =
   | ''
   | 'no-referrer'
@@ -186,6 +187,8 @@ if (isRuntimeContextOwner) {
 
 /** iframe 标签列表，computed 避免重复 filter */
 const iframeTabs = computed(() => tabs.value.filter((item) => item.iframe))
+const activeNonIframeTab = computed(() => tabs.value.find((item) => item.active && !item.iframe))
+const hasActiveNonIframeTab = computed(() => Boolean(activeNonIframeTab.value))
 
 /** 已激活过的 iframe 使用真实 URL（保留内容），未激活过的用 about:blank（按需加载，切换不重载） */
 const iframeEverActivated = reactive<Record<string, boolean>>({})
@@ -448,7 +451,16 @@ onBeforeUnmount(() => {
       </template>
     </tab-header>
     <div class="stack-tab__container">
-      <StackKeepAlive :transition-name="pageSwitch" @loaded="onComponentLoaded" />
+      <div
+        :id="activeNonIframeTab ? getStackTabPanelId(activeNonIframeTab.id) : undefined"
+        :hidden="!hasActiveNonIframeTab"
+        class="stack-tab__keep-alive-panel"
+        :role="activeNonIframeTab ? 'tabpanel' : undefined"
+        :aria-labelledby="activeNonIframeTab ? getStackTabTabId(activeNonIframeTab.id) : undefined"
+        :aria-hidden="activeNonIframeTab ? undefined : 'true'"
+      >
+        <StackKeepAlive :transition-name="pageSwitch" @loaded="onComponentLoaded" />
+      </div>
       <transition-group :name="pageTransition" tag="div" class="stack-tab__iframes" appear>
         <Transition
           v-for="frame of iframeTabs"
@@ -456,7 +468,14 @@ onBeforeUnmount(() => {
           :name="pageTransition"
           appear
         >
-          <div v-show="frame.active" :key="getIframeKey(frame)" class="stack-tab__iframe-wrapper">
+          <div
+            v-show="frame.active"
+            :id="getStackTabPanelId(frame.id)"
+            :key="getIframeKey(frame)"
+            class="stack-tab__iframe-wrapper"
+            role="tabpanel"
+            :aria-labelledby="getStackTabTabId(frame.id)"
+          >
             <div
               v-if="shouldShowIframeLoading(frame.id)"
               class="stack-tab__iframe-loading"

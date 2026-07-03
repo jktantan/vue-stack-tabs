@@ -54,7 +54,7 @@ function makeTab(overrides: Partial<ITabItem> = {}): ITabItem {
   }
 }
 
-function mountMenu(contextMenu: IContextMenu[] = []) {
+function mountMenu(contextMenu: IContextMenu[] = [], extraProps: Record<string, unknown> = {}) {
   return mount(ContextMenu, {
     props: {
       index: 0,
@@ -62,7 +62,8 @@ function mountMenu(contextMenu: IContextMenu[] = []) {
       top: 24,
       tabItem: makeTab(),
       max: 2,
-      contextMenu
+      contextMenu,
+      ...extraProps
     },
     attachTo: document.body
   })
@@ -96,6 +97,30 @@ describe('ContextMenu accessibility', () => {
     await wrapper.get('[role="menu"]').trigger('keydown', { key: 'Escape' })
 
     expect(wrapper.emitted('close')).toHaveLength(1)
+  })
+
+  it('Escape 关闭菜单后恢复焦点到触发 tab', async () => {
+    const trigger = document.createElement('button')
+    document.body.append(trigger)
+    const wrapper = mountMenu([], { restoreFocusElement: trigger })
+
+    await wrapper.get('[role="menu"]').trigger('keydown', { key: 'Escape' })
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.emitted('close')).toHaveLength(1)
+    expect(document.activeElement).toBe(trigger)
+  })
+
+  it('点击菜单项关闭菜单后恢复焦点到触发 tab', async () => {
+    const trigger = document.createElement('button')
+    document.body.append(trigger)
+    const wrapper = mountMenu([], { restoreFocusElement: trigger })
+
+    await wrapper.get('[role="menuitem"]').trigger('click')
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.emitted('close')).toHaveLength(1)
+    expect(document.activeElement).toBe(trigger)
   })
 
   it('ArrowDown 和 ArrowUp 在可用菜单项间移动焦点', async () => {

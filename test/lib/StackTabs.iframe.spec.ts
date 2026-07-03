@@ -1,5 +1,7 @@
 // @vitest-environment happy-dom
 import { mount } from '@vue/test-utils'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h, ref } from 'vue'
 import type { ITabItem } from '@/lib/model/TabModel'
@@ -15,6 +17,7 @@ const setSessionPrefixMock = vi.fn()
 const setIFramePathMock = vi.fn()
 const openTabMock = vi.fn()
 const openInNewWindowMock = vi.fn()
+const stackTabStyles = readFileSync(resolve(process.cwd(), 'src/lib/assets/style/stackTab.scss'), 'utf8')
 
 vi.mock('vue-i18n-lite', () => ({
   useI18n: () => ({
@@ -139,6 +142,41 @@ describe('StackTabs iframe security and states', () => {
     expect(unsafeWrapper.get('iframe.stack-tab__iframe').attributes('sandbox')).toBeUndefined()
   })
 
+  it('iframe wrapper 作为 tabpanel 关联对应 tab', () => {
+    const wrapper = mountStackTabs()
+    const panel = wrapper.get('.stack-tab__iframe-wrapper')
+
+    expect(panel.attributes('role')).toBe('tabpanel')
+    expect(panel.attributes('id')).toBe('stack-tab-panel-frame-1')
+    expect(panel.attributes('aria-labelledby')).toBe('stack-tab-tab-frame-1')
+  })
+
+  it('非 iframe 活动内容容器作为 tabpanel 关联对应 tab', () => {
+    tabs.value = [makeIframeTab({ id: 'page-1', iframe: false, url: undefined, active: true })]
+    const wrapper = mountStackTabs()
+    const panel = wrapper.get('.stack-tab__keep-alive-panel')
+
+    expect(panel.attributes('role')).toBe('tabpanel')
+    expect(panel.attributes('id')).toBe('stack-tab-panel-page-1')
+    expect(panel.attributes('aria-labelledby')).toBe('stack-tab-tab-page-1')
+    expect(panel.isVisible()).toBe(true)
+  })
+
+  it('iframe 激活时隐藏非 iframe tabpanel，避免旧页面暴露给读屏', () => {
+    const wrapper = mountStackTabs()
+    const panel = wrapper.get('.stack-tab__keep-alive-panel')
+
+    expect(panel.attributes('role')).toBeUndefined()
+    expect(panel.attributes('aria-hidden')).toBe('true')
+    expect(panel.attributes()).toHaveProperty('hidden')
+    expect(panel.isVisible()).toBe(false)
+  })
+
+  it('非 iframe tabpanel 全高承载 keep-alive 内容', () => {
+    expect(stackTabStyles).toMatch(/&__keep-alive-panel\s*\{[\s\S]*width: 100%/)
+    expect(stackTabStyles).toMatch(/&__keep-alive-panel\s*\{[\s\S]*height: 100%/)
+  })
+
   it('iframe loading 使用 status 语义', () => {
     const wrapper = mountStackTabs()
 
@@ -146,6 +184,16 @@ describe('StackTabs iframe security and states', () => {
     expect(loading.attributes('role')).toBe('status')
     expect(loading.attributes('aria-live')).toBe('polite')
     expect(loading.attributes('aria-label')).toBe('VueStackTab.loading')
+  })
+
+  it('iframe 错误态样式覆盖 iframe 且保留点击能力', () => {
+    expect(stackTabStyles).toMatch(/&__iframe-error\s*\{[\s\S]*position: absolute/)
+    expect(stackTabStyles).toMatch(/&__iframe-error\s*\{[\s\S]*top: 0/)
+    expect(stackTabStyles).toMatch(/&__iframe-error\s*\{[\s\S]*left: 0/)
+    expect(stackTabStyles).toMatch(/&__iframe-error\s*\{[\s\S]*z-index: 2/)
+    expect(stackTabStyles).toMatch(/&__iframe-error\s*\{[\s\S]*width: 100%/)
+    expect(stackTabStyles).toMatch(/&__iframe-error\s*\{[\s\S]*height: 100%/)
+    expect(stackTabStyles).toMatch(/&__iframe-error\s*\{[\s\S]*pointer-events: auto/)
   })
 
   it('加载超时后显示 iframeError slot 并可重试', async () => {

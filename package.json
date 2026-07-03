@@ -64,7 +64,7 @@
     "lint:check": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "lib:build": "vite --config vite.config.lib.ts build && vite --config vite.config.iframe-bridge.ts build && vite --config vite.config.nuxt.ts build && node -e \"const fs=require('fs');fs.copyFileSync('dist/vue-stack-tabs.css','dist/style.css');fs.copyFileSync('dist/src/lib/iframe-bridge.d.ts','dist/iframe-bridge.d.ts');fs.mkdirSync('dist/nuxt',{recursive:true});fs.copyFileSync('dist/src/lib/nuxt/module.d.ts','dist/nuxt/module.d.ts');fs.mkdirSync('dist/nuxt/runtime',{recursive:true});fs.copyFileSync('dist/src/lib/nuxt/runtime/plugin.d.ts','dist/nuxt/runtime/plugin.d.ts');fs.copyFileSync('dist/nuxt/plugin.mjs','dist/nuxt/runtime/plugin.mjs')\"",
+    "lib:build": "vite --config vite.config.lib.ts build && vite --config vite.config.iframe-bridge.ts build && vite --config vite.config.nuxt.ts build && node -e \"const fs=require('fs');fs.copyFileSync('dist/vue-stack-tabs.css','dist/style.css');fs.copyFileSync('dist/src/lib/iframe-bridge.d.ts','dist/iframe-bridge.d.ts');fs.mkdirSync('dist/utils',{recursive:true});fs.copyFileSync('dist/src/lib/utils/iframeBridge.d.ts','dist/utils/iframeBridge.d.ts');fs.mkdirSync('dist/nuxt',{recursive:true});fs.copyFileSync('dist/src/lib/nuxt/module.d.ts','dist/nuxt/module.d.ts');fs.mkdirSync('dist/nuxt/runtime',{recursive:true});fs.copyFileSync('dist/src/lib/nuxt/runtime/plugin.d.ts','dist/nuxt/runtime/plugin.d.ts');fs.copyFileSync('dist/nuxt/plugin.mjs','dist/nuxt/runtime/plugin.mjs')\"",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",

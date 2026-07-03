@@ -11,9 +11,12 @@
     @contextmenu="$emit('contextmenu', $event)"
   >
     <button
+      :id="getStackTabTabId(item.id)"
       type="button"
       role="tab"
       class="stack-tab__item-tab"
+      :data-tab-id="item.id"
+      :aria-controls="getStackTabPanelId(item.id)"
       :aria-selected="item.active ? 'true' : 'false'"
       :tabindex="item.active ? 0 : -1"
       :title="title"
@@ -47,6 +50,7 @@
 import { computed, ref, onUnmounted } from 'vue'
 import type { ITabItem } from '../../model/TabModel'
 import { TabEventType, useTabEmitter } from '../../hooks/useTabEventBus'
+import { getStackTabPanelId, getStackTabTabId } from '../../utils/stackTabsA11y'
 import { useI18n } from 'vue-i18n-lite'
 const emit = defineEmits(['close', 'active', 'contextmenu'])
 const emitter = useTabEmitter()

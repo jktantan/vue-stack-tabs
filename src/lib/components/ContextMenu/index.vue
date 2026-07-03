@@ -81,7 +81,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, reactive } from 'vue'
+import { ref, onMounted, reactive, nextTick } from 'vue'
 import type { ITabItem, IContextMenu } from '../../model/TabModel'
 import { useI18n } from 'vue-i18n-lite'
 import { getMaxZIndex } from '../../utils/scrollUtils'
@@ -95,13 +95,15 @@ const props = withDefaults(
     left?: number
     top?: number
     contextMenu?: Array<IContextMenu>
+    restoreFocusElement?: HTMLElement | null
     tabItem: ITabItem
     max: number
   }>(),
   {
     left: 0,
     top: 0,
-    contextMenu: () => []
+    contextMenu: () => [],
+    restoreFocusElement: null
   }
 )
 const emit = defineEmits<{ close: [] }>()
@@ -113,10 +115,19 @@ const menuPosition = reactive({ left: props.left, top: props.top })
 const { closeTab, closeAllTabs, refreshTab, refreshAllTabs, openInNewWindow } = useTabActions()
 const { removeLeftTabs, removeRightTabs, removeOtherTabs } = useTabPanel()
 
+const restoreFocusToTrigger = () => {
+  props.restoreFocusElement?.focus()
+}
+
+const closeMenu = () => {
+  emit('close')
+  void nextTick(restoreFocusToTrigger)
+}
+
 /** 菜单项点击：执行回调并关闭菜单 */
 const handleMenuItemClick = (fn?: () => void) => {
   fn?.()
-  emit('close')
+  closeMenu()
 }
 
 const getMenuButtons = (): HTMLButtonElement[] => {
@@ -142,7 +153,7 @@ const getFocusedMenuItemIndex = (): number => {
 const handleMenuKeydown = (event: KeyboardEvent) => {
   if (event.key === 'Escape') {
     event.preventDefault()
-    emit('close')
+    closeMenu()
     return
   }
 

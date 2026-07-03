@@ -50,6 +50,7 @@
         :max="contextMenuData.max"
         :index="contextMenuData.index"
         :context-menu="normalizedContextMenu"
+        :restore-focus-element="contextMenuTriggerElement"
         @close="handleCloseContextMenu"
       />
     </transition>
@@ -83,6 +84,7 @@ const emit = defineEmits(['active'])
 const scrollContainerRef = ref<InstanceType<typeof TabHeaderScroll>>()
 const headerRef = ref<HTMLElement>()
 const { shown: contextMenuShown, contextMenuData, showContextMenu } = useContextMenu()
+const contextMenuTriggerElement = ref<HTMLElement | null>(null)
 /** 关闭右键菜单 */
 const handleCloseContextMenu = () => {
   contextMenuShown.value = false
@@ -118,10 +120,20 @@ const normalizedContextMenu = computed<IContextMenu[]>(() => {
 })
 
 /** 右键标签：禁用时不阻止浏览器默认菜单，启用时打开组件菜单 */
+const getContextMenuFocusElement = (event: MouseEvent): HTMLElement | null => {
+  const eventTarget = event.target instanceof Element ? event.target : null
+  const targetTab = eventTarget?.closest<HTMLElement>('[role="tab"]')
+  if (targetTab) return targetTab
+
+  const currentTarget = event.currentTarget instanceof HTMLElement ? event.currentTarget : null
+  return currentTarget?.querySelector<HTMLElement>('[role="tab"]') ?? null
+}
+
 const handleTabContextMenu = (e: MouseEvent, item: ITabItem, index: number, max: number) => {
   if (!isContextMenuEnabled.value) return
 
   e.preventDefault()
+  contextMenuTriggerElement.value = getContextMenuFocusElement(e)
   showContextMenu(e, item, index, max)
 }
 

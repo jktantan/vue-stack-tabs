@@ -45,6 +45,9 @@ describe('TabHeaderItem accessibility', () => {
     expect(tab.attributes('type')).toBe('button')
     expect(tab.attributes('aria-selected')).toBe('true')
     expect(tab.attributes('tabindex')).toBe('0')
+    expect(tab.attributes('data-tab-id')).toBe('tab-1')
+    expect(tab.attributes('id')).toBe('stack-tab-tab-tab-1')
+    expect(tab.attributes('aria-controls')).toBe('stack-tab-panel-tab-1')
   })
 
   it('非 active tab 通过箭头键获得焦点，但不进入普通 Tab 顺序', () => {

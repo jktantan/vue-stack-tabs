@@ -209,7 +209,7 @@ const off = onRefreshRequest(() => window.location.reload(), {
 })
 ```
 
-生产环境建议显式传入 `targetOrigin` 和 `allowedOrigins`，避免 wildcard postMessage 策略。
+默认未传 `targetOrigin` 时使用 iframe 页面自身的 `window.location.origin`，适合同源父页面；跨域父页面必须显式传 `targetOrigin`。生产环境建议同时显式传入 `targetOrigin` 和 `allowedOrigins`。
 
 ---
 
@@ -227,7 +227,7 @@ const off = onRefreshRequest(() => window.location.reload(), {
 />
 ```
 
-默认 sandbox 保留常见业务页面能力。如果你的页面需要更严格限制，可以减少 sandbox token；如果你的同源业务页面确实不能在 sandbox 下工作，可以传入空字符串关闭 sandbox，但这会降低隔离强度。
+默认 sandbox 保留常见业务页面能力，属于兼容优先，不是强隔离；强隔离请移除 `allow-same-origin`，并按业务能力继续减少 sandbox token。如果你的同源业务页面确实不能在 sandbox 下工作，可以传入空字符串关闭 sandbox，但这会降低隔离强度。
 
 ---
 
@@ -344,7 +344,7 @@ fetchData().finally(() => closeTabLoading())
 | Prop                   | 类型                        | 默认值                                                                     | 说明                                                    |
 | ---------------------- | --------------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------- |
 | `iframePath`           | `string`                    | **必填**                                                                   | iframe 占位路由的路径                                   |
-| `iframeSandbox`        | `string`                    | `allow-scripts allow-forms allow-popups allow-downloads allow-same-origin` | iframe sandbox 策略；传空字符串可关闭 sandbox（不推荐） |
+| `iframeSandbox`        | `string`                    | `allow-scripts allow-forms allow-popups allow-downloads allow-same-origin` | iframe sandbox 策略；默认兼容优先不是强隔离，强隔离请移除 `allow-same-origin`；传空字符串可关闭 sandbox（不推荐） |
 | `iframeReferrerPolicy` | `ReferrerPolicy`            | `strict-origin-when-cross-origin`                                          | iframe referrerpolicy 属性                              |
 | `iframeAllow`          | `string`                    | `''`                                                                       | iframe allow 属性，例如 `fullscreen`                    |
 | `iframeLoadTimeout`    | `number`                    | `15000`                                                                    | iframe 加载超时时间，单位 ms                            |
@@ -420,7 +420,7 @@ const off = onRefreshRequest(
 
 #### 2. 原生对接方式
 
-如果无法引入库工具，或希望保持零依赖，可以使用原生 API。生产环境必须使用明确的父页面 origin，并校验刷新消息来源：
+如果无法引入库工具，或希望保持零依赖，可以使用原生 API。生产环境必须使用明确的父页面 origin，并校验刷新消息来源。`postOpenTab` 的默认 `targetOrigin` 是 iframe 页面的 `window.location.origin`，跨域父页面必须显式传入父页面 origin：
 
 ```ts
 const parentOrigin = 'https://parent.example.com'

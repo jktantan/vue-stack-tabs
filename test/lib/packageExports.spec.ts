@@ -89,6 +89,43 @@ describe('package exports', () => {
     expect(nuxtConfig).toContain("resolve(rootDir, 'src/lib/nuxt/module.ts')")
   })
 
+  it('packaged smoke script verifies iframe bridge TypeScript closure from the real tarball', () => {
+    const script = readFileSync(join(process.cwd(), 'scripts', 'verify-packaged.mjs'), 'utf8')
+
+    expect(script).toContain('writeIframeBridgeTypeSmokeProject')
+    expect(script).toContain("import { postOpenTab, onRefreshRequest } from 'vue-stack-tabs/iframe-bridge'")
+    expect(script).toContain("'--noEmit', '--pretty', 'false'")
+  })
+
+  it('lib build copies iframe bridge declaration dependencies next to the subpath declaration', () => {
+    const pkg = readPackageJson()
+    const buildScript = readFileSync(join(process.cwd(), 'package.json'), 'utf8')
+
+    expect(pkg.exports?.['./iframe-bridge']).toEqual({
+      types: './dist/iframe-bridge.d.ts',
+      import: './dist/iframe-bridge.mjs'
+    })
+    expect(buildScript).toContain('dist/utils')
+    expect(buildScript).toContain('dist/src/lib/utils/iframeBridge.d.ts')
+  })
+
+  it('README documents compatible sandbox and cross-origin targetOrigin requirements', () => {
+    const readme = readFileSync(join(process.cwd(), 'README.md'), 'utf8')
+
+    expect(readme).toContain('兼容优先，不是强隔离')
+    expect(readme).toContain('强隔离请移除 `allow-same-origin`')
+    expect(readme).toContain('默认未传 `targetOrigin` 时使用 iframe 页面自身的 `window.location.origin`')
+    expect(readme).toContain('跨域父页面必须显式传 `targetOrigin`')
+  })
+
+  it('lib tsconfig suppresses TypeScript 6 deprecation noise explicitly', () => {
+    const tsconfig = JSON.parse(readFileSync(join(process.cwd(), 'tsconfig.lib.json'), 'utf8')) as {
+      compilerOptions?: { ignoreDeprecations?: string }
+    }
+
+    expect(tsconfig.compilerOptions?.ignoreDeprecations).toBe('6.0')
+  })
+
   it('exposes side-effect-free iframe bridge and dist Nuxt module subpaths', () => {
     const pkg = readPackageJson()
     const iframeBridgeExport = pkg.exports?.['./iframe-bridge'] as PackageExportEntry

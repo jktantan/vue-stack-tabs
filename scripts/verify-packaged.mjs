@@ -67,6 +67,42 @@ function linkPeerDependency(tempProjectDir, packageName) {
   fs.symlinkSync(sourcePath, targetPath, 'junction')
 }
 
+function writeIframeBridgeTypeSmokeProject(tempProjectDir) {
+  fs.writeFileSync(
+    join(tempProjectDir, 'iframe-bridge-consumer.ts'),
+    `import { postOpenTab, onRefreshRequest } from 'vue-stack-tabs/iframe-bridge'
+
+postOpenTab(
+  { title: 'typed tab', path: '/typed', query: { id: '1' } },
+  { targetOrigin: 'https://parent.example.com' }
+)
+
+const off = onRefreshRequest(() => undefined, {
+  allowedOrigins: ['https://parent.example.com']
+})
+off()
+`
+  )
+  fs.writeFileSync(
+    join(tempProjectDir, 'tsconfig.json'),
+    JSON.stringify(
+      {
+        compilerOptions: {
+          target: 'ES2022',
+          module: 'ESNext',
+          moduleResolution: 'Bundler',
+          strict: true,
+          skipLibCheck: false,
+          noEmit: true
+        },
+        include: ['iframe-bridge-consumer.ts']
+      },
+      null,
+      2
+    )
+  )
+}
+
 function writeNuxtSmokeStubs(tempProjectDir) {
   const nuxtDir = join(tempProjectDir, 'node_modules', 'nuxt')
   fs.mkdirSync(join(nuxtDir, 'kit'), { recursive: true })
@@ -143,6 +179,7 @@ async function assertPackedFileList(tarballPath) {
     'package/dist/style.css',
     'package/dist/iframe-bridge.mjs',
     'package/dist/iframe-bridge.d.ts',
+    'package/dist/utils/iframeBridge.d.ts',
     'package/dist/nuxt/module.mjs',
     'package/dist/nuxt/module.d.ts',
     'package/dist/nuxt/runtime/plugin.mjs',
@@ -179,7 +216,10 @@ async function verifyPackageExportsFromTarball(tarballPath) {
     linkPeerDependency(tempProjectDir, 'vue')
     linkPeerDependency(tempProjectDir, 'vue-router')
     linkPeerDependency(tempProjectDir, 'element-plus')
+    writeIframeBridgeTypeSmokeProject(tempProjectDir)
     writeNuxtSmokeStubs(tempProjectDir)
+
+    await run('pnpm', ['exec', 'tsc', '--noEmit', '--pretty', 'false'], tempProjectDir)
 
     await runNodeScript(
       `
