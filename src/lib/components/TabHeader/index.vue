@@ -1,5 +1,5 @@
 <template>
-  <div class="stack-tab__header">
+  <div ref="headerRef" class="stack-tab__header">
     <slot name="leftButton" />
     <tab-header-scroll
       ref="scrollContainerRef"
@@ -81,6 +81,7 @@ const maximum = inject(maximumKey, ref(false))
 const emit = defineEmits(['active'])
 /** 滚动容器 ref，用于调用 scrollIntoView / isInView */
 const scrollContainerRef = ref<InstanceType<typeof TabHeaderScroll>>()
+const headerRef = ref<HTMLElement>()
 const { shown: contextMenuShown, contextMenuData, showContextMenu } = useContextMenu()
 /** 关闭右键菜单 */
 const handleCloseContextMenu = () => {
@@ -133,10 +134,25 @@ const tabTransitionProps = computed<TransitionProps>(() =>
 
 const getActiveTabIndex = (): number => tabs.value.findIndex((tab) => tab.active)
 
+const focusTabById = (tabId: string) => {
+  nextTick(() => {
+    const activeTabElement = headerRef.value?.querySelector<HTMLElement>(
+      `.stack-tab__nav [role="tab"][data-tab-id="${CSS.escape(tabId)}"]`
+    )
+    if (!activeTabElement) return
+
+    activeTabElement.focus()
+    if (scrollContainerRef.value && !scrollContainerRef.value.isInView(activeTabElement)) {
+      scrollContainerRef.value.scrollIntoView(activeTabElement)
+    }
+  })
+}
+
 const activateTabByIndex = (index: number) => {
   const item = tabs.value[index]
   if (!item) return
   handleActivateTab(item as ITabItem, undefined, true)
+  focusTabById(String(item.id))
 }
 
 const handleTabListKeydown = (event: KeyboardEvent) => {

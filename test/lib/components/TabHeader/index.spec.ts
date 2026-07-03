@@ -54,16 +54,22 @@ const TabHeaderItemStub = defineComponent({
   },
   emits: ['contextmenu', 'active', 'close'],
   setup(props, { emit }) {
-    return () =>
-      h(
+    return () => {
+      const item = props.item as ITabItem
+
+      return h(
         'li',
         {
           class: 'stack-tab__item',
-          onClick: () => emit('active', props.item, undefined, true),
+          role: 'tab',
+          tabindex: item.active ? 0 : -1,
+          'data-tab-id': item.id,
+          onClick: (event: MouseEvent) => emit('active', item, event.currentTarget, true),
           onContextmenu: (event: MouseEvent) => emit('contextmenu', event)
         },
-        String((props.item as ITabItem).title)
+        String(item.title)
       )
+    }
   }
 })
 
@@ -119,6 +125,7 @@ function makeTab(overrides: Partial<ITabItem> = {}): ITabItem {
 
 function mountHeader(props: Record<string, unknown> = {}, maximum = ref(false)) {
   return mount(TabHeader, {
+    attachTo: document.body,
     props: {
       space: 300,
       ...props
@@ -253,7 +260,7 @@ describe('TabHeader keyboard navigation', () => {
     expect(tablist.attributes('aria-orientation')).toBe('horizontal')
   })
 
-  it('ArrowRight 激活下一个 tab，ArrowLeft 激活上一个 tab', async () => {
+  it('ArrowRight 激活并聚焦下一个 tab，ArrowLeft 激活上一个 tab', async () => {
     tabs.value = [
       makeTab({ id: 'tab-1', title: 'One', active: true }),
       makeTab({ id: 'tab-2', title: 'Two', active: false }),
@@ -263,15 +270,16 @@ describe('TabHeader keyboard navigation', () => {
     const tablist = wrapper.get('[role="tablist"]')
 
     await tablist.trigger('keydown', { key: 'ArrowRight' })
-    await nextTick()
-    expect(activeTabMock).toHaveBeenLastCalledWith('tab-2', true)
-
     tabs.value = [
       makeTab({ id: 'tab-1', title: 'One', active: false }),
       makeTab({ id: 'tab-2', title: 'Two', active: true }),
       makeTab({ id: 'tab-3', title: 'Three', active: false })
     ]
     await nextTick()
+    await nextTick()
+
+    expect(activeTabMock).toHaveBeenLastCalledWith('tab-2', true)
+    expect(document.activeElement).toBe(wrapper.get('[data-tab-id="tab-2"]').element)
 
     await tablist.trigger('keydown', { key: 'ArrowLeft' })
     await nextTick()

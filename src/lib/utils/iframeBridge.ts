@@ -18,6 +18,10 @@ export interface IframeBridgeOptions {
   targetOrigin?: string
 }
 
+function getDefaultTargetOrigin(): string {
+  return window.location.origin
+}
+
 export interface RefreshRequestOptions {
   allowedOrigins?: string[]
 }
@@ -44,7 +48,7 @@ export function postOpenTab(
   if (typeof window === 'undefined' || !window.parent) return
   window.parent.postMessage(
     { type: MSG_OPEN_TAB, payload },
-    options.targetOrigin ?? '*' // 父窗口可校验 origin，此处默认 * 便于跨子域
+    options.targetOrigin ?? getDefaultTargetOrigin()
   )
 }
 

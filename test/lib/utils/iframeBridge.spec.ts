@@ -11,12 +11,12 @@ describe('iframeBridge', () => {
   })
 
   describe('postOpenTab', () => {
-    it('有 window.parent 时调用 postMessage', () => {
+    it('未显式配置 targetOrigin 时默认发送给当前父窗口 origin', () => {
       const spy = vi.spyOn(window.parent, 'postMessage')
       postOpenTab({ title: 't', path: '/p' })
       expect(spy).toHaveBeenCalledWith(
         { type: MSG_OPEN_TAB, payload: { title: 't', path: '/p' } },
-        '*'
+        window.location.origin
       )
       spy.mockRestore()
     })
