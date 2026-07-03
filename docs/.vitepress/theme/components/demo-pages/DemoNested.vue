@@ -29,11 +29,12 @@ import useTabRouter from '../../../../../src/lib/hooks/useTabRouter'
 const { forward } = useTabRouter()
 
 const goHome = () => {
-  forward({ path: '/' })
+  // 这里可以使用 forward 导航到嵌套路由
+  console.log('导航到首页')
 }
 
 const goDetail = (id: number) => {
-  forward({ path: '/detail', query: { id: String(id) } })
+  console.log(`导航到详情 ${id}`)
 }
 </script>
 
@@ -73,7 +74,7 @@ h1 {
   background: white;
   padding: 24px;
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
   margin-top: 24px;
 }
 

@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 /* global console, process */
 /**
- * 打包后验证：先检查 dist 入口和 ESM 导入，再在 Vue / Nuxt playground 中构建。
+ * 打包后验证：先检查 dist 入口，再用真实 pnpm pack tarball 验证 package exports 和 playground 构建。
  */
 import fs from 'node:fs'
 import { spawn } from 'node:child_process'
 import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
-import { dirname, join } from 'node:path'
+import { dirname, join, relative } from 'node:path'
 import { tmpdir } from 'node:os'
 
 const require = createRequire(import.meta.url)
@@ -15,11 +15,22 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const root = join(__dirname, '..')
 const playgrounds = ['vue', 'nuxt']
 
-async function run(bin, args, cwd, env = {}) {
+async function run(bin, args, cwd = root, env = {}) {
   return new Promise((resolve, reject) => {
     const childEnv = { ...process.env, ...env }
     const child = spawn(bin, args, { cwd, env: childEnv, stdio: 'inherit', shell: false })
     child.on('close', (code) => (code === 0 ? resolve() : reject(new Error(`exit ${code}`))))
+  })
+}
+
+async function runCapture(bin, args, cwd = root) {
+  return new Promise((resolve, reject) => {
+    let stdout = ''
+    const child = spawn(bin, args, { cwd, stdio: ['ignore', 'pipe', 'inherit'], shell: false })
+    child.stdout.on('data', (chunk) => {
+      stdout += chunk
+    })
+    child.on('close', (code) => (code === 0 ? resolve(stdout) : reject(new Error(`exit ${code}`))))
   })
 }
 
@@ -34,16 +45,18 @@ async function runNodeScript(source, cwd = root) {
   })
 }
 
+function readJson(filePath) {
+  return JSON.parse(fs.readFileSync(filePath, 'utf8'))
+}
+
+function writeJson(filePath, value) {
+  fs.writeFileSync(filePath, `${JSON.stringify(value, null, 2)}\n`)
+}
+
 function cleanPlaygroundBuildOutputs(cwd) {
   for (const outputPath of ['.nuxt', '.output', 'dist']) {
     fs.rmSync(join(cwd, outputPath), { recursive: true, force: true })
   }
-}
-
-function copyPackageForSmoke(packageDir) {
-  fs.mkdirSync(packageDir, { recursive: true })
-  fs.cpSync(join(root, 'dist'), join(packageDir, 'dist'), { recursive: true })
-  fs.copyFileSync(join(root, 'package.json'), join(packageDir, 'package.json'))
 }
 
 function linkPeerDependency(tempProjectDir, packageName) {
@@ -51,6 +64,7 @@ function linkPeerDependency(tempProjectDir, packageName) {
   const sourcePath = dirname(packageJsonPath)
   const targetPath = join(tempProjectDir, 'node_modules', packageName)
 
+  fs.mkdirSync(dirname(targetPath), { recursive: true })
   fs.symlinkSync(sourcePath, targetPath, 'junction')
 }
 
@@ -81,26 +95,103 @@ export const useRuntimeConfig = () => ({ public: { vueStackTabs: { locale: 'zh-C
   )
 }
 
-async function verifyPackageExportsFromTempProject() {
-  const tempProjectDir = fs.mkdtempSync(join(tmpdir(), 'vue-stack-tabs-packaged-'))
+function assertNoRequireExport(exportConfig, exportPath) {
+  if (!exportConfig || typeof exportConfig !== 'object') return
+
+  for (const [key, value] of Object.entries(exportConfig)) {
+    const nestedExportPath = `${exportPath}.${key}`
+    if (key === 'require') {
+      throw new Error('CommonJS require export should not exist: ' + exportPath)
+    }
+    assertNoRequireExport(value, nestedExportPath)
+  }
+}
+
+function assertExportTypesExist(packageDir, exportConfig) {
+  if (!exportConfig || typeof exportConfig !== 'object') return
+
+  for (const [key, value] of Object.entries(exportConfig)) {
+    if (key === 'types' && typeof value === 'string') {
+      const typePath = join(packageDir, value)
+      if (!fs.existsSync(typePath)) throw new Error(`types export 不存在：${typePath}`)
+      continue
+    }
+    assertExportTypesExist(packageDir, value)
+  }
+}
+
+async function packPackage(packDir) {
+  await run('pnpm', ['pack', '--pack-destination', packDir], root)
+
+  const tarballs = fs
+    .readdirSync(packDir)
+    .filter((fileName) => fileName.endsWith('.tgz'))
+    .map((fileName) => join(packDir, fileName))
+
+  if (tarballs.length !== 1) {
+    throw new Error(`预期 pnpm pack 生成 1 个 tarball，实际为 ${tarballs.length}`)
+  }
+
+  return tarballs[0]
+}
+
+async function assertPackedFileList(tarballPath) {
+  const fileList = await runCapture('tar', ['-tf', tarballPath], root)
+  const packedFiles = new Set(fileList.trim().split(/\r?\n/).filter(Boolean))
+  const requiredPackedFiles = [
+    'package/package.json',
+    'package/dist/vue-stack-tabs.es.js',
+    'package/dist/style.css',
+    'package/dist/iframe-bridge.mjs',
+    'package/dist/iframe-bridge.d.ts',
+    'package/dist/nuxt/module.mjs',
+    'package/dist/nuxt/module.d.ts',
+    'package/dist/nuxt/runtime/plugin.mjs',
+    'package/dist/nuxt/runtime/plugin.d.ts'
+  ]
+
+  for (const filePath of requiredPackedFiles) {
+    if (!packedFiles.has(filePath)) throw new Error(`tarball 缺少文件：${filePath}`)
+  }
+}
+
+async function extractTarballForSmoke(tempProjectDir, tarballPath) {
   const packageDir = join(tempProjectDir, 'node_modules', 'vue-stack-tabs')
+  fs.mkdirSync(packageDir, { recursive: true })
+  await run('tar', ['-xzf', tarballPath, '--strip-components', '1', '-C', packageDir], root)
+  return packageDir
+}
+
+async function verifyPackageExportsFromTarball(tarballPath) {
+  const tempProjectDir = fs.mkdtempSync(join(tmpdir(), 'vue-stack-tabs-tarball-smoke-'))
 
   try {
-    copyPackageForSmoke(packageDir)
+    fs.writeFileSync(join(tempProjectDir, 'package.json'), '{"type":"module"}\n')
+    const packageDir = await extractTarballForSmoke(tempProjectDir, tarballPath)
+    const pkg = readJson(join(packageDir, 'package.json'))
+
+    for (const [exportPath, exportConfig] of Object.entries(pkg.exports)) {
+      assertNoRequireExport(exportConfig, exportPath)
+    }
+    if (!pkg.exports['./iframe-bridge']) throw new Error('iframe bridge export missing')
+    if (!pkg.exports['./nuxt']) throw new Error('Nuxt export missing')
+    assertExportTypesExist(packageDir, pkg.exports)
+
     linkPeerDependency(tempProjectDir, 'vue')
     linkPeerDependency(tempProjectDir, 'vue-router')
+    linkPeerDependency(tempProjectDir, 'element-plus')
     writeNuxtSmokeStubs(tempProjectDir)
 
     await runNodeScript(
       `
-        import pkg from './node_modules/vue-stack-tabs/package.json' with { type: 'json' }
-        for (const [exportPath, exportConfig] of Object.entries(pkg.exports)) {
-          if (typeof exportConfig === 'object' && exportConfig?.require) {
-            throw new Error('CommonJS require export should not exist: ' + exportPath)
-          }
+        import { existsSync } from 'node:fs'
+        import { createRequire } from 'node:module'
+        const require = createRequire(new URL('./package.json', import.meta.url))
+        const assertResolvedFile = (specifier, label) => {
+          const resolved = require.resolve(specifier)
+          if (!existsSync(resolved)) throw new Error(label + ' 不存在：' + resolved)
         }
-        if (!pkg.exports['./iframe-bridge']) throw new Error('iframe bridge export missing')
-        if (!pkg.exports['./nuxt']) throw new Error('Nuxt export missing')
+        assertResolvedFile('vue-stack-tabs/dist/style.css', 'root CSS')
         await import('vue-stack-tabs')
         const bridge = await import('vue-stack-tabs/iframe-bridge')
         if (typeof bridge.postOpenTab !== 'function') throw new Error('postOpenTab missing')
@@ -109,7 +200,7 @@ async function verifyPackageExportsFromTempProject() {
         if (typeof nuxtModule.default !== 'function') throw new Error('Nuxt module default export missing')
         const nuxtRuntime = await import('./node_modules/vue-stack-tabs/dist/nuxt/runtime/plugin.mjs')
         if (typeof nuxtRuntime.default !== 'function') throw new Error('Nuxt runtime plugin default export missing')
-        console.log('dist ESM imports verified')
+        console.log('tarball ESM imports verified')
       `,
       tempProjectDir
     )
@@ -118,44 +209,89 @@ async function verifyPackageExportsFromTempProject() {
   }
 }
 
-async function main() {
-  console.log('[1/4] 检查 dist 入口文件...')
-  const requiredDistFiles = [
-    ['root ESM', join(root, 'dist', 'vue-stack-tabs.es.js')],
-    ['root CSS', join(root, 'dist', 'style.css')],
-    ['iframe bridge ESM', join(root, 'dist', 'iframe-bridge.mjs')],
-    ['iframe bridge types', join(root, 'dist', 'iframe-bridge.d.ts')],
-    ['Nuxt module ESM', join(root, 'dist', 'nuxt', 'module.mjs')],
-    ['Nuxt module types', join(root, 'dist', 'nuxt', 'module.d.ts')],
-    ['Nuxt runtime plugin ESM', join(root, 'dist', 'nuxt', 'runtime', 'plugin.mjs')],
-    ['Nuxt runtime plugin types', join(root, 'dist', 'nuxt', 'runtime', 'plugin.d.ts')]
-  ]
+function copyPlaygroundForTarball(name, tempRoot, tarballPath) {
+  const source = join(root, 'playgrounds', name)
+  const target = join(tempRoot, 'playgrounds', name)
+  const skippedTopLevelPaths = new Set(['node_modules', '.nuxt', '.output', 'dist'])
 
-  for (const [label, filePath] of requiredDistFiles) {
-    if (!fs.existsSync(filePath)) {
-      console.error(`${label} 不存在：${filePath}`)
-      process.exit(1)
+  fs.cpSync(source, target, {
+    recursive: true,
+    filter: (sourcePath) => {
+      const sourceRelativePath = relative(source, sourcePath)
+      const topLevelPath = sourceRelativePath.split(/[\\/]/)[0]
+      return !skippedTopLevelPaths.has(topLevelPath)
+    }
+  })
+
+  const packageJsonPath = join(target, 'package.json')
+  const packageJson = readJson(packageJsonPath)
+  const relativeTarballPath = relative(target, tarballPath).replaceAll('\\', '/')
+  const tarballDependency = relativeTarballPath.startsWith('.')
+    ? `file:${relativeTarballPath}`
+    : `file:./${relativeTarballPath}`
+  packageJson.dependencies = {
+    ...packageJson.dependencies,
+    'vue-stack-tabs': tarballDependency
+  }
+  writeJson(packageJsonPath, packageJson)
+
+  return target
+}
+
+async function verifyPlaygroundBuildsFromTarball(tarballPath, tempRoot) {
+  for (const name of playgrounds) {
+    const cwd = copyPlaygroundForTarball(name, tempRoot, tarballPath)
+    try {
+      console.log(`\n[3/4] ${name}: pnpm install tarball...`)
+      await run(
+        'pnpm',
+        ['--dir', cwd, 'install', '--ignore-workspace', '--ignore-scripts', '--no-frozen-lockfile'],
+        root
+      )
+      console.log(`\n[4/4] ${name}: pnpm run build...`)
+      await run('pnpm', ['--dir', cwd, 'run', 'build'], root, { USE_PACKAGE: '1' })
+      console.log(`${name} tarball 构建成功`)
+    } finally {
+      cleanPlaygroundBuildOutputs(cwd)
     }
   }
+}
 
-  console.log('\n[2/4] 验证临时 package 的 exports 与 ESM 导入...')
-  await verifyPackageExportsFromTempProject()
+async function main() {
+  const tempRoot = fs.mkdtempSync(join(tmpdir(), 'vue-stack-tabs-packaged-'))
 
-  for (const name of playgrounds) {
-    const cwd = join(root, 'playgrounds', name)
-    console.log(`\n[3/4] ${name}: pnpm install...`)
-    await run(
-      'pnpm',
-      ['--dir', cwd, 'install', '--ignore-workspace', '--ignore-scripts', '--frozen-lockfile'],
-      root
-    )
-    console.log(`\n[4/4] ${name}: pnpm run build...`)
-    await run('pnpm', ['--dir', cwd, 'run', 'build'], root, { USE_PACKAGE: '1' })
-    console.log(`${name} 构建成功`)
-    cleanPlaygroundBuildOutputs(cwd)
+  try {
+    console.log('[1/4] 检查 dist 入口文件...')
+    const requiredDistFiles = [
+      ['root ESM', join(root, 'dist', 'vue-stack-tabs.es.js')],
+      ['root CSS', join(root, 'dist', 'style.css')],
+      ['iframe bridge ESM', join(root, 'dist', 'iframe-bridge.mjs')],
+      ['iframe bridge types', join(root, 'dist', 'iframe-bridge.d.ts')],
+      ['Nuxt module ESM', join(root, 'dist', 'nuxt', 'module.mjs')],
+      ['Nuxt module types', join(root, 'dist', 'nuxt', 'module.d.ts')],
+      ['Nuxt runtime plugin ESM', join(root, 'dist', 'nuxt', 'runtime', 'plugin.mjs')],
+      ['Nuxt runtime plugin types', join(root, 'dist', 'nuxt', 'runtime', 'plugin.d.ts')]
+    ]
+
+    for (const [label, filePath] of requiredDistFiles) {
+      if (!fs.existsSync(filePath)) {
+        console.error(`${label} 不存在：${filePath}`)
+        process.exit(1)
+      }
+    }
+
+    console.log('\n[2/4] pnpm pack 并验证 tarball exports 与 ESM 导入...')
+    const packDir = join(tempRoot, 'pack')
+    fs.mkdirSync(packDir, { recursive: true })
+    const tarballPath = await packPackage(packDir)
+    await assertPackedFileList(tarballPath)
+    await verifyPackageExportsFromTarball(tarballPath)
+    await verifyPlaygroundBuildsFromTarball(tarballPath, tempRoot)
+
+    console.log('\n全部通过：dist 入口、tarball exports、Vue 与 Nuxt tarball 构建验证完成')
+  } finally {
+    fs.rmSync(tempRoot, { recursive: true, force: true })
   }
-
-  console.log('\n全部通过：dist 入口、ESM 导入、Vue 与 Nuxt 打包后验证完成')
 }
 
 main().catch((err) => {

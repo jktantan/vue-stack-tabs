@@ -35,25 +35,29 @@ describe('package exports', () => {
     expect(pkg.module).toBe('./dist/vue-stack-tabs.es.js')
   })
 
-  it('packaged smoke script resolves exports from an isolated temp package directory', () => {
+  it('packaged smoke script creates one pnpm pack tarball for isolated smoke checks', () => {
     const script = readFileSync(join(process.cwd(), 'scripts', 'verify-packaged.mjs'), 'utf8')
 
-    expect(script).toContain("fs.mkdtempSync(join(tmpdir(), 'vue-stack-tabs-packaged-'))")
-    expect(script).toContain("join(tempProjectDir, 'node_modules', 'vue-stack-tabs')")
-    expect(script).toContain('./node_modules/vue-stack-tabs/package.json')
-    expect(script).toContain('await runNodeScript(')
-    expect(script).toContain('tempProjectDir')
+    expect(script).toContain('await packPackage(packDir)')
+    expect(script).toContain("['pack', '--pack-destination', packDir]")
+    expect(script).toContain('tarballPath')
+    expect(script).toContain('await verifyPackageExportsFromTarball(tarballPath)')
+    expect(script).toContain('extractTarballForSmoke(tempProjectDir, tarballPath)')
+    expect(script).not.toContain('copyPackageForSmoke')
   })
 
-  it('packaged smoke script verifies root, iframe, Nuxt module, and Nuxt runtime ESM imports', () => {
+  it('packaged smoke script verifies root, iframe, Nuxt module, CSS, types, and Nuxt runtime from the tarball', () => {
     const script = readFileSync(join(process.cwd(), 'scripts', 'verify-packaged.mjs'), 'utf8')
 
     expect(script).toContain("await import('vue-stack-tabs')")
     expect(script).toContain("await import('vue-stack-tabs/iframe-bridge')")
     expect(script).toContain("await import('vue-stack-tabs/nuxt')")
+    expect(script).toContain("assertResolvedFile('vue-stack-tabs/dist/style.css', 'root CSS')")
+    expect(script).toContain('assertExportTypesExist(packageDir, pkg.exports)')
     expect(script).toContain(
       "await import('./node_modules/vue-stack-tabs/dist/nuxt/runtime/plugin.mjs')"
     )
+    expect(script).toContain('assertPackedFileList')
   })
 
   it('packaged smoke script rejects CommonJS require on every object export', () => {

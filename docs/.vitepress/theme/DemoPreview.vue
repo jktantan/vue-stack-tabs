@@ -15,7 +15,7 @@ const props = withDefaults(
 )
 
 const isDev = import.meta.env.DEV
-const base = import.meta.env.BASE_URL || '/'
+const base = (import.meta as any).env?.BASE_URL || '/'
 
 const src = computed(() => {
   const p = props.path.startsWith('/') ? props.path : `/${props.path}`
@@ -35,7 +35,12 @@ const error = ref(false)
       <p>请运行 <code>pnpm dev</code> 查看本地演示。部署到 GitHub Pages 后无需此步骤。</p>
     </div>
     <div v-else class="demo-preview-frame-wrap">
-      <iframe :src="src" :title="title" class="demo-preview-iframe" @error="error = true" />
+      <iframe
+        :src="src"
+        :title="title"
+        class="demo-preview-iframe"
+        @error="error = true"
+      />
     </div>
   </div>
 </template>
