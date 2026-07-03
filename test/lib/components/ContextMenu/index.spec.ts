@@ -123,6 +123,31 @@ describe('ContextMenu accessibility', () => {
     expect(document.activeElement).toBe(trigger)
   })
 
+  it('点击关闭当前 tab 后触发元素被移除时聚焦新的 active tab', async () => {
+    const trigger = document.createElement('button')
+    trigger.setAttribute('role', 'tab')
+    trigger.setAttribute('aria-selected', 'false')
+    document.body.append(trigger)
+
+    const nextActiveTab = document.createElement('button')
+    nextActiveTab.setAttribute('role', 'tab')
+    nextActiveTab.setAttribute('aria-selected', 'true')
+    document.body.append(nextActiveTab)
+    closeTabMock.mockImplementationOnce(() => {
+      trigger.remove()
+    })
+    const wrapper = mountMenu([], { restoreFocusElement: trigger })
+
+    const closeItem = wrapper
+      .findAll('[role="menuitem"]')
+      .find((item) => item.text().includes('VueStackTab.close'))
+    await closeItem?.trigger('click')
+    await wrapper.vm.$nextTick()
+
+    expect(closeTabMock).toHaveBeenCalledWith('tab-1')
+    expect(document.activeElement).toBe(nextActiveTab)
+  })
+
   it('ArrowDown 和 ArrowUp 在可用菜单项间移动焦点', async () => {
     const wrapper = mountMenu()
     const menu = wrapper.get('[role="menu"]')

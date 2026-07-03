@@ -5,7 +5,10 @@ import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import ContextMenuItem from '@/lib/components/ContextMenu/ContextMenuItem.vue'
 
-const stackTabStyles = readFileSync(resolve(process.cwd(), 'src/lib/assets/style/stackTab.scss'), 'utf8')
+const stackTabStyles = readFileSync(
+  resolve(process.cwd(), 'src/lib/assets/style/stackTab.scss'),
+  'utf8'
+)
 
 describe('ContextMenuItem accessibility', () => {
   it('渲染为 menuitem button', () => {

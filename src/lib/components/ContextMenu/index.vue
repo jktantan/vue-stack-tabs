@@ -115,8 +115,18 @@ const menuPosition = reactive({ left: props.left, top: props.top })
 const { closeTab, closeAllTabs, refreshTab, refreshAllTabs, openInNewWindow } = useTabActions()
 const { removeLeftTabs, removeRightTabs, removeOtherTabs } = useTabPanel()
 
+const focusActiveTabFallback = () => {
+  const activeTab = document.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]')
+  activeTab?.focus()
+}
+
 const restoreFocusToTrigger = () => {
-  props.restoreFocusElement?.focus()
+  if (props.restoreFocusElement && document.contains(props.restoreFocusElement)) {
+    props.restoreFocusElement.focus()
+    return
+  }
+
+  focusActiveTabFallback()
 }
 
 const closeMenu = () => {
