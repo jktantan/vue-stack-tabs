@@ -38,7 +38,7 @@
 ```ts
 import VueStackTabs from 'vue-stack-tabs'
 import {
-  VueStackTabs,
+  VueStackTabs as VueStackTabsComponent,
   StackTab,
   useTabActions,
   useTabRouter,
@@ -168,8 +168,7 @@ export default defineNuxtConfig({
 page loading 和 iframe loading 容器补充：
 
 ```html
-role="status"
-aria-live="polite"
+role="status" aria-live="polite"
 ```
 
 需要有可被辅助技术理解的文本或 `aria-label`。

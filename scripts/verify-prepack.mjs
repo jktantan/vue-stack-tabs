@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* global console, process */
 /**
  * 打包前验证：单元测试 + Vue 主项目构建（源码）+ Nuxt playground 构建（源码）
  */

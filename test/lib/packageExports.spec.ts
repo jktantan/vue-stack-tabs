@@ -35,6 +35,27 @@ describe('package exports', () => {
     expect(pkg.module).toBe('./dist/vue-stack-tabs.es.js')
   })
 
+  it('packaged smoke script resolves exports from an isolated temp package directory', () => {
+    const script = readFileSync(join(process.cwd(), 'scripts', 'verify-packaged.mjs'), 'utf8')
+
+    expect(script).toContain("fs.mkdtempSync(join(tmpdir(), 'vue-stack-tabs-packaged-'))")
+    expect(script).toContain("join(tempProjectDir, 'node_modules', 'vue-stack-tabs')")
+    expect(script).toContain('./node_modules/vue-stack-tabs/package.json')
+    expect(script).toContain('await runNodeScript(')
+    expect(script).toContain('tempProjectDir')
+  })
+
+  it('packaged smoke script verifies root, iframe, Nuxt module, and Nuxt runtime ESM imports', () => {
+    const script = readFileSync(join(process.cwd(), 'scripts', 'verify-packaged.mjs'), 'utf8')
+
+    expect(script).toContain("await import('vue-stack-tabs')")
+    expect(script).toContain("await import('vue-stack-tabs/iframe-bridge')")
+    expect(script).toContain("await import('vue-stack-tabs/nuxt')")
+    expect(script).toContain(
+      "await import('./node_modules/vue-stack-tabs/dist/nuxt/runtime/plugin.mjs')"
+    )
+  })
+
   it('exposes side-effect-free iframe bridge and dist Nuxt module subpaths', () => {
     const pkg = readPackageJson()
     const iframeBridgeExport = pkg.exports?.['./iframe-bridge'] as PackageExportEntry

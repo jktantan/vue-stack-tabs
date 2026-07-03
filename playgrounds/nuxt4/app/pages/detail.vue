@@ -17,6 +17,7 @@
 </template>
 
 <script setup lang="ts">
+import { useRoute } from 'vue-router'
 import { useTabRouter } from 'vue-stack-tabs'
 
 defineProps<{ _back?: Record<string, unknown> }>()

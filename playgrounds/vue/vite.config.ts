@@ -4,13 +4,18 @@ import vueJsx from '@vitejs/plugin-vue-jsx'
 import { resolve } from 'node:path'
 
 const rootDir = resolve(__dirname, '../..')
+const isSourceMode = process.env.USE_SOURCE === '1'
 
 export default defineConfig({
   plugins: [vue(), vueJsx()],
   resolve: {
-    alias: {
-      'vue-stack-tabs': resolve(rootDir, 'src/lib/index.ts'),
-      '@': resolve(rootDir, 'src')
-    }
+    alias: isSourceMode
+      ? {
+          'vue-stack-tabs': resolve(rootDir, 'src/lib/index.ts'),
+          '@': resolve(rootDir, 'src')
+        }
+      : {
+          '@': resolve(rootDir, 'src')
+        }
   }
 })

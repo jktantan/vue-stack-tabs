@@ -2,14 +2,14 @@
   <div class="demo-page">
     <h1>🔗 嵌套路由演示</h1>
     <p>演示在同一个标签内的前进和后退导航。</p>
-    
+
     <div class="nested-nav">
       <button class="btn" @click="goHome">首页 Home</button>
       <button class="btn" @click="goDetail(1)">详情 1</button>
       <button class="btn" @click="goDetail(2)">详情 2</button>
       <button class="btn" @click="goDetail(3)">详情 3</button>
     </div>
-    
+
     <div class="nested-content">
       <h2>嵌套路由主页</h2>
       <p>点击上方按钮可以在同一个标签内导航到不同的子页面。</p>
@@ -29,12 +29,11 @@ import useTabRouter from '../../../../../src/lib/hooks/useTabRouter'
 const { forward } = useTabRouter()
 
 const goHome = () => {
-  // 这里可以使用 forward 导航到嵌套路由
-  console.log('导航到首页')
+  forward({ path: '/' })
 }
 
 const goDetail = (id: number) => {
-  console.log(`导航到详情 ${id}`)
+  forward({ path: '/detail', query: { id: String(id) } })
 }
 </script>
 
@@ -74,7 +73,7 @@ h1 {
   background: white;
   padding: 24px;
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   margin-top: 24px;
 }
 

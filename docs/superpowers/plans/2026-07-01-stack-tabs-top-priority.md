@@ -58,6 +58,7 @@
 ### Task 1: Package exports and build entries
 
 **Files:**
+
 - Create: `src/lib/iframe-bridge.ts`
 - Create: `vite.config.iframe-bridge.ts`
 - Create: `vite.config.nuxt.ts`
@@ -67,6 +68,7 @@
 - Modify: `tsconfig.lib.json:2-4`
 
 **Interfaces:**
+
 - Consumes: existing `src/lib/utils/iframeBridge.ts` exports.
 - Produces: `vue-stack-tabs/iframe-bridge` ESM import path; `vue-stack-tabs/nuxt` dist import path; root ESM-only package exports.
 
@@ -143,7 +145,11 @@ Create `src/lib/iframe-bridge.ts`:
 
 ```ts
 export { MSG_OPEN_TAB, MSG_REFRESH, onRefreshRequest, postOpenTab } from './utils/iframeBridge'
-export type { IframeBridgeOptions, IframeOpenTabPayload, RefreshRequestOptions } from './utils/iframeBridge'
+export type {
+  IframeBridgeOptions,
+  IframeOpenTabPayload,
+  RefreshRequestOptions
+} from './utils/iframeBridge'
 ```
 
 This file will fail type-check until Task 2 adds `IframeBridgeOptions` and `RefreshRequestOptions`.
@@ -296,11 +302,13 @@ Expected: PASS.
 ### Task 2: iframeBridge targetOrigin and allowedOrigins
 
 **Files:**
+
 - Modify: `test/lib/utils/iframeBridge.spec.ts:1-50`
 - Modify: `src/lib/utils/iframeBridge.ts:14-52`
 - Modify: `src/lib/iframe-bridge.ts`
 
 **Interfaces:**
+
 - Produces: `IframeBridgeOptions`, `RefreshRequestOptions`, `postOpenTab(payload, options?)`, `onRefreshRequest(callback?, options?)`.
 - Consumed by: Task 1 `src/lib/iframe-bridge.ts`, Task 8 docs.
 
@@ -398,13 +406,13 @@ export interface RefreshRequestOptions {
 Replace `postOpenTab` with:
 
 ```ts
-export function postOpenTab(payload: IframeOpenTabPayload, options: IframeBridgeOptions = {}): void {
+export function postOpenTab(
+  payload: IframeOpenTabPayload,
+  options: IframeBridgeOptions = {}
+): void {
   if (typeof window === 'undefined' || !window.parent) return
 
-  window.parent.postMessage(
-    { type: MSG_OPEN_TAB, payload },
-    options.targetOrigin ?? '*'
-  )
+  window.parent.postMessage({ type: MSG_OPEN_TAB, payload }, options.targetOrigin ?? '*')
 }
 ```
 
@@ -456,6 +464,7 @@ Expected: PASS.
 ### Task 3: Accessible header buttons and tab items
 
 **Files:**
+
 - Create: `test/lib/components/TabHeader/TabHeaderButton.spec.ts`
 - Create: `test/lib/components/TabHeader/TabHeaderItem.spec.ts`
 - Modify: `src/lib/components/TabHeader/TabHeaderButton.vue:5-40`
@@ -463,6 +472,7 @@ Expected: PASS.
 - Modify: `src/lib/assets/style/stackTab.scss:60-85,163-261`
 
 **Interfaces:**
+
 - Produces: `TabHeaderButton` emits native click from `<button>`; `TabHeaderItem` still emits `active(item, element, isRoute)` and `close(item)`.
 - Consumed by: `TabHeader/index.vue` and existing tests.
 
@@ -806,10 +816,12 @@ Expected: PASS. If the existing middle-click test breaks because the event is no
 ### Task 4: TabHeader tablist keyboard navigation
 
 **Files:**
+
 - Modify: `test/lib/components/TabHeader/index.spec.ts:1-244`
 - Modify: `src/lib/components/TabHeader/index.vue:10-29,60-164`
 
 **Interfaces:**
+
 - Consumes: `TabHeaderItem` role tab buttons from Task 3.
 - Produces: parent-managed tablist direction navigation.
 
@@ -971,6 +983,7 @@ Expected: PASS.
 ### Task 5: Accessible ContextMenu and ContextMenuItem
 
 **Files:**
+
 - Create: `test/lib/components/ContextMenu/ContextMenuItem.spec.ts`
 - Create: `test/lib/components/ContextMenu/index.spec.ts`
 - Modify: `src/lib/components/ContextMenu/ContextMenuItem.vue:5-18`
@@ -978,6 +991,7 @@ Expected: PASS.
 - Modify: `src/lib/model/TabModel.ts:88-94`
 
 **Interfaces:**
+
 - Produces: `IContextMenu.key?: string`; context menu root role menu; item role menuitem.
 - Consumed by: `TabHeader/index.vue` custom context menu forwarding.
 
@@ -1034,12 +1048,7 @@ Replace `ContextMenuItem.vue` template with:
 
 ```vue
 <template>
-  <button
-    type="button"
-    role="menuitem"
-    class="stack-tab__contextmenu-item"
-    :disabled="disabled"
-  >
+  <button type="button" role="menuitem" class="stack-tab__contextmenu-item" :disabled="disabled">
     <span class="stack-tab__contextmenu-icon" :class="icon" aria-hidden="true" />
     <span class="stack-tab__contextmenu-title" @contextmenu.prevent>{{ title }}</span>
   </button>
@@ -1343,7 +1352,8 @@ const handleMenuKeydown = (event: KeyboardEvent) => {
   }
 }
 
-const getCustomMenuKey = (item: IContextMenu): string => item.key ?? `${item.title}-${item.icon ?? ''}`
+const getCustomMenuKey = (item: IContextMenu): string =>
+  item.key ?? `${item.title}-${item.icon ?? ''}`
 ```
 
 In `onMounted`, after viewport position correction, focus first item:
@@ -1367,10 +1377,12 @@ Expected: PASS.
 ### Task 6: Loading status semantics
 
 **Files:**
+
 - Create: `test/lib/components/PageLoading.spec.ts`
 - Modify: `src/lib/components/PageLoading.vue:7-13`
 
 **Interfaces:**
+
 - Produces: accessible loading status for internal page loading.
 - Consumed by: `useTabPanel.tsx` cache wrapper.
 
@@ -1469,12 +1481,14 @@ Expected: PASS.
 ### Task 7: StackTabs iframe security props, load timeout and slots
 
 **Files:**
+
 - Create: `test/lib/StackTabs.iframe.spec.ts`
 - Modify: `src/lib/StackTabs.vue:44-84,166-240,303-370`
 - Modify: `src/lib/i18n/lang/zh-CN.ts`
 - Modify: `src/lib/i18n/lang/en.ts`
 
 **Interfaces:**
+
 - Produces: `iframeSandbox`, `iframeReferrerPolicy`, `iframeAllow`, `iframeLoadTimeout`; iframe loading/error slots; retry behavior.
 - Consumes: existing `iframeRefreshKeys` and iframe tab list.
 
@@ -1732,7 +1746,8 @@ const retryIframe = (frameId: string) => {
   setIframeLoading(frameId)
 }
 
-const shouldShowIframeLoading = (frameId: string) => getIframeLoadState(frameId).status === 'loading'
+const shouldShowIframeLoading = (frameId: string) =>
+  getIframeLoadState(frameId).status === 'loading'
 const shouldShowIframeError = (frameId: string) => getIframeLoadState(frameId).status === 'timeout'
 ```
 
@@ -1836,10 +1851,12 @@ Expected: PASS.
 ### Task 8: Packaged smoke verification and documentation
 
 **Files:**
+
 - Modify: `scripts/verify-packaged.mjs:1-45`
 - Modify: `README.md`
 
 **Interfaces:**
+
 - Consumes: dist files from Tasks 1 and 2.
 - Produces: verification that package exports resolve from a packed package.
 
@@ -1921,7 +1938,7 @@ Expected: PASS.
 
 In `README.md`, add a section named `ESM-only 与 iframe bridge 子入口` with this content:
 
-```md
+````md
 ## ESM-only 与 iframe bridge 子入口
 
 `vue-stack-tabs` 从当前版本开始只承诺 ESM import，不再支持 `require('vue-stack-tabs')`。
@@ -1943,20 +1960,19 @@ postOpenTab(
   { targetOrigin: 'https://parent.example.com' }
 )
 
-const off = onRefreshRequest(
-  () => window.location.reload(),
-  { allowedOrigins: ['https://parent.example.com'] }
-)
+const off = onRefreshRequest(() => window.location.reload(), {
+  allowedOrigins: ['https://parent.example.com']
+})
 ```
 
 生产环境建议显式传入 `targetOrigin` 和 `allowedOrigins`，避免 wildcard postMessage 策略。
-```
+````
 
 - [ ] **Step 6: Document iframe policy props**
 
 In `README.md`, add a section named `iframe 安全策略` with this content:
 
-```md
+````md
 ## iframe 安全策略
 
 `VueStackTabs` 支持配置 iframe 安全属性：
@@ -1972,7 +1988,7 @@ In `README.md`, add a section named `iframe 安全策略` with this content:
 ```
 
 默认 sandbox 保留常见业务页面能力。如果你的页面需要更严格限制，可以减少 sandbox token；如果你的同源业务页面确实不能在 sandbox 下工作，可以传入空字符串关闭 sandbox，但这会降低隔离强度。
-```
+````
 
 - [ ] **Step 7: Run README format check**
 
@@ -1995,9 +2011,11 @@ Then re-run the check.
 ### Task 9: Final verification and review
 
 **Files:**
+
 - No production file changes in this task unless earlier verification exposes a defect.
 
 **Interfaces:**
+
 - Consumes: all previous tasks.
 - Produces: verified working branch ready for code review.
 
