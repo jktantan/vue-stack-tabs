@@ -1949,7 +1949,6 @@ In `README.md`, add a section named `ESM-only 与 iframe bridge 子入口` with 
 import VueStackTabs from 'vue-stack-tabs'
 import 'vue-stack-tabs/dist/style.css'
 ```
-````
 
 iframe 内部页面建议使用无样式副作用的子入口：
 
@@ -1967,14 +1966,13 @@ const off = onRefreshRequest(() => window.location.reload(), {
 ```
 
 生产环境建议显式传入 `targetOrigin` 和 `allowedOrigins`，避免 wildcard postMessage 策略。
-
 ````
 
 - [ ] **Step 6: Document iframe policy props**
 
 In `README.md`, add a section named `iframe 安全策略` with this content:
 
-```md
+````md
 ## iframe 安全策略
 
 `VueStackTabs` 支持配置 iframe 安全属性：
@@ -1987,10 +1985,9 @@ In `README.md`, add a section named `iframe 安全策略` with this content:
   iframe-allow="fullscreen"
   :iframe-load-timeout="15000"
 />
-````
+```
 
 默认 sandbox 保留常见业务页面能力。如果你的页面需要更严格限制，可以减少 sandbox token；如果你的同源业务页面确实不能在 sandbox 下工作，可以传入空字符串关闭 sandbox，但这会降低隔离强度。
-
 ````
 
 - [ ] **Step 7: Run README format check**
@@ -1999,7 +1996,7 @@ Run:
 
 ```bash
 pnpm prettier --check README.md docs/superpowers/specs/2026-07-01-stack-tabs-top-priority-design.md docs/superpowers/plans/2026-07-01-stack-tabs-top-priority.md
-````
+```
 
 Expected: PASS. If it fails, run:
 
