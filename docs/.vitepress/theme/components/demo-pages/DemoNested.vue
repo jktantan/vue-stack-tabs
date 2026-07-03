@@ -24,10 +24,6 @@
 </template>
 
 <script setup lang="ts">
-import useTabRouter from '../../../../../src/lib/hooks/useTabRouter'
-
-const { forward } = useTabRouter()
-
 const goHome = () => {
   // 这里可以使用 forward 导航到嵌套路由
   console.log('导航到首页')

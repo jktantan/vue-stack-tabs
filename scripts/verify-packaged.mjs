@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-/* global console, process */
 /**
  * 打包后验证：先检查 dist 入口，再用真实 pnpm pack tarball 验证 package exports 和 playground 构建。
  */

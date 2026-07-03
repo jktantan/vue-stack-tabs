@@ -15,7 +15,7 @@ const props = withDefaults(
 )
 
 const isDev = import.meta.env.DEV
-const base = (import.meta as any).env?.BASE_URL || '/'
+const base = import.meta.env.BASE_URL || '/'
 
 const src = computed(() => {
   const p = props.path.startsWith('/') ? props.path : `/${props.path}`
