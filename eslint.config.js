@@ -37,5 +37,21 @@ export default tseslint.config(
       'vue/multi-word-component-names': 'off'
     }
   },
+  {
+    files: ['scripts/**/*.mjs'],
+    languageOptions: {
+      globals: {
+        ...globals.node
+      }
+    }
+  },
+  {
+    files: ['playgrounds/nuxt/**/*.vue', 'playgrounds/nuxt4/**/*.vue'],
+    languageOptions: {
+      globals: {
+        useRoute: 'readonly'
+      }
+    }
+  },
   eslintConfigPrettier
 )

@@ -41,6 +41,18 @@ import {
   unregisterStackTabsRuntimeContext
 } from './hooks/stackTabsContext'
 import { getPostMessageTargetOrigin, isStackTabsOpenTabMessage } from './utils/stackTabsMessage'
+import { getStackTabPanelId, getStackTabTabId } from './utils/stackTabsA11y'
+type StackTabsIframeReferrerPolicy =
+  | ''
+  | 'no-referrer'
+  | 'no-referrer-when-downgrade'
+  | 'origin'
+  | 'origin-when-cross-origin'
+  | 'same-origin'
+  | 'strict-origin'
+  | 'strict-origin-when-cross-origin'
+  | 'unsafe-url'
+
 const emit = defineEmits(['onActive', 'onPageLoaded'])
 const props = withDefaults(
   defineProps<{
@@ -66,6 +78,10 @@ const props = withDefaults(
     sessionPrefix?: string
     /** 允许通过 postMessage 调用 openTab 的 iframe 来源，默认仅同源 */
     iframeAllowedOrigins?: string[]
+    iframeSandbox?: string
+    iframeReferrerPolicy?: StackTabsIframeReferrerPolicy
+    iframeAllow?: string
+    iframeLoadTimeout?: number
   }>(),
   {
     defaultTabs: () => [],
@@ -81,7 +97,11 @@ const props = withDefaults(
     space: 300,
     globalScroll: false,
     sessionPrefix: '',
-    iframeAllowedOrigins: () => []
+    iframeAllowedOrigins: () => [],
+    iframeSandbox: 'allow-scripts allow-forms allow-popups allow-downloads allow-same-origin',
+    iframeReferrerPolicy: 'strict-origin-when-cross-origin' as StackTabsIframeReferrerPolicy,
+    iframeAllow: '',
+    iframeLoadTimeout: 15000
   }
 )
 const { changeLocale, t } = useI18n()
@@ -131,9 +151,10 @@ const tabActions = isRuntimeContextOwner
   ? useTabActions()
   : {
       setIFramePath: () => undefined,
-      openTab: () => Promise.resolve(undefined)
+      openTab: () => Promise.resolve(undefined),
+      openInNewWindow: () => undefined
     }
-const { setIFramePath, openTab } = tabActions
+const { setIFramePath, openTab, openInNewWindow } = tabActions
 if (isRuntimeContextOwner) {
   setIFramePath(props.iframePath)
   setGlobalScroll(props.globalScroll)
@@ -166,6 +187,8 @@ if (isRuntimeContextOwner) {
 
 /** iframe 标签列表，computed 避免重复 filter */
 const iframeTabs = computed(() => tabs.value.filter((item) => item.iframe))
+const activeNonIframeTab = computed(() => tabs.value.find((item) => item.active && !item.iframe))
+const hasActiveNonIframeTab = computed(() => Boolean(activeNonIframeTab.value))
 
 /** 已激活过的 iframe 使用真实 URL（保留内容），未激活过的用 about:blank（按需加载，切换不重载） */
 const iframeEverActivated = reactive<Record<string, boolean>>({})
@@ -185,50 +208,98 @@ watch(
  * @param frame - iframe 标签项
  * @returns 实际加载的 URL
  */
-const getIframeSrc = (frame: { id: string; url?: string }) => {
-  const safeUrl = toSafeTabUrl(frame.url ?? '')
-  return iframeEverActivated[frame.id] ? safeUrl : 'about:blank'
+const appendIframeRefreshKey = (src: string, refreshKey: number): string => {
+  if (refreshKey <= 0 || src === 'about:blank') return src
+
+  const hashIndex = src.indexOf('#')
+  const baseWithSearch = hashIndex >= 0 ? src.slice(0, hashIndex) : src
+  const hash = hashIndex >= 0 ? src.slice(hashIndex) : ''
+  const searchIndex = baseWithSearch.indexOf('?')
+  const path = searchIndex >= 0 ? baseWithSearch.slice(0, searchIndex) : baseWithSearch
+  const search = searchIndex >= 0 ? baseWithSearch.slice(searchIndex + 1) : ''
+  const searchParams = new URLSearchParams(search)
+  searchParams.set('__stack_tabs_refresh', String(refreshKey))
+
+  return `${path}?${searchParams.toString()}${hash}`
 }
 
-/** iframe 的 key：postMessage 模式仅用 id（不重建，动画正常）；reload 模式含 refreshKeys */
-const getIframeKey = (frame: { id: string; iframeRefreshMode?: string }) =>
-  frame.iframeRefreshMode === 'reload'
-    ? `${frame.id}-${iframeRefreshKeys.value[frame.id] ?? 0}`
-    : frame.id
+const getIframeRefreshKey = (frameId: string): number => iframeRefreshKeys.value[frameId] ?? 0
+const getIframeSrc = (frame: { id: string; url?: string }, refreshKey = getIframeRefreshKey(frame.id)) => {
+  const safeUrl = toSafeTabUrl(frame.url ?? '')
+  const src = iframeEverActivated[frame.id] ? safeUrl : 'about:blank'
+  return appendIframeRefreshKey(src, refreshKey)
+}
 
-/** 各 iframe 是否已加载过（切回时不再显示 loading，因 load 不会再次触发） */
-const iframeHasLoaded = reactive<Record<string, boolean>>({})
-/** 各 iframe 加载状态，仅在首次加载时显示 */
-const iframeLoadingStates = reactive<Record<string, boolean>>({})
+/** iframe 的 key：包含刷新 key，确保错误态重试与 reload refresh 都能重建 iframe */
+const getIframeKey = (frame: { id: string }) => `${frame.id}-${getIframeRefreshKey(frame.id)}`
+
+type IframeLoadStatus = 'idle' | 'loading' | 'loaded' | 'timeout'
+
+interface IframeLoadState {
+  status: IframeLoadStatus
+  message?: string
+}
+
+const iframeLoadStates = reactive<Record<string, IframeLoadState>>({})
+const getIframeLoadState = (frameId: string): IframeLoadState =>
+  iframeLoadStates[frameId] ?? { status: 'idle' }
 /** iframe 加载超时定时器 Map，用于兜底清理 loading 状态 */
 const loadTimeoutIds = new Map<string, ReturnType<typeof setTimeout>>()
-/** 加载超时时间（ms），超时后强制隐藏 loading */
-const LOAD_TIMEOUT_MS = 5000
+
+const clearIframeLoadTimeout = (frameId: string) => {
+  const timeoutId = loadTimeoutIds.get(frameId)
+  if (!timeoutId) return
+  clearTimeout(timeoutId)
+  loadTimeoutIds.delete(frameId)
+}
 
 /** 标记 iframe 已加载完成，清除超时并隐藏 loading */
 const setIframeLoaded = (frameId: string) => {
-  const tid = loadTimeoutIds.get(frameId)
-  if (tid) {
-    clearTimeout(tid)
-    loadTimeoutIds.delete(frameId)
-  }
-  iframeHasLoaded[frameId] = true
-  iframeLoadingStates[frameId] = false
+  clearIframeLoadTimeout(frameId)
+  iframeLoadStates[frameId] = { status: 'loaded' }
 }
 
 /** 为 iframe 显示 loading 状态，已加载过的切回时不重复显示；设置超时兜底 */
-const setIframeLoading = (frameId: string) => {
-  if (iframeHasLoaded[frameId]) return // 已加载过，切回时不显示 loading
-  iframeLoadingStates[frameId] = true
-  const tid = loadTimeoutIds.get(frameId)
-  if (tid) clearTimeout(tid)
+const setIframeLoading = (frameId: string, options: { force?: boolean } = {}) => {
+  const current = getIframeLoadState(frameId)
+  if (current.status === 'loaded' && !options.force) return
+
+  clearIframeLoadTimeout(frameId)
+  iframeLoadStates[frameId] = { status: 'loading' }
   loadTimeoutIds.set(
     frameId,
     setTimeout(() => {
       loadTimeoutIds.delete(frameId)
-      iframeLoadingStates[frameId] = false
-    }, LOAD_TIMEOUT_MS)
+      if (getIframeLoadState(frameId).status === 'loading') {
+        iframeLoadStates[frameId] = {
+          status: 'timeout',
+          message: t('VueStackTab.iframeLoadTimeout')
+        }
+      }
+    }, props.iframeLoadTimeout)
   )
+}
+
+const retryIframe = (frameId: string) => {
+  iframeLoadStates[frameId] = { status: 'idle' }
+  iframeRefreshKeys.value = {
+    ...iframeRefreshKeys.value,
+    [frameId]: (iframeRefreshKeys.value[frameId] ?? 0) + 1
+  }
+  setIframeLoading(frameId, { force: true })
+}
+
+const shouldShowIframeLoading = (frameId: string) => getIframeLoadState(frameId).status === 'loading'
+const shouldShowIframeError = (frameId: string) => getIframeLoadState(frameId).status === 'timeout'
+
+const handleIframeLoad = (frame: { id: string; url?: string }, event: Event) => {
+  const iframe = event.currentTarget as HTMLIFrameElement | null
+  const refreshKey = Number(iframe?.dataset.refreshKey ?? 0)
+  if (!iframeEverActivated[frame.id]) return
+  if (getIframeSrc(frame, refreshKey) === 'about:blank') return
+  if (refreshKey !== getIframeRefreshKey(frame.id)) return
+  if (iframe !== iframeElRefs[frame.id]) return
+  setIframeLoaded(frame.id)
 }
 
 // 当 iframe 标签变为激活且有真实 URL 时，显示加载状态（仅首次）
@@ -238,6 +309,21 @@ watch(
     for (const f of frames) setIframeLoading(f.id)
   },
   { immediate: true, deep: true }
+)
+
+watch(
+  iframeRefreshKeys,
+  (keys, previousKeys = {}) => {
+    for (const frame of iframeTabs.value) {
+      if (!frame.active) continue
+      const nextKey = keys[frame.id] ?? 0
+      const previousKey = previousKeys[frame.id] ?? 0
+      if (nextKey !== previousKey) {
+        setIframeLoading(frame.id, { force: true })
+      }
+    }
+  },
+  { deep: true }
 )
 
 /** iframe 元素 refs，key 为 tabId，用于 postMessage 刷新时获取 contentWindow */
@@ -250,6 +336,22 @@ const setIframeRef = (id: string, el: HTMLIFrameElement | null) => {
     delete iframeElRefs[id]
   }
 }
+
+watch(
+  iframeTabs,
+  (frames) => {
+    const activeIds = new Set(frames.map((frame) => frame.id))
+    for (const id of Object.keys(iframeLoadStates)) {
+      if (!activeIds.has(id)) {
+        clearIframeLoadTimeout(id)
+        delete iframeLoadStates[id]
+        delete iframeEverActivated[id]
+        delete iframeElRefs[id]
+      }
+    }
+  },
+  { immediate: true }
+)
 
 /** postMessage 刷新：向 iframe 发送消息，由其自行刷新 */
 const handleRefreshIframePostMessage = (tabId: string) => {
@@ -349,7 +451,16 @@ onBeforeUnmount(() => {
       </template>
     </tab-header>
     <div class="stack-tab__container">
-      <StackKeepAlive :transition-name="pageSwitch" @loaded="onComponentLoaded" />
+      <div
+        :id="activeNonIframeTab ? getStackTabPanelId(activeNonIframeTab.id) : undefined"
+        :hidden="!hasActiveNonIframeTab"
+        class="stack-tab__keep-alive-panel"
+        :role="activeNonIframeTab ? 'tabpanel' : undefined"
+        :aria-labelledby="activeNonIframeTab ? getStackTabTabId(activeNonIframeTab.id) : undefined"
+        :aria-hidden="activeNonIframeTab ? undefined : 'true'"
+      >
+        <StackKeepAlive :transition-name="pageSwitch" @loaded="onComponentLoaded" />
+      </div>
       <transition-group :name="pageTransition" tag="div" class="stack-tab__iframes" appear>
         <Transition
           v-for="frame of iframeTabs"
@@ -357,17 +468,58 @@ onBeforeUnmount(() => {
           :name="pageTransition"
           appear
         >
-          <div v-show="frame.active" class="stack-tab__iframe-wrapper">
-            <div v-show="iframeLoadingStates[frame.id] !== false" class="stack-tab__iframe-loading">
-              <span class="stack-tab__iframe-loading-text">{{ t('VueStackTab.loading') }}</span>
+          <div
+            v-show="frame.active"
+            :id="getStackTabPanelId(frame.id)"
+            :key="getIframeKey(frame)"
+            class="stack-tab__iframe-wrapper"
+            role="tabpanel"
+            :aria-labelledby="getStackTabTabId(frame.id)"
+          >
+            <div
+              v-if="shouldShowIframeLoading(frame.id)"
+              class="stack-tab__iframe-loading"
+              role="status"
+              aria-live="polite"
+              :aria-label="t('VueStackTab.loading')"
+            >
+              <slot name="iframeLoading" :tab="frame">
+                <span class="stack-tab__iframe-loading-text">{{ t('VueStackTab.loading') }}</span>
+              </slot>
+            </div>
+            <div v-if="shouldShowIframeError(frame.id)" class="stack-tab__iframe-error" role="alert">
+              <slot name="iframeError" :tab="frame" :retry="retryIframe">
+                <span class="stack-tab__iframe-error-text">
+                  {{ getIframeLoadState(frame.id).message ?? t('VueStackTab.iframeLoadTimeout') }}
+                </span>
+                <button
+                  type="button"
+                  class="stack-tab__iframe-error-retry"
+                  @click="retryIframe(frame.id)"
+                >
+                  {{ t('VueStackTab.retry') }}
+                </button>
+                <button
+                  v-if="frame.url && isAllowedTabUrl(frame.url)"
+                  type="button"
+                  class="stack-tab__iframe-error-open"
+                  @click="openInNewWindow(frame.id)"
+                >
+                  {{ t('VueStackTab.openInNewWindow') }}
+                </button>
+              </slot>
             </div>
             <iframe
-              :key="iframeRefreshKeys[frame.id] || 0"
               :ref="(el) => setIframeRef(frame.id, el as HTMLIFrameElement | null)"
               class="stack-tab__iframe"
-              :src="getIframeSrc(frame)"
+              :src="getIframeSrc(frame, getIframeRefreshKey(frame.id))"
+              :data-refresh-key="getIframeRefreshKey(frame.id)"
+              :title="frame.title || t('VueStackTab.iframeTitle') || 'Stack tab iframe'"
+              :sandbox="iframeSandbox || undefined"
+              :referrerpolicy="iframeReferrerPolicy"
+              :allow="iframeAllow || undefined"
               frameborder="0"
-              @load="setIframeLoaded(frame.id)"
+              @load="handleIframeLoad(frame, $event)"
             />
           </div>
         </Transition>

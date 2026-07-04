@@ -1,23 +1,41 @@
 <template>
   <li
     ref="tabElementRef"
+    role="presentation"
     class="stack-tab__item"
     :class="{
       'is-active': item.active,
       'is-icon': item.closable
     }"
-    @click="handleActivate(true)"
+    @click.self="handleActivate(true)"
+    @contextmenu="$emit('contextmenu', $event)"
   >
-    <!--    <div v-if="!!icon" class="stack-tab__item-icon" :class="icon"></div>-->
-    <div class="stack-tab__item-title">
-      <div class="stack-tab__item-title-content" :title="title">
-        {{ title }}
-      </div>
-    </div>
-    <div
+    <button
+      :id="getStackTabTabId(item.id)"
+      type="button"
+      role="tab"
+      class="stack-tab__item-tab"
+      :data-tab-id="item.id"
+      :aria-controls="getStackTabPanelId(item.id)"
+      :aria-selected="item.active ? 'true' : 'false'"
+      :tabindex="item.active ? 0 : -1"
+      :title="title"
+      @click="handleActivate(true)"
+      @keydown="handleTabKeydown"
+    >
+      <span class="stack-tab__item-title">
+        <span class="stack-tab__item-title-content">
+          {{ title }}
+        </span>
+      </span>
+    </button>
+    <button
       v-if="item.closable"
+      type="button"
       class="stack-tab__icon-close-fill stack-tab__item-button"
       :title="t('VueStackTab.close')"
+      :aria-label="`${t('VueStackTab.close')} ${title}`"
+      :tabindex="item.active ? 0 : -1"
       @click.stop="handleClose"
     />
   </li>
@@ -32,8 +50,9 @@
 import { computed, ref, onUnmounted } from 'vue'
 import type { ITabItem } from '../../model/TabModel'
 import { TabEventType, useTabEmitter } from '../../hooks/useTabEventBus'
+import { getStackTabPanelId, getStackTabTabId } from '../../utils/stackTabsA11y'
 import { useI18n } from 'vue-i18n-lite'
-const emit = defineEmits(['close', 'active'])
+const emit = defineEmits(['close', 'active', 'contextmenu'])
 const emitter = useTabEmitter()
 const { t } = useI18n()
 /** 当前标签 DOM 元素，用于滚动到可视区域 */
@@ -55,9 +74,7 @@ onUnmounted(() => {
   emitter.off(TabEventType.TAB_ACTIVE, handleTabActiveEvent)
 })
 /** 显示标题，空时用 i18n 占位 */
-const title = computed<string>(() => {
-  return props.item.title || t('undefined')
-})
+const title = computed<string>(() => props.item.title || t('VueStackTab.undefined'))
 
 /** 关闭按钮点击，向父级 emit close */
 const handleClose = () => {
@@ -66,6 +83,19 @@ const handleClose = () => {
 /** 激活当前标签，向父级 emit active 并传递 DOM 引用 */
 const handleActivate = (isRoute = true) => {
   emit('active', props.item, tabElementRef.value, isRoute)
+}
+
+const handleTabKeydown = (event: KeyboardEvent) => {
+  if (event.key === 'Enter' || event.key === ' ') {
+    event.preventDefault()
+    handleActivate(true)
+    return
+  }
+
+  if ((event.key === 'Delete' || event.key === 'Backspace') && props.item.closable) {
+    event.preventDefault()
+    handleClose()
+  }
 }
 </script>
 

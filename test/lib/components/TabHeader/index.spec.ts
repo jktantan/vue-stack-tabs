@@ -11,6 +11,9 @@ import TabHeader from '@/lib/components/TabHeader/index.vue'
 
 const activeTabMock = vi.fn()
 const closeTabMock = vi.fn()
+const removeLeftTabsMock = vi.fn()
+const removeRightTabsMock = vi.fn()
+const removeOtherTabsMock = vi.fn()
 const tabs = ref<ITabItem[]>([])
 
 vi.mock('vue-i18n-lite', () => ({
@@ -24,6 +27,14 @@ vi.mock('@/lib/hooks/useTabActions', () => ({
     activeTab: activeTabMock,
     closeTab: closeTabMock,
     tabs
+  })
+}))
+
+vi.mock('@/lib/hooks/useTabPanel', () => ({
+  default: () => ({
+    removeLeftTabs: removeLeftTabsMock,
+    removeRightTabs: removeRightTabsMock,
+    removeOtherTabs: removeOtherTabsMock
   })
 }))
 
@@ -54,16 +65,22 @@ const TabHeaderItemStub = defineComponent({
   },
   emits: ['contextmenu', 'active', 'close'],
   setup(props, { emit }) {
-    return () =>
-      h(
+    return () => {
+      const item = props.item as ITabItem
+
+      return h(
         'li',
         {
           class: 'stack-tab__item',
-          onClick: () => emit('active', props.item, undefined, true),
+          role: 'tab',
+          tabindex: item.active ? 0 : -1,
+          'data-tab-id': item.id,
+          onClick: (event: MouseEvent) => emit('active', item, event.currentTarget, true),
           onContextmenu: (event: MouseEvent) => emit('contextmenu', event)
         },
-        String((props.item as ITabItem).title)
+        String(item.title)
       )
+    }
   }
 })
 
@@ -78,12 +95,25 @@ const ContextMenuStub = defineComponent({
     contextMenu: {
       type: Array,
       default: () => []
+    },
+    restoreFocusElement: {
+      type: Object,
+      default: null
     }
   },
   emits: ['close'],
-  setup(props) {
+  setup(props, { emit }) {
     return () =>
       h('div', { class: 'stack-tab__contextmenu', 'data-test': 'context-menu' }, [
+        h(
+          'button',
+          {
+            type: 'button',
+            'data-test': 'close-menu',
+            onClick: () => emit('close')
+          },
+          'close menu'
+        ),
         h(
           'span',
           { 'data-test': 'custom-menu-count' },
@@ -119,6 +149,7 @@ function makeTab(overrides: Partial<ITabItem> = {}): ITabItem {
 
 function mountHeader(props: Record<string, unknown> = {}, maximum = ref(false)) {
   return mount(TabHeader, {
+    attachTo: document.body,
     props: {
       space: 300,
       ...props
@@ -131,6 +162,29 @@ function mountHeader(props: Record<string, unknown> = {}, maximum = ref(false)) 
       stubs: {
         TabHeaderScroll: TabHeaderScrollStub as Component,
         TabHeaderItem: TabHeaderItemStub as Component,
+        ContextMenu: ContextMenuStub as Component,
+        TabHeaderButton: true,
+        Transition: false,
+        TransitionGroup: false
+      }
+    }
+  })
+}
+
+function mountHeaderWithRealItems(props: Record<string, unknown> = {}, maximum = ref(false)) {
+  return mount(TabHeader, {
+    attachTo: document.body,
+    props: {
+      space: 300,
+      ...props
+    },
+    global: {
+      provide: {
+        [maximumKey as symbol]: maximum,
+        [tabEmitterKey as symbol]: mitt()
+      },
+      stubs: {
+        TabHeaderScroll: TabHeaderScrollStub as Component,
         ContextMenu: ContextMenuStub as Component,
         TabHeaderButton: true,
         Transition: false,
@@ -158,6 +212,9 @@ async function triggerTabContextMenu(wrapper: ReturnType<typeof mountHeader>) {
 beforeEach(() => {
   activeTabMock.mockReset()
   closeTabMock.mockReset()
+  removeLeftTabsMock.mockReset()
+  removeRightTabsMock.mockReset()
+  removeOtherTabsMock.mockReset()
   activeTabMock.mockResolvedValue(undefined)
   tabs.value = [makeTab()]
 })
@@ -241,5 +298,92 @@ describe('TabHeader contextmenu', () => {
 
     expect(wrapper.find('[data-test="custom-menu-count"]').text()).toBe('1')
     expect(customMenuCallback).toHaveBeenCalledWith('tab-1')
+  })
+
+  it('打开菜单时记录触发 tab 元素，供菜单关闭后恢复焦点', async () => {
+    tabs.value = [makeTab({ id: 'tab-1', active: true })]
+    const wrapper = mountHeader()
+    const trigger = wrapper.get<HTMLElement>('[role="tab"]')
+
+    trigger.element.focus()
+    await triggerTabContextMenu(wrapper)
+
+    const menu = wrapper.getComponent({ name: 'ContextMenu' })
+    expect(menu.props('restoreFocusElement')).toBe(trigger.element)
+  })
+})
+
+describe('TabHeader keyboard navigation', () => {
+  it('tablist 使用正确角色', () => {
+    tabs.value = [makeTab({ id: 'tab-1', title: 'One', active: true })]
+    const wrapper = mountHeader()
+    const tablist = wrapper.get('[role="tablist"]')
+
+    expect(tablist.attributes('aria-orientation')).toBe('horizontal')
+  })
+
+  it('真实 TabHeaderItem 中 ArrowRight 激活并聚焦下一个 tab button', async () => {
+    tabs.value = [
+      makeTab({ id: 'tab-1', title: 'One', active: true }),
+      makeTab({ id: 'tab-2', title: 'Two', active: false })
+    ]
+    const wrapper = mountHeaderWithRealItems()
+    const tablist = wrapper.get('[role="tablist"]')
+
+    await tablist.trigger('keydown', { key: 'ArrowRight' })
+    tabs.value = [
+      makeTab({ id: 'tab-1', title: 'One', active: false }),
+      makeTab({ id: 'tab-2', title: 'Two', active: true })
+    ]
+    await nextTick()
+    await nextTick()
+
+    const target = wrapper.get('button[role="tab"][data-tab-id="tab-2"]')
+    expect(activeTabMock).toHaveBeenLastCalledWith('tab-2', true)
+    expect(document.activeElement).toBe(target.element)
+  })
+
+  it('ArrowRight 激活并聚焦下一个 tab，ArrowLeft 激活上一个 tab', async () => {
+    tabs.value = [
+      makeTab({ id: 'tab-1', title: 'One', active: true }),
+      makeTab({ id: 'tab-2', title: 'Two', active: false }),
+      makeTab({ id: 'tab-3', title: 'Three', active: false })
+    ]
+    const wrapper = mountHeader()
+    const tablist = wrapper.get('[role="tablist"]')
+
+    await tablist.trigger('keydown', { key: 'ArrowRight' })
+    tabs.value = [
+      makeTab({ id: 'tab-1', title: 'One', active: false }),
+      makeTab({ id: 'tab-2', title: 'Two', active: true }),
+      makeTab({ id: 'tab-3', title: 'Three', active: false })
+    ]
+    await nextTick()
+    await nextTick()
+
+    expect(activeTabMock).toHaveBeenLastCalledWith('tab-2', true)
+    expect(document.activeElement).toBe(wrapper.get('[data-tab-id="tab-2"]').element)
+
+    await tablist.trigger('keydown', { key: 'ArrowLeft' })
+    await nextTick()
+    expect(activeTabMock).toHaveBeenLastCalledWith('tab-1', true)
+  })
+
+  it('Home 和 End 激活首尾 tab', async () => {
+    tabs.value = [
+      makeTab({ id: 'tab-1', title: 'One', active: false }),
+      makeTab({ id: 'tab-2', title: 'Two', active: true }),
+      makeTab({ id: 'tab-3', title: 'Three', active: false })
+    ]
+    const wrapper = mountHeader()
+    const tablist = wrapper.get('[role="tablist"]')
+
+    await tablist.trigger('keydown', { key: 'Home' })
+    await nextTick()
+    expect(activeTabMock).toHaveBeenLastCalledWith('tab-1', true)
+
+    await tablist.trigger('keydown', { key: 'End' })
+    await nextTick()
+    expect(activeTabMock).toHaveBeenLastCalledWith('tab-3', true)
   })
 })

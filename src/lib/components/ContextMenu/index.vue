@@ -8,16 +8,19 @@
   <div
     ref="menuElementRef"
     class="stack-tab__contextmenu"
+    role="menu"
+    tabindex="-1"
     :style="{
       left: `${menuPosition.left}px`,
       top: `${menuPosition.top}px`,
       'z-index': getMaxZIndex('.stack-tab,.stack-tab *')
     }"
+    @keydown="handleMenuKeydown"
   >
     <context-menu-item
       icon="stack-tab__icon-reload svg-mask"
       :title="t('VueStackTab.reload')"
-      :disabled="!tabItem.refreshable ? 'disabled' : null"
+      :disabled="!tabItem.refreshable"
       @click="handleMenuItemClick(() => refreshTab(tabItem.id))"
     />
     <context-menu-item
@@ -28,19 +31,19 @@
     <context-menu-item
       icon="stack-tab__icon-close svg-mask"
       :title="t('VueStackTab.close')"
-      :disabled="!tabItem.closable ? 'disabled' : null"
+      :disabled="!tabItem.closable"
       @click="handleMenuItemClick(() => closeTab(tabItem.id))"
     />
     <context-menu-item
       icon="stack-tab__icon-close-lefts svg-mask"
       :title="t('VueStackTab.closeLeft')"
-      :disabled="index <= 0 ? 'disabled' : null"
+      :disabled="index <= 0"
       @click="handleMenuItemClick(() => removeLeftTabs(tabItem.id))"
     />
     <context-menu-item
       icon="stack-tab__icon-close-rights svg-mask"
       :title="t('VueStackTab.closeRight')"
-      :disabled="index >= max - 1 ? 'disabled' : null"
+      :disabled="index >= max - 1"
       @click="handleMenuItemClick(() => removeRightTabs(tabItem.id))"
     />
     <context-menu-item
@@ -62,20 +65,23 @@
     <div
       v-if="contextMenu !== undefined && contextMenu.length > 0"
       class="divider div-transparent"
+      role="separator"
+      aria-orientation="horizontal"
     ></div>
     <context-menu-item
-      v-for="(item, menuIndex) in contextMenu"
-      :key="menuIndex"
+      v-for="item in contextMenu"
+      :key="getCustomMenuKey(item)"
+      :data-menu-key="getCustomMenuKey(item)"
       :icon="item.icon"
       :title="item.title"
-      :disabled="item.disabled(tabItem) ? 'disabled' : null"
+      :disabled="item.disabled(tabItem)"
       @click="handleMenuItemClick(() => !item.disabled(tabItem) && item.callback(tabItem.id))"
     />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, reactive } from 'vue'
+import { ref, onMounted, reactive, nextTick } from 'vue'
 import type { ITabItem, IContextMenu } from '../../model/TabModel'
 import { useI18n } from 'vue-i18n-lite'
 import { getMaxZIndex } from '../../utils/scrollUtils'
@@ -89,13 +95,15 @@ const props = withDefaults(
     left?: number
     top?: number
     contextMenu?: Array<IContextMenu>
+    restoreFocusElement?: HTMLElement | null
     tabItem: ITabItem
     max: number
   }>(),
   {
     left: 0,
     top: 0,
-    contextMenu: () => []
+    contextMenu: () => [],
+    restoreFocusElement: null
   }
 )
 const emit = defineEmits<{ close: [] }>()
@@ -107,17 +115,93 @@ const menuPosition = reactive({ left: props.left, top: props.top })
 const { closeTab, closeAllTabs, refreshTab, refreshAllTabs, openInNewWindow } = useTabActions()
 const { removeLeftTabs, removeRightTabs, removeOtherTabs } = useTabPanel()
 
+const focusActiveTabFallback = () => {
+  const activeTab = document.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]')
+  activeTab?.focus()
+}
+
+const restoreFocusToTrigger = () => {
+  if (props.restoreFocusElement && document.contains(props.restoreFocusElement)) {
+    props.restoreFocusElement.focus()
+    return
+  }
+
+  focusActiveTabFallback()
+}
+
+const closeMenu = () => {
+  emit('close')
+  void nextTick(restoreFocusToTrigger)
+}
+
 /** 菜单项点击：执行回调并关闭菜单 */
 const handleMenuItemClick = (fn?: () => void) => {
   fn?.()
-  emit('close')
+  closeMenu()
 }
+
+const getMenuButtons = (): HTMLButtonElement[] => {
+  const root = menuElementRef.value
+  if (!root) return []
+  return Array.from(root.querySelectorAll<HTMLButtonElement>('[role="menuitem"]')).filter(
+    (button) => !button.disabled
+  )
+}
+
+const focusMenuItem = (index: number) => {
+  const buttons = getMenuButtons()
+  if (buttons.length <= 0) return
+  const safeIndex = (index + buttons.length) % buttons.length
+  buttons[safeIndex]?.focus()
+}
+
+const getFocusedMenuItemIndex = (): number => {
+  const buttons = getMenuButtons()
+  return buttons.findIndex((button) => button === document.activeElement)
+}
+
+const handleMenuKeydown = (event: KeyboardEvent) => {
+  if (event.key === 'Escape') {
+    event.preventDefault()
+    closeMenu()
+    return
+  }
+
+  if (event.key === 'ArrowDown') {
+    event.preventDefault()
+    const focusedIndex = getFocusedMenuItemIndex()
+    focusMenuItem(focusedIndex === -1 ? 0 : focusedIndex + 1)
+    return
+  }
+
+  if (event.key === 'ArrowUp') {
+    event.preventDefault()
+    const focusedIndex = getFocusedMenuItemIndex()
+    focusMenuItem(focusedIndex === -1 ? -1 : focusedIndex - 1)
+    return
+  }
+
+  if (event.key === 'Home') {
+    event.preventDefault()
+    focusMenuItem(0)
+    return
+  }
+
+  if (event.key === 'End') {
+    event.preventDefault()
+    focusMenuItem(getMenuButtons().length - 1)
+  }
+}
+
+const getCustomMenuKey = (item: IContextMenu): string => item.key ?? `${item.title}-${item.icon ?? ''}`
+
 /** 挂载后修正菜单位置，避免超出右边界 */
 onMounted(() => {
   const menuWidth = menuElementRef.value?.clientWidth ?? 0
   if (menuPosition.left + menuWidth > window.innerWidth) {
     menuPosition.left = window.innerWidth - menuWidth - 5
   }
+  focusMenuItem(0)
 })
 </script>
 

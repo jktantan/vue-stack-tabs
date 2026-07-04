@@ -8,6 +8,8 @@
     v-if="isScrollButtonVisible"
     icon-class="stack-tab__icon-left-arrow"
     :disabled="isDisabledLeftButton"
+    :title="t('VueStackTab.scrollLeft')"
+    :aria-label="t('VueStackTab.scrollLeft')"
     @click="!isDisabledLeftButton && handleScrollButtonClick(-1 * space)"
   />
   <div ref="headerScroll" class="stack-tab__scroll" @wheel.passive="handleWheelScroll">
@@ -45,11 +47,14 @@
     v-if="isScrollButtonVisible"
     icon-class="stack-tab__icon-right-arrow"
     :disabled="isDisabledRightButton"
+    :title="t('VueStackTab.scrollRight')"
+    :aria-label="t('VueStackTab.scrollRight')"
     @click="!isDisabledRightButton && handleScrollButtonClick(space!)"
   />
 </template>
 
 <script lang="ts" setup>
+import { useI18n } from 'vue-i18n-lite'
 import { computed, ref, reactive, onMounted, watch, onUnmounted } from 'vue'
 import type { ScrollData, DragData } from '../../model/TabModel'
 import {
@@ -57,6 +62,8 @@ import {
   scrollIntoView as scrollIntoViewUtil
 } from '../../utils/scrollUtils'
 import TabHeaderButton from './TabHeaderButton.vue'
+
+const { t } = useI18n()
 
 /** 标签列表滚动容器 */
 const container = ref<HTMLElement | null>(null)

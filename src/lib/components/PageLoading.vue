@@ -8,19 +8,24 @@
   <div
     v-if="isLoading"
     class="stack-tab-loading-mask"
+    role="status"
+    aria-live="polite"
+    :aria-label="t('VueStackTab.loading')"
     :style="{ zIndex: getMaxZIndex('.cache-page-wrapper *') }"
   >
-    <div class="stack-tab-loading--spin turn" />
+    <div class="stack-tab-loading--spin turn" aria-hidden="true" />
   </div>
 </template>
 <script setup lang="ts">
 import { ref, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n-lite'
 import { TabEventType, useTabEmitter } from '../hooks/useTabEventBus'
 import { getMaxZIndex } from '../utils/scrollUtils'
 const props = defineProps<{
   /** 当前标签 id，用于过滤 PAGE_LOADING 事件 */
   tabId: string
 }>()
+const { t } = useI18n()
 const emitter = useTabEmitter()
 /** 是否显示 loading 遮罩 */
 const isLoading = ref<boolean>(false)

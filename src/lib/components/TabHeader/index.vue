@@ -1,5 +1,5 @@
 <template>
-  <div class="stack-tab__header">
+  <div ref="headerRef" class="stack-tab__header">
     <slot name="leftButton" />
     <tab-header-scroll
       ref="scrollContainerRef"
@@ -12,8 +12,11 @@
           key="tab-list-transition"
           tag="ul"
           class="stack-tab__nav"
+          role="tablist"
+          aria-orientation="horizontal"
           v-bind="tabTransitionProps"
           appear
+          @keydown="handleTabListKeydown"
         >
           <tab-header-item
             v-for="(item, index) in tabs"
@@ -33,7 +36,8 @@
     <slot name="rightButton" />
     <tab-header-button
       :icon-class="maximum ? 'stack-tab__icon-restore' : 'stack-tab__icon-fullscreen'"
-      :title="t('VueStackTab.maximum')"
+      :title="maximum ? t('VueStackTab.restore') : t('VueStackTab.maximum')"
+      :aria-label="maximum ? t('VueStackTab.restore') : t('VueStackTab.maximum')"
       @click="maximum = !maximum"
     />
     <transition name="stack-tab-zoom" appear>
@@ -46,6 +50,7 @@
         :max="contextMenuData.max"
         :index="contextMenuData.index"
         :context-menu="normalizedContextMenu"
+        :restore-focus-element="contextMenuTriggerElement"
         @close="handleCloseContextMenu"
       />
     </transition>
@@ -77,7 +82,9 @@ const maximum = inject(maximumKey, ref(false))
 const emit = defineEmits(['active'])
 /** 滚动容器 ref，用于调用 scrollIntoView / isInView */
 const scrollContainerRef = ref<InstanceType<typeof TabHeaderScroll>>()
+const headerRef = ref<HTMLElement>()
 const { shown: contextMenuShown, contextMenuData, showContextMenu } = useContextMenu()
+const contextMenuTriggerElement = ref<HTMLElement | null>(null)
 /** 关闭右键菜单 */
 const handleCloseContextMenu = () => {
   contextMenuShown.value = false
@@ -113,10 +120,20 @@ const normalizedContextMenu = computed<IContextMenu[]>(() => {
 })
 
 /** 右键标签：禁用时不阻止浏览器默认菜单，启用时打开组件菜单 */
+const getContextMenuFocusElement = (event: MouseEvent): HTMLElement | null => {
+  const eventTarget = event.target instanceof Element ? event.target : null
+  const targetTab = eventTarget?.closest<HTMLElement>('[role="tab"]')
+  if (targetTab) return targetTab
+
+  const currentTarget = event.currentTarget instanceof HTMLElement ? event.currentTarget : null
+  return currentTarget?.querySelector<HTMLElement>('[role="tab"]') ?? null
+}
+
 const handleTabContextMenu = (e: MouseEvent, item: ITabItem, index: number, max: number) => {
   if (!isContextMenuEnabled.value) return
 
   e.preventDefault()
+  contextMenuTriggerElement.value = getContextMenuFocusElement(e)
   showContextMenu(e, item, index, max)
 }
 
@@ -126,6 +143,60 @@ const tabTransitionProps = computed<TransitionProps>(() =>
     ? ({ name: props.tabTransition } as TransitionProps)
     : (props.tabTransition as TransitionProps)
 )
+
+const getActiveTabIndex = (): number => tabs.value.findIndex((tab) => tab.active)
+
+const focusTabById = (tabId: string) => {
+  nextTick(() => {
+    const activeTabElement = headerRef.value?.querySelector<HTMLElement>(
+      `.stack-tab__nav [role="tab"][data-tab-id="${CSS.escape(tabId)}"]`
+    )
+    if (!activeTabElement) return
+
+    activeTabElement.focus()
+    if (scrollContainerRef.value && !scrollContainerRef.value.isInView(activeTabElement)) {
+      scrollContainerRef.value.scrollIntoView(activeTabElement)
+    }
+  })
+}
+
+const activateTabByIndex = (index: number) => {
+  const item = tabs.value[index]
+  if (!item) return
+  handleActivateTab(item as ITabItem, undefined, true)
+  focusTabById(String(item.id))
+}
+
+const handleTabListKeydown = (event: KeyboardEvent) => {
+  const count = tabs.value.length
+  if (count <= 0) return
+
+  const currentIndex = getActiveTabIndex()
+  const safeIndex = currentIndex >= 0 ? currentIndex : 0
+
+  if (event.key === 'ArrowRight') {
+    event.preventDefault()
+    activateTabByIndex((safeIndex + 1) % count)
+    return
+  }
+
+  if (event.key === 'ArrowLeft') {
+    event.preventDefault()
+    activateTabByIndex((safeIndex - 1 + count) % count)
+    return
+  }
+
+  if (event.key === 'Home') {
+    event.preventDefault()
+    activateTabByIndex(0)
+    return
+  }
+
+  if (event.key === 'End') {
+    event.preventDefault()
+    activateTabByIndex(count - 1)
+  }
+}
 
 /** 是否显示左右滚动按钮 */
 const isScrollButton = computed<boolean>(() => {

@@ -31,7 +31,8 @@ export default defineConfig(({ mode }) => ({
     lib: {
       entry: resolve(__dirname, 'src/lib/index.ts'),
       name: 'vue-stack-tabs',
-      fileName: (format) => `vue-stack-tabs.${format}.js`
+      formats: ['es'],
+      fileName: () => 'vue-stack-tabs.es.js'
     },
     rollupOptions: {
       external: ['vue', 'element-plus', 'vue-router'],

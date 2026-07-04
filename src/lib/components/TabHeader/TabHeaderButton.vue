@@ -4,24 +4,28 @@
   职责：左右滚动箭头、全屏/还原按钮，支持禁用与阴影样式
 -->
 <template>
-  <div
+  <button
+    type="button"
     class="stack-tab__header-button"
     :class="{
       'stack-tab__shadow-right': shadow === 'right',
       'stack-tab__shadow-left': shadow === 'left'
     }"
-    :disabled="disabled ? 'disabled' : null"
+    :disabled="disabled"
     :title="title"
+    :aria-label="resolvedAriaLabel"
   >
-    <div v-if="!('icon' in $slots)" class="stack-tab__mask-button" :class="iconClass" />
-    <div v-if="'icon' in $slots" class="stack-tab__button">
+    <span v-if="!('icon' in $slots)" class="stack-tab__mask-button" :class="iconClass" />
+    <span v-if="'icon' in $slots" class="stack-tab__button">
       <slot name="icon" />
-    </div>
-  </div>
+    </span>
+  </button>
 </template>
 
 <script lang="ts" setup>
-withDefaults(
+import { computed } from 'vue'
+
+const props = withDefaults(
   defineProps<{
     /** 是否禁用 */
     disabled?: boolean
@@ -31,14 +35,21 @@ withDefaults(
     iconClass?: string
     /** 悬停提示 */
     title?: string
+    /** 辅助技术标签，未传时使用 title */
+    ariaLabel?: string
   }>(),
   {
     disabled: false,
     shadow: null,
     iconClass: '',
-    title: ''
+    title: '',
+    ariaLabel: ''
   }
 )
+
+const resolvedAriaLabel = computed<string>(() => {
+  return props.ariaLabel || props.title
+})
 </script>
 
 <style scoped></style>

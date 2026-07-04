@@ -38,7 +38,7 @@ pnpm add vue-stack-tabs
 // main.ts
 import { createApp } from 'vue'
 import VueStackTabs from 'vue-stack-tabs'
-import 'vue-stack-tabs/dist/vue-stack-tabs.css'
+import 'vue-stack-tabs/dist/style.css'
 import App from './App.vue'
 import router from './router'
 
@@ -143,7 +143,7 @@ export default defineNuxtConfig({
   vueStackTabs: {
     locale: 'zh-CN'
   },
-  css: ['vue-stack-tabs/dist/vue-stack-tabs.css']
+  css: ['vue-stack-tabs/dist/style.css']
 })
 ```
 
@@ -180,6 +180,54 @@ import { useTabActions } from 'vue-stack-tabs'
 const { openTab } = useTabActions()
 </script>
 ```
+
+---
+
+## ESM-only 与 iframe bridge 子入口
+
+`vue-stack-tabs` 从当前版本开始只承诺 ESM import，不再支持 `require('vue-stack-tabs')`。
+
+主应用中继续使用 root 入口：
+
+```ts
+import VueStackTabs from 'vue-stack-tabs'
+import 'vue-stack-tabs/dist/style.css'
+```
+
+iframe 内部页面建议使用无样式副作用的子入口：
+
+```ts
+import { postOpenTab, onRefreshRequest } from 'vue-stack-tabs/iframe-bridge'
+
+postOpenTab(
+  { title: '订单详情', path: '/orders/1' },
+  { targetOrigin: 'https://parent.example.com' }
+)
+
+const off = onRefreshRequest(() => window.location.reload(), {
+  allowedOrigins: ['https://parent.example.com']
+})
+```
+
+默认未传 `targetOrigin` 时使用 iframe 页面自身的 `window.location.origin`，适合同源父页面；跨域父页面必须显式传 `targetOrigin`。生产环境建议同时显式传入 `targetOrigin` 和 `allowedOrigins`。
+
+---
+
+## iframe 安全策略
+
+`VueStackTabs` 支持配置 iframe 安全属性：
+
+```vue
+<VueStackTabs
+  iframe-path="/__iframe"
+  iframe-sandbox="allow-scripts allow-forms allow-popups allow-downloads allow-same-origin"
+  iframe-referrer-policy="strict-origin-when-cross-origin"
+  iframe-allow="fullscreen"
+  :iframe-load-timeout="15000"
+/>
+```
+
+默认 sandbox 保留常见业务页面能力，属于兼容优先，不是强隔离；强隔离请移除 `allow-same-origin`，并按业务能力继续减少 sandbox token。如果你的同源业务页面确实不能在 sandbox 下工作，可以传入空字符串关闭 sandbox，但这会降低隔离强度。
 
 ---
 
@@ -293,22 +341,26 @@ fetchData().finally(() => closeTabLoading())
 
 `<VueStackTabs>` 组件属性：
 
-| Prop                   | 类型                        | 默认值                  | 说明                                              |
-| ---------------------- | --------------------------- | ----------------------- | ------------------------------------------------- |
-| `iframePath`           | `string`                    | **必填**                | iframe 占位路由的路径                             |
-| `defaultTabs`          | `ITabData[]`                | `[]`                    | 初始标签列表                                      |
-| `max`                  | `number`                    | `20`                    | 最大标签数量                                      |
-| `contextmenu`          | `boolean \| object`         | `true`                  | 是否启用右键菜单                                  |
-| `pageTransition`       | `string`                    | `'stack-tab-swap'`      | 前进时的页面转场动画名                            |
-| `pageTransitionBack`   | `string`                    | `'stack-tab-swap-back'` | 后退时的页面转场动画名                            |
-| `tabTransition`        | `string \| TransitionProps` | `'stack-tab-zoom'`      | 标签增删时的过渡效果                              |
-| `tabScrollMode`        | `TabScrollMode`             | `'both'`                | 标签栏滚动方式：`'wheel'` / `'button'` / `'both'` |
-| `width`                | `string`                    | `'100%'`                | 容器宽度                                          |
-| `height`               | `string`                    | `'100%'`                | 容器高度                                          |
-| `i18n`                 | `string`                    | `'zh-CN'`               | 国际化语言                                        |
-| `globalScroll`         | `boolean`                   | `false`                 | 是否使用页面级滚动记忆                            |
-| `sessionPrefix`        | `string`                    | `''`                    | sessionStorage 键前缀                             |
-| `iframeAllowedOrigins` | `string[]`                  | 同源                    | 允许 iframe postMessage 的来源列表                |
+| Prop                   | 类型                        | 默认值                                                                     | 说明                                                    |
+| ---------------------- | --------------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------- |
+| `iframePath`           | `string`                    | **必填**                                                                   | iframe 占位路由的路径                                   |
+| `iframeSandbox`        | `string`                    | `allow-scripts allow-forms allow-popups allow-downloads allow-same-origin` | iframe sandbox 策略；默认兼容优先不是强隔离，强隔离请移除 `allow-same-origin`；传空字符串可关闭 sandbox（不推荐） |
+| `iframeReferrerPolicy` | `ReferrerPolicy`            | `strict-origin-when-cross-origin`                                          | iframe referrerpolicy 属性                              |
+| `iframeAllow`          | `string`                    | `''`                                                                       | iframe allow 属性，例如 `fullscreen`                    |
+| `iframeLoadTimeout`    | `number`                    | `15000`                                                                    | iframe 加载超时时间，单位 ms                            |
+| `defaultTabs`          | `ITabData[]`                | `[]`                                                                       | 初始标签列表                                            |
+| `max`                  | `number`                    | `20`                                                                       | 最大标签数量                                            |
+| `contextmenu`          | `boolean \| object`         | `true`                                                                     | 是否启用右键菜单                                        |
+| `pageTransition`       | `string`                    | `'stack-tab-swap'`                                                         | 前进时的页面转场动画名                                  |
+| `pageTransitionBack`   | `string`                    | `'stack-tab-swap-back'`                                                    | 后退时的页面转场动画名                                  |
+| `tabTransition`        | `string \| TransitionProps` | `'stack-tab-zoom'`                                                         | 标签增删时的过渡效果                                    |
+| `tabScrollMode`        | `TabScrollMode`             | `'both'`                                                                   | 标签栏滚动方式：`'wheel'` / `'button'` / `'both'`       |
+| `width`                | `string`                    | `'100%'`                                                                   | 容器宽度                                                |
+| `height`               | `string`                    | `'100%'`                                                                   | 容器高度                                                |
+| `i18n`                 | `string`                    | `'zh-CN'`                                                                  | 国际化语言                                              |
+| `globalScroll`         | `boolean`                   | `false`                                                                    | 是否使用页面级滚动记忆                                  |
+| `sessionPrefix`        | `string`                    | `''`                                                                       | sessionStorage 键前缀                                   |
+| `iframeAllowedOrigins` | `string[]`                  | 同源                                                                       | 允许 iframe postMessage 的来源列表                      |
 
 ---
 
@@ -339,30 +391,40 @@ openTab({
 
 #### 1. 使用 Bridge 工具（推荐）
 
-如果 iframe 内页能引用库代码（或引入 `iframeBridge.ts` 导出的工具），推荐使用此方式：
+如果 iframe 内页能引用库代码，推荐使用无样式副作用的 `vue-stack-tabs/iframe-bridge` 子入口：
 
 ```ts
-import { postOpenTab, onRefreshRequest } from 'vue-stack-tabs'
+import { postOpenTab, onRefreshRequest } from 'vue-stack-tabs/iframe-bridge'
+
+const parentOrigin = 'https://parent.example.com'
 
 // 打开标签
-postOpenTab({
-  title: '新页面',
-  path: '/detail',
-  query: { id: '1' }
-})
+postOpenTab(
+  {
+    title: '新页面',
+    path: '/detail',
+    query: { id: '1' }
+  },
+  { targetOrigin: parentOrigin }
+)
 
 // 监听刷新请求
-onRefreshRequest(() => {
-  // 自定义刷新逻辑
-  location.reload()
-})
+const off = onRefreshRequest(
+  () => {
+    // 自定义刷新逻辑
+    location.reload()
+  },
+  { allowedOrigins: [parentOrigin] }
+)
 ```
 
 #### 2. 原生对接方式
 
-如果无法引入库工具，或希望保持零依赖，可以使用原生 API：
+如果无法引入库工具，或希望保持零依赖，可以使用原生 API。生产环境必须使用明确的父页面 origin，并校验刷新消息来源。`postOpenTab` 的默认 `targetOrigin` 是 iframe 页面的 `window.location.origin`，跨域父页面必须显式传入父页面 origin：
 
 ```ts
+const parentOrigin = 'https://parent.example.com'
+
 // 打开标签
 window.parent.postMessage(
   {
@@ -372,11 +434,13 @@ window.parent.postMessage(
       path: '/detail'
     }
   },
-  '*'
+  parentOrigin
 )
 
 // 监听刷新请求
 window.addEventListener('message', (ev) => {
+  if (ev.origin !== parentOrigin) return
+  if (ev.source !== window.parent) return
   if (ev.data?.type === 'vue-stack-tabs:refresh') {
     // 执行刷新
     location.reload()
