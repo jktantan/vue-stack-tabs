@@ -42,4 +42,17 @@ describe('ContextMenuItem accessibility', () => {
     expect(stackTabStyles).toContain('background: transparent')
     expect(stackTabStyles).toContain('text-align: inherit')
   })
+
+  it('右键菜单项保持原 div 菜单项的整行盒模型', () => {
+    expect(stackTabStyles).toMatch(/&-item\s*\{[\s\S]*width:\s*100%;/)
+    expect(stackTabStyles).toMatch(/&-item\s*\{[\s\S]*min-height:\s*30px;/)
+    expect(stackTabStyles).toMatch(/&-item\s*\{[\s\S]*box-sizing:\s*border-box;/)
+  })
+
+  it('右键菜单项聚焦态复用 hover 视觉并移除原生按钮轮廓', () => {
+    expect(stackTabStyles).toMatch(
+      /&:hover,\s*&:active,\s*&:focus-visible\s*\{[\s\S]*background-color:\s*\$stack-tab-color-primary;/
+    )
+    expect(stackTabStyles).toMatch(/&:focus\s*\{[\s\S]*outline:\s*none;/)
+  })
 })

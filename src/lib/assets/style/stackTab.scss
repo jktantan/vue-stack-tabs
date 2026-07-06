@@ -431,11 +431,16 @@
       display: flex;
       position: relative;
       align-items: center;
+      justify-content: flex-start;
+      width: 100%;
+      min-height: 30px;
+      margin: 0;
       padding: 0 10px;
       line-height: 30px;
       font: inherit;
       text-align: inherit;
       appearance: none;
+      box-sizing: border-box;
       color: $stack-tab-text-color;
       cursor: pointer;
       background: transparent;
@@ -445,13 +450,18 @@
       user-select: none;
 
       &:hover,
-      &:active {
+      &:active,
+      &:focus-visible {
         color: $stack-tab-color-white;
         background-color: $stack-tab-color-primary;
 
         .svg-mask {
           background-color: $stack-tab-color-white;
         }
+      }
+
+      &:focus {
+        outline: none;
       }
 
       &[disabled] {
