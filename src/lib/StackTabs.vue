@@ -196,13 +196,6 @@ const iframeEverActivated = reactive<Record<string, boolean>>({})
 const activeIframesWithUrl = computed(() =>
   iframeTabs.value.filter((f) => f.active && (f.url ?? '') && isAllowedTabUrl(f.url ?? ''))
 )
-watch(
-  activeIframesWithUrl,
-  (frames) => {
-    for (const f of frames) iframeEverActivated[f.id] = true
-  },
-  { immediate: true, deep: true }
-)
 /**
  * 获取 iframe 的 src：未激活过的用 about:blank 延迟加载，已激活的保留真实 URL
  * @param frame - iframe 标签项
@@ -232,6 +225,15 @@ const getIframeSrc = (frame: { id: string; url?: string }, refreshKey = getIfram
 
 /** iframe 的 key：包含刷新 key，确保错误态重试与 reload refresh 都能重建 iframe */
 const getIframeKey = (frame: { id: string }) => `${frame.id}-${getIframeRefreshKey(frame.id)}`
+
+const iframeSrcMap = computed<Record<string, string>>(() => {
+  const map: Record<string, string> = {}
+  for (const frame of iframeTabs.value) {
+    const refreshKey = getIframeRefreshKey(frame.id)
+    map[frame.id] = getIframeSrc(frame, refreshKey)
+  }
+  return map
+})
 
 type IframeLoadStatus = 'idle' | 'loading' | 'loaded' | 'timeout'
 
@@ -292,6 +294,17 @@ const retryIframe = (frameId: string) => {
 const shouldShowIframeLoading = (frameId: string) => getIframeLoadState(frameId).status === 'loading'
 const shouldShowIframeError = (frameId: string) => getIframeLoadState(frameId).status === 'timeout'
 
+watch(
+  activeIframesWithUrl,
+  (frames) => {
+    for (const f of frames) {
+      iframeEverActivated[f.id] = true
+      setIframeLoading(f.id)
+    }
+  },
+  { immediate: true }
+)
+
 const handleIframeLoad = (frame: { id: string; url?: string }, event: Event) => {
   const iframe = event.currentTarget as HTMLIFrameElement | null
   const refreshKey = Number(iframe?.dataset.refreshKey ?? 0)
@@ -301,15 +314,6 @@ const handleIframeLoad = (frame: { id: string; url?: string }, event: Event) => 
   if (iframe !== iframeElRefs[frame.id]) return
   setIframeLoaded(frame.id)
 }
-
-// 当 iframe 标签变为激活且有真实 URL 时，显示加载状态（仅首次）
-watch(
-  activeIframesWithUrl,
-  (frames) => {
-    for (const f of frames) setIframeLoading(f.id)
-  },
-  { immediate: true, deep: true }
-)
 
 watch(
   iframeRefreshKeys,
@@ -339,14 +343,26 @@ const setIframeRef = (id: string, el: HTMLIFrameElement | null) => {
 
 watch(
   iframeTabs,
-  (frames) => {
-    const activeIds = new Set(frames.map((frame) => frame.id))
-    for (const id of Object.keys(iframeLoadStates)) {
-      if (!activeIds.has(id)) {
+  (frames, oldFrames) => {
+    if (oldFrames && frames.length < oldFrames.length) {
+      const activeIds = new Set(frames.map((frame) => frame.id))
+      const removedFrames = oldFrames.filter((f) => !activeIds.has(f.id))
+      for (const removed of removedFrames) {
+        const id = removed.id
         clearIframeLoadTimeout(id)
         delete iframeLoadStates[id]
         delete iframeEverActivated[id]
         delete iframeElRefs[id]
+      }
+    } else if (!oldFrames) {
+      const activeIds = new Set(frames.map((frame) => frame.id))
+      for (const id of Object.keys(iframeLoadStates)) {
+        if (!activeIds.has(id)) {
+          clearIframeLoadTimeout(id)
+          delete iframeLoadStates[id]
+          delete iframeEverActivated[id]
+          delete iframeElRefs[id]
+        }
       }
     }
   },
@@ -512,7 +528,7 @@ onBeforeUnmount(() => {
             <iframe
               :ref="(el) => setIframeRef(frame.id, el as HTMLIFrameElement | null)"
               class="stack-tab__iframe"
-              :src="getIframeSrc(frame, getIframeRefreshKey(frame.id))"
+              :src="iframeSrcMap[frame.id] || 'about:blank'"
               :data-refresh-key="getIframeRefreshKey(frame.id)"
               :title="frame.title || t('VueStackTab.iframeTitle') || 'Stack tab iframe'"
               :sandbox="iframeSandbox || undefined"
