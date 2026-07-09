@@ -55,9 +55,9 @@ export const createTabPanelEviction = (context: StackTabsRuntimeContext): TabPan
   const evictMarkedCaches = (): void => {
     if (cacheIdsToEvict.size <= 0) return
 
-    for (const cacheName of [...cacheIdsToEvict]) {
-      evictPageCache(cacheName)
-    }
+    const toEvict = new Set(cacheIdsToEvict)
+    caches.value = caches.value.filter((c) => !toEvict.has(c))
+    for (const cacheName of toEvict) components.delete(cacheName)
     cacheIdsToEvict.clear()
   }
 
