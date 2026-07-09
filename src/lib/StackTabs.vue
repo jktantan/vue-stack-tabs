@@ -461,7 +461,7 @@ onBeforeUnmount(() => {
       >
         <StackKeepAlive :transition-name="pageSwitch" @loaded="onComponentLoaded" />
       </div>
-      <transition-group :name="pageTransition" tag="div" class="stack-tab__iframes" appear>
+      <div class="stack-tab__iframes">
         <Transition
           v-for="frame of iframeTabs"
           :key="getIframeKey(frame)"
@@ -523,7 +523,7 @@ onBeforeUnmount(() => {
             />
           </div>
         </Transition>
-      </transition-group>
+      </div>
     </div>
   </div>
 </template>
