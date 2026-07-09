@@ -336,9 +336,11 @@ export default () => {
         if (foundIndex !== -1) {
           // 找到了！这是一次浏览器的原生后退行为，因为路由事件触发了所以栈还没来得及退。
           // 手动执行类似 `backward` 的栈回退逻辑以亡羊补牢。
-          console.warn(
-            '[vue-stack-tabs] Detected native browser back navigation, repairing page stack...'
-          )
+          if (!import.meta.env.PROD) {
+            console.warn(
+              '[vue-stack-tabs] Detected native browser back navigation, repairing page stack...'
+            )
+          }
           const stepsToPop = pagesList.length - 1 - foundIndex
           for (let i = 0; i < stepsToPop; i++) {
             const popped = targetTab.pages.pop()

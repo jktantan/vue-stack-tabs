@@ -18,15 +18,8 @@ import TabHeaderButton from './components/TabHeader/TabHeaderButton.vue'
 import './assets/style/index.scss'
 
 export type VueStackTabsPluginOptions = LocaleMessageOption[]
-//
-// const i18n = createI18n({
-//   legacy: false,
-//   locale: 'zh-CN',
-//   fallbackLocale: 'en-US'
-// })
 
 export * from './model/TabModel'
-// Cutsom type
 declare module '@vue/runtime-core' {
   export interface GlobalComponents {
     VueStackTabs: typeof StackTab

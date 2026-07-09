@@ -377,19 +377,25 @@ const handleRefreshIframePostMessage = (tabId: string) => {
     try {
       const targetOrigin = getPostMessageTargetOrigin(tab?.url ?? '')
       if (!targetOrigin) {
-        console.warn(
-          `[vue-stack-tabs] Skip refresh postMessage because iframe URL is invalid: ${tabId}`
-        )
+        if (!import.meta.env.PROD) {
+          console.warn(
+            `[vue-stack-tabs] Skip refresh postMessage because iframe URL is invalid: ${tabId}`
+          )
+        }
         return
       }
       iframe.contentWindow.postMessage({ type: 'vue-stack-tabs:refresh' }, targetOrigin)
     } catch (e) {
-      console.warn(`[vue-stack-tabs] Failed to send refresh postMessage to iframe: ${tabId}`, e)
+      if (!import.meta.env.PROD) {
+        console.warn(`[vue-stack-tabs] Failed to send refresh postMessage to iframe: ${tabId}`, e)
+      }
     }
   } else {
-    console.warn(
-      `[vue-stack-tabs] IFrame element not found for tabId: ${tabId} when trying to refresh.`
-    )
+    if (!import.meta.env.PROD) {
+      console.warn(
+        `[vue-stack-tabs] IFrame element not found for tabId: ${tabId} when trying to refresh.`
+      )
+    }
   }
 }
 
@@ -411,7 +417,9 @@ const handleMessage = (ev: MessageEvent) => {
   if (!payload) return
 
   openTab(payload).catch((error: unknown) => {
-    console.warn('[vue-stack-tabs] Failed to open tab from iframe message:', error)
+    if (!import.meta.env.PROD) {
+      console.warn('[vue-stack-tabs] Failed to open tab from iframe message:', error)
+    }
   })
 }
 

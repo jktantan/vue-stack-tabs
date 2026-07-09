@@ -151,7 +151,9 @@ export default function useTabRouter() {
         restorePages(tab.pages, pages)
       }
     }).catch((error: unknown) => {
-      console.warn('[vue-stack-tabs] forward navigation failed:', error)
+      if (!import.meta.env.PROD) {
+        console.warn('[vue-stack-tabs] forward navigation failed:', error)
+      }
     })
   }
 
@@ -224,12 +226,13 @@ export default function useTabRouter() {
           break
         }
       }
-      // 栈中找不到目标路径，无法后退，返回警告
       if (!found) {
-        console.warn(
-          `[vue-stack-tabs] backward failed: target url '${to}' not found in history stack. Current stack: `,
-          JSON.parse(JSON.stringify(pages))
-        )
+        if (!import.meta.env.PROD) {
+          console.warn(
+            `[vue-stack-tabs] backward failed: target url '${to}' not found in history stack. Current stack: `,
+            JSON.parse(JSON.stringify(pages))
+          )
+        }
         return false
       }
     }
@@ -294,7 +297,9 @@ export default function useTabRouter() {
         }
       }
     }).catch((error: unknown) => {
-      console.warn('[vue-stack-tabs] backward navigation failed:', error)
+      if (!import.meta.env.PROD) {
+        console.warn('[vue-stack-tabs] backward navigation failed:', error)
+      }
     })
     return true
   }

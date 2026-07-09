@@ -17,17 +17,6 @@ export enum TabScrollMode {
   BOTH = 'both'
 }
 
-// export enum EventType {
-//   I18N_LOCALES = 'I18N_LOCALES',
-//   PANEL_MAXIMUM = 'PANEL_MAXIMUM',
-//   TAB_ACTIVE = 'TAB_ACTIVE',
-//   TAB_CLOSE = 'TAB_CLOSE',
-//   TAB_CLOSE_ALL = 'TAB_CLOSE_ALL',
-//   TAB_CLOSE_RIGHT = 'TAB_CLOSE_RIGHT',
-//   TAB_CLOSE_LEFT = 'TAB_CLOSE_LEFT',
-//   TAB_REFRESH = 'TAB_REFRESH',
-//   TAB_REFRESH_ALL = 'TAB_REFRESH_ALL'
-// }
 /** 标签栏滚动条拖拽时的临时状态 */
 export interface DragData {
   thumbLeft: number
@@ -94,104 +83,47 @@ export interface IContextMenu {
   callback(id: string): void
   disabled: (tabData: ITabBase) => boolean
 }
-// export interface TabRouteLocationRaw {
-//   path: string
-//   query?: any
-// }
-// export interface PageRouteLocationRaw {
-//   pId: string
-//   path: string
-//   query: any
-// }
-/** 使用 Map 实现的栈结构，用于标签内的 pages 页面栈 */
+/** 数组实现的栈结构，用于标签内的 pages 页面栈 */
 export class Stack<T> {
-  protected items: Map<number, T>
+  protected items: T[]
 
   constructor(items?: T[]) {
-    this.items = new Map()
-    if (items) {
-      for (const item of items) {
-        this.push(item)
-      }
-    }
+    this.items = items ? [...items] : []
   }
 
-  /**
-   * @description: 入栈
-   * @param {T} element 要入栈的元素
-   */
   push(element: T) {
-    this.items.set(this.items.size, element)
+    this.items.push(element)
   }
 
-  /**
-   * @description: 出栈
-   * @return {T} 返回出栈的元素
-   */
   pop(): T | undefined {
-    if (this.isEmpty()) {
-      return undefined
-    }
-    const result = this.items.get(this.items.size - 1)
-    this.items.delete(this.items.size - 1)
-    return result
+    return this.items.pop()
   }
 
-  /**
-   * @description: 返回栈顶的元素
-   * @return {T}
-   */
   peek(): T | undefined {
-    if (this.isEmpty()) {
-      return undefined
-    }
-    return this.items.get(this.items.size - 1)
+    return this.items.length > 0 ? this.items[this.items.length - 1] : undefined
   }
 
-  /**
-   * @description: 返回栈是否为空
-   * @return {Boolean}
-   */
   isEmpty(): boolean {
-    return this.items.size === 0
+    return this.items.length === 0
   }
 
-  /**
-   * @description: 返回栈里的元素个数
-   * @return {Number}
-   */
   size(): number {
-    return this.items.size
+    return this.items.length
   }
 
-  /**
-   * @description: 清空栈内存
-   */
   clear() {
-    this.items.clear()
+    this.items.length = 0
   }
 
-  /**
-   * @description: 将栈中的元素转换为数组
-   * @return {T[]}
-   */
   list(): T[] {
-    return Array.from(this.items.values())
+    return [...this.items]
   }
 
-  /**
-   * @description: 用于控制 JSON.stringify 时的序列化输出
-   * @return {T[]}
-   */
   toJSON(): T[] {
     return this.list()
   }
 
-  /**
-   * @description: 覆盖Object默认的toString
-   * @return {String}
-   */
   toString(): string {
-    return this.list().toString()
+    return this.items.toString()
   }
 }
