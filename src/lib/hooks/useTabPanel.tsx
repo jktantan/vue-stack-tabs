@@ -34,7 +34,8 @@ import {
   omitStackTabsReservedQuery,
   toSafeTabUrl,
   decodeSafeTabUrl,
-  cloneLocationQuery
+  cloneLocationQuery,
+  clonePage
 } from '../utils/urlParser'
 import PageLoading from '../components/PageLoading.vue'
 import { TabEventType, useTabEmitter } from './useTabEventBus'
@@ -53,12 +54,6 @@ const EmptyPlaceholderComponent = defineComponent({
   setup() {
     return () => null
   }
-})
-
-const cloneTabPage = (page: ITabPage): ITabPage => ({
-  ...page,
-  query: page.query ? cloneLocationQuery(page.query) : undefined,
-  _backParams: page._backParams ? { ...page._backParams } : undefined
 })
 
 const cloneRouteQuery = (route: RouteLocationNormalizedLoaded, tabInfo: ITabBase) => ({
@@ -116,6 +111,9 @@ export default () => {
    * @param staticTabs - 初始标签配置
    */
   const initialize = (staticTabs: ITabData[]) => {
+    const newDefaults: ITabItem[] = []
+    const newTabs: ITabItem[] = []
+
     for (const item of staticTabs) {
       const fullItem = defu(item, {
         id: crypto.randomUUID(),
@@ -126,11 +124,6 @@ export default () => {
       const tabId = fullItem.id ?? crypto.randomUUID()
       fullItem.id = tabId
       const uri = parseUrl(fullItem.path)
-      const config = defu(fullItem, {
-        closable: true,
-        refreshable: true,
-        iframe: false
-      })
       const cacheName = createPageId()
       const page: ITabPage = {
         id: cacheName,
@@ -142,12 +135,12 @@ export default () => {
       pages.push(page)
       const tab: ITabItem = {
         id: tabId,
-        title: config.title ?? '',
-        closable: config.closable,
-        refreshable: config.refreshable,
-        iframe: config.iframe,
+        title: fullItem.title ?? '',
+        closable: fullItem.closable!,
+        refreshable: fullItem.refreshable!,
+        iframe: fullItem.iframe!,
         iframeRefreshMode:
-          (config as { iframeRefreshMode?: string }).iframeRefreshMode === 'reload'
+          (fullItem as { iframeRefreshMode?: string }).iframeRefreshMode === 'reload'
             ? 'reload'
             : 'postMessage',
         active: false,
@@ -155,20 +148,21 @@ export default () => {
       }
 
       addCache(cacheName)
-      defaultTabs.value = [...defaultTabs.value, tab]
-      tabs.value = [...tabs.value, { ...tab }]
+      newDefaults.push(tab)
+      newTabs.push({ ...tab })
     }
+
+    defaultTabs.value = [...defaultTabs.value, ...newDefaults]
+    tabs.value = [...tabs.value, ...newTabs]
 
     const storedTabJson = sessionStorage.getItem(getSessionKey())
     const restoredTab = restoreTabFromSession(storedTabJson)
-    if (restoredTab && !tabs.value.some((t) => t.id === restoredTab!.id)) {
+    if (restoredTab && !tabs.value.some((t) => t.id === restoredTab.id)) {
       if (restoredTab.url) restoredTab.url = toSafeTabUrl(restoredTab.url)
       if (restoredTab.iframe && restoredTab.url && restoredTab.iframeRefreshMode === undefined) {
         restoredTab.iframeRefreshMode = isCrossOriginUrl(restoredTab.url) ? 'reload' : 'postMessage'
       }
 
-      // 核心修复：刷新恢复后，不仅要把 Tab 塞入列表，
-      // 更要把里面所有的 Page 的 ULID 重新注册进 keep-alive 的 includes，防止彻底沦为白板无缓存组件
       if (restoredTab.pages && typeof restoredTab.pages.list === 'function') {
         const pages = restoredTab.pages.list()
         pages.forEach((page) => {
@@ -176,7 +170,7 @@ export default () => {
         })
       }
 
-      tabs.value.push(restoredTab)
+      tabs.value = [...tabs.value, restoredTab]
     }
     isInitialized.value = true
   }
@@ -186,9 +180,8 @@ export default () => {
     runtimeContext.maxTabCount.value <= 0 ||
     (runtimeContext.maxTabCount.value > 0 && runtimeContext.maxTabCount.value > tabs.value.length)
 
-  const addTab = (tab: ITabItem) => {
-    tabs.value.push(tab)
-    return Promise.resolve(true)
+  const addTab = (tab: ITabItem): void => {
+    tabs.value = [...tabs.value, tab]
   }
 
   const getTab = (id: string) => tabs.value.find((t) => t.id === id) ?? null
@@ -222,15 +215,6 @@ export default () => {
 
   /**
    * 查找或创建目标标签，并同步更新 active 状态与 pages 栈。
-   *
-   * 算法：
-   * 1. 遍历所有 tab，将所有 tab.active 置为 false（全部失活）
-   * 2. 同时查找 id 匹配的目标 tab（targetTab）
-   * 3-a. 若目标 tab 不存在：说明是首次打开该标签，创建新的 ITabItem，初始化 pages 栈并推入当前 page
-   * 3-b. 若目标 tab 已存在：
-   *      - 设为 active
-   *      - 判断当前 page 是否已在栈顶（避免重复入栈）
-   *        当路由在同一标签内多次重渲染（响应式触发）时，page.id 与 peek().id 相同，跳过 push
    */
   const findOrCreateTargetTab = (
     tabInfo: ITabBase,
@@ -245,7 +229,6 @@ export default () => {
     }
 
     if (targetTab === null) {
-      // 全新标签：初始化 pages 栈、从 query.__src 获取 iframe url
       const pages = new Stack<ITabPage>()
       pages.push(page)
       const src = route.query.__src
@@ -260,13 +243,10 @@ export default () => {
         active: true,
         pages
       } as unknown as ITabItem
-      addTab(targetTab).then(() => {
-        emitter.emit(TabEventType.TAB_ACTIVE, { id: tabInfo.id!, isRoute: false })
-      })
+      addTab(targetTab)
+      emitter.emit(TabEventType.TAB_ACTIVE, { id: tabInfo.id!, isRoute: false })
     } else {
       targetTab.active = true
-      // 幂等保护：page.id 与当前栈顶相同时不重复入栈
-      // 响应式重渲染（如 caches 变更）会重复调用 tabWrapper，需过滤此类重入
       if (targetTab.pages.isEmpty() || targetTab.pages.peek()!.id !== page.id) {
         targetTab.pages.push(page)
       }
@@ -274,26 +254,12 @@ export default () => {
     return targetTab
   }
 
-  /**
-   * 暴露给外部使用，用于获取指定路由对应的 cacheName
-   */
-  const getCacheName = () => {
+  const createCacheName = () => {
     return createPageId()
   }
 
   /**
    * 根据当前路由更新/创建标签与页面状态（核心路由适配器）。
-   *
-   * 该函数在每次 tabWrapper 被调用时执行（即每次 <router-view> 渲染或响应式重渲染时）。
-   * 返回三种可能的结果：
-   * - { empty: true }                          → 目标标签已被标记为驱逐（关闭态），返回空占位组件
-   * - { recovered, cacheName }                  → 页面曾被软标记驱逐（刷新场景），原组件仍存活，直接恢复
-   * - { cacheName, tabInfo, targetTab }         → 正常流程，返回完整上下文供 resolvePageComponent 使用
-   *
-   * cacheName 生成算法：
-   *   createPageId(tabId, normalizedPath, queryObject)
-   *   使用 tabId + 路径 + query（含 __tab）生成确定性哈希，
-   *   同一标签同一路由的 cacheName 始终相同，用作 cacheComponent.name 及 keep-alive include 的键。
    */
   const updatePageState = (
     route: RouteLocationNormalizedLoaded
@@ -306,8 +272,7 @@ export default () => {
 
     const path = normalizePathForCache(route)
 
-    // 核心重构：一切以数据栈为准，不再计算 URL 哈希
-    let targetTab: ITabItem | null = tabInfo.id ? (getTab(tabInfo.id) as unknown as ITabItem) : null
+    let targetTab: ITabItem | null = tabInfo.id ? (getTab(tabInfo.id) as ITabItem | null) : null
     let cacheName: string
     let page: ITabPage | null = null
 
@@ -315,16 +280,11 @@ export default () => {
       const top = targetTab.pages.peek()
       if (!top) throw new Error('[vue-stack-tabs] Stack is not empty but peek() returned undefined')
 
-      // 数据栈是唯一真相源，只比对 path 即可判断当前路由是否与栈顶一致
       if (top.path === path) {
         cacheName = top.id
       } else {
-        // [边界/修复] "空降兵"或"浏览器原生后退"拦截
-        // URL 和栈顶对不上！我们被外部改变了。
-        const pagesList = targetTab.pages.list()
+        const pagesList = targetTab.pages.readonlyList()
         let foundIndex = -1
-        // 从栈顶往下找，有没有曾经来过的同路由（以此判定是否为 PopState 后退）
-        // 只比对 path，因为数据栈才是唯一真相源
         for (let i = pagesList.length - 2; i >= 0; i--) {
           const pastPage = pagesList[i]
           if (pastPage && pastPage.path === path) {
@@ -334,8 +294,6 @@ export default () => {
         }
 
         if (foundIndex !== -1) {
-          // 找到了！这是一次浏览器的原生后退行为，因为路由事件触发了所以栈还没来得及退。
-          // 手动执行类似 `backward` 的栈回退逻辑以亡羊补牢。
           if (!import.meta.env.PROD) {
             console.warn(
               '[vue-stack-tabs] Detected native browser back navigation, repairing page stack...'
@@ -344,10 +302,8 @@ export default () => {
           const stepsToPop = pagesList.length - 1 - foundIndex
           for (let i = 0; i < stepsToPop; i++) {
             const popped = targetTab.pages.pop()
-            // 立即驱逐被错误保留在内存的那些未来组件（在 router 的钩子里也可以，但这里既然已经渲染就直接驱）
             if (popped) evictPageCache(popped.id)
           }
-          // 因为我们把不要的都出栈了，现在的栈顶就是以前的这一个记录
           const newTop = targetTab.pages.peek()
           cacheName = newTop ? newTop.id : createPageId()
 
@@ -355,23 +311,21 @@ export default () => {
             page = {
               id: cacheName,
               tabId: tabInfo.id!,
-              path: route.path, // 保持原 query 等参数
+              path: route.path,
               query: cloneRouteQuery(route, tabInfo)
             }
           }
         } else {
-          // 在历史栈完全没找到，真的是被强行推入的“空降兵”新路由，直接补发一个新的栈记录。
           cacheName = createPageId()
           page = {
             id: cacheName,
             tabId: tabInfo.id!,
-            path: route.path, // 保持原 query 等参数
+            path: route.path,
             query: cloneRouteQuery(route, tabInfo)
           }
         }
       }
     } else {
-      // 这是一个全新创建的 Tab（被外部用空链接无中生有）
       cacheName = createPageId()
       page = {
         id: cacheName,
@@ -381,23 +335,17 @@ export default () => {
       }
     }
 
-    // 刷新恢复场景：依旧支持软驱逐和组件复用
     if (cacheIdsToEvict.has(cacheName)) {
       cacheIdsToEvict.delete(cacheName)
       const cached = components.get(cacheName)
       if (cached) return { recovered: cached, cacheName }
     }
 
-    // 将 page （如果上面判断它为全新的时候）塞入栈中或建新 Tab
     if (page) {
       targetTab = findOrCreateTargetTab(tabInfo, route, cacheName, page)
     } else {
-      // 否则说明这只是同页渲染复用（或者是刷新回来的无变动栈），把 targetTab 直接提拔为 active
       for (const t of tabs.value) t.active = false
       targetTab!.active = true
-      if (!cacheName && targetTab && !targetTab.pages.isEmpty()) {
-        cacheName = targetTab.pages.peek()!.id
-      }
     }
 
     saveActiveTabToSession(targetTab!)
@@ -406,27 +354,6 @@ export default () => {
 
   /**
    * 获取或创建与 cacheName 对应的 cacheComponent（keep-alive 包装组件）。
-   *
-   * 设计要点：
-   *
-   * 1. 「组件定义与 VNode 解耦」
-   *    旧版实现在 defineComponent 时通过 components: { DynamicComponent: component }
-   *    将页面 VNode 锁定为闭包，导致：
-   *      - 组件定义本身持有旧 VNode 引用，即使路由参数变化也不更新
-   *      - evictPageCache 后重建新定义，但 keep-alive 以 name 为键仍激活旧实例
-   *    新版改为通过 props: ['vnode'] + StackTabs.vue 的 :vnode="Component" 动态传入，
-   *    每次渲染从父层获取最新 VNode，彻底消除闭包缓存残留。
-   *
-   * 2. 「cloneVNode 注入 tId / pId」
-   *    render 函数执行时，通过 cloneVNode(Node, { tId, pId }) 克隆页面 VNode 并附加标签标识属性。
-   *    被渲染的页面组件（如 InternalRouteDetail）通过 attrs.tId / attrs.pId 读取这两个值，
-   *    供 useTabRouter 内部定位所属标签与缓存 ID。
-   *    （未声明在 defineProps 里的属性自动进入 attrs）
-   *
-   * 3. 「onActivated 延迟驱逐」
-   *    标签切换（非 backward）导致旧页面失活时，旧页面 ID 已由 markCacheForEviction 标记，
-   *    等新页面的 cacheComponent onActivated 触发，再批量执行 evictMarkedCaches 是安全的——
-   *    此时新页面已就绪，不存在重渲染重建的竞态问题。
    */
   const resolvePageComponent = (ctx: {
     cacheName: string
@@ -435,17 +362,13 @@ export default () => {
   }): DefineComponent => {
     const { cacheName, tabInfo } = ctx
 
-    // 已存在的组件定义直接复用（keep-alive 会在内部找到缓存实例），无需重建
     if (components.has(cacheName)) {
-      addCache(cacheName) // 确保再次激活时仍在 include 列表中
+      addCache(cacheName)
       return components.get(cacheName)!
     }
 
-    // 首次进入该缓存页：创建专属 cacheComponent 包装组件
     const cacheComponent = defineComponent({
-      // name 与 cacheName 保持一致，作为 keep-alive include 的匹配键
       name: cacheName,
-      // vnode 由 StackTabs.vue 的 :vnode="Component" 动态传入（解耦闭包）
       props: {
         vnode: {
           type: Object as () => VNode,
@@ -528,21 +451,6 @@ export default () => {
     return cacheComponent
   }
 
-  // 刷新隔离名单功能已由全新 ID 替换法替代
-
-  /**
-   * 将路由对应的组件注册为缓存页面（由 StackTabs.vue 的 tabWrapper 调用）。
-   *
-   * 流程：
-   * 1. 若 component 为空（router-view 未匹配到路由），返回空占位组件
-   * 2. updatePageState 解析路由状态：
-   *    - empty    → 标签已关闭，返回空占位
-   *    - recovered → 刷新恢复，直接 addCache 并返回原组件
-   *    - 正常      → 调用 resolvePageComponent 获取/创建 cacheComponent
-   *
-   * @param component StackTabs.vue 传入的原始 VNode（来自 <router-view> 的 Component 插槽）
-   * @returns 用于 <component :is> 的 cacheComponent 包装定义
-   */
   /** 当前正在渲染的页面的缓存 Key（ULID），供 StackTabs.vue 的 :key 绑定使用 */
   const activeCacheKey = ref<string>('')
 
@@ -580,7 +488,7 @@ export default () => {
     const currentTab = getTab(tab.id!)
     if (!currentTab) return undefined
 
-    const pageSnapshot = currentTab.pages.list().map(cloneTabPage)
+    const pageSnapshot = currentTab.pages.list().map((p) => clonePage(p))
     const cacheSnapshot = [...caches.value]
     const componentSnapshot = new Map(components)
 
@@ -590,7 +498,7 @@ export default () => {
 
     return () => {
       currentTab.pages.clear()
-      for (const page of pageSnapshot) currentTab.pages.push(cloneTabPage(page))
+      for (const page of pageSnapshot) currentTab.pages.push(clonePage(page))
       caches.value = [...cacheSnapshot]
       components.clear()
       for (const [id, component] of componentSnapshot) components.set(id, component)
@@ -730,11 +638,9 @@ export default () => {
     const currentPage = tab.pages.peek()
     if (!currentPage) return
 
-    // 新架构：真正的刷新 = 把栈顶的旧组件数据连根拔起并注销，让它换个新 ID 重新走生命周期
     const oldId = currentPage.id
-    evictPageCache(oldId) // 清除旧缓存
+    evictPageCache(oldId)
 
-    // 生成全新 ID，相当于把原页面配方注入了一个崭新的组件身份
     currentPage.id = createPageId()
     addCache(currentPage.id)
 
@@ -747,15 +653,15 @@ export default () => {
 
   const refreshAllTabs = () => {
     let needsActiveRefresh = false
+    const iframeKeysUpdate = { ...iframeRefreshKeys.value }
+    let iframeKeysChanged = false
 
     for (const tab of tabs.value) {
       if (!tab?.refreshable) continue
       if (tab.iframe) {
         if (tab.iframeRefreshMode === 'reload') {
-          iframeRefreshKeys.value = {
-            ...iframeRefreshKeys.value,
-            [tab.id]: (iframeRefreshKeys.value[tab.id] ?? 0) + 1
-          }
+          iframeKeysUpdate[tab.id] = (iframeKeysUpdate[tab.id] ?? 0) + 1
+          iframeKeysChanged = true
         } else {
           emitter.emit(TabEventType.REFRESH_IFRAME_POSTMESSAGE, tab.id)
         }
@@ -772,6 +678,10 @@ export default () => {
           }
         }
       }
+    }
+
+    if (iframeKeysChanged) {
+      iframeRefreshKeys.value = iframeKeysUpdate
     }
 
     if (needsActiveRefresh) {
@@ -800,7 +710,6 @@ export default () => {
         tab.active = tab.id === id
       }
       saveActiveTabToSession(target as ITabItem)
-      // 强制触发 tabs 响应式更新，确保 TabHeader 高亮与 iframe 进入动画 timing 正确
       tabs.value = tabs.value.slice()
     }
 
@@ -813,8 +722,6 @@ export default () => {
       return Promise.resolve()
     }
 
-    // 切换 Tab 走路由时，必须将 __tab 编码信息注入 query，
-    // 否则 parseTabInfoFromRoute 找不到对应 Tab，会新建匿名标签！
     const __tab = encodeTabInfo({
       id: target.id,
       title: target.title,
@@ -826,15 +733,15 @@ export default () => {
 
     return runNavigationTransaction({
       apply: () => {
-        const activeStates = tabs.value.map((tab) => ({ id: tab.id, active: tab.active }))
+        const prevActiveId = tabs.value.find((tab) => tab.active)?.id
         const sessionSnapshot = window.sessionStorage.getItem(getSessionKey())
         activateTarget()
-        return { activeStates, sessionSnapshot }
+        return { prevActiveId, sessionSnapshot }
       },
       navigate: () => router.push({ path: top.path, query }),
       rollback: (snapshot) => {
         for (const tab of tabs.value) {
-          tab.active = snapshot.activeStates.find((item) => item.id === tab.id)?.active ?? false
+          tab.active = tab.id === snapshot.prevActiveId
         }
         tabs.value = tabs.value.slice()
         restoreActiveTabSession(snapshot.sessionSnapshot)
@@ -873,7 +780,7 @@ export default () => {
     initialize,
     size,
     active,
-    getCacheName,
+    getCacheName: createCacheName,
     destroy,
     reset,
     addCache,

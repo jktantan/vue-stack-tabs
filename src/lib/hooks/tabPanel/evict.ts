@@ -19,6 +19,8 @@ export interface TabPanelEvictionApi {
 export const createTabPanelEviction = (context: StackTabsRuntimeContext): TabPanelEvictionApi => {
   const { caches, components, cacheIdsToEvict, tabIdsToEvict } = context
 
+  const cacheSet = new Set<string>(caches.value)
+
   const markCacheForEviction = (cacheName: string): void => {
     cacheIdsToEvict.add(cacheName)
   }
@@ -33,15 +35,16 @@ export const createTabPanelEviction = (context: StackTabsRuntimeContext): TabPan
   }
 
   const addCache = (cacheName: string): void => {
-    if (!caches.value.includes(cacheName)) {
+    if (!cacheSet.has(cacheName)) {
+      cacheSet.add(cacheName)
       caches.value = [...caches.value, cacheName]
     }
   }
 
   const removeCache = (cacheName: string): void => {
-    const index = caches.value.indexOf(cacheName)
-    if (index >= 0) {
-      caches.value = caches.value.filter((_, idx) => idx !== index)
+    if (cacheSet.has(cacheName)) {
+      cacheSet.delete(cacheName)
+      caches.value = caches.value.filter((c) => c !== cacheName)
     }
   }
 
@@ -57,7 +60,10 @@ export const createTabPanelEviction = (context: StackTabsRuntimeContext): TabPan
 
     const toEvict = new Set(cacheIdsToEvict)
     caches.value = caches.value.filter((c) => !toEvict.has(c))
-    for (const cacheName of toEvict) components.delete(cacheName)
+    for (const cacheName of toEvict) {
+      cacheSet.delete(cacheName)
+      components.delete(cacheName)
+    }
     cacheIdsToEvict.clear()
   }
 

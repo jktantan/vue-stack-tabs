@@ -103,6 +103,10 @@ export class Stack<T> {
     return this.items.length > 0 ? this.items[this.items.length - 1] : undefined
   }
 
+  at(index: number): T | undefined {
+    return this.items[index]
+  }
+
   isEmpty(): boolean {
     return this.items.length === 0
   }
@@ -117,6 +121,10 @@ export class Stack<T> {
 
   list(): T[] {
     return [...this.items]
+  }
+
+  readonlyList(): readonly T[] {
+    return this.items
   }
 
   toJSON(): T[] {

@@ -107,6 +107,19 @@ export function cloneLocationQuery(query: LocationQueryRaw = {}): LocationQueryR
   return cloned
 }
 
+export interface CloneablePage {
+  query?: LocationQueryRaw
+  _backParams?: Record<string, unknown>
+}
+
+export function clonePage<T extends CloneablePage>(page: T): T {
+  return {
+    ...page,
+    query: page.query ? cloneLocationQuery(page.query) : undefined,
+    _backParams: page._backParams ? { ...page._backParams } : undefined
+  }
+}
+
 export function omitStackTabsReservedQuery(query: LocationQueryRaw = {}): LocationQueryRaw {
   const sanitized: LocationQueryRaw = {}
   for (const [key, value] of Object.entries(query)) {
