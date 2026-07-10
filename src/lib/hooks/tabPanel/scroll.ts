@@ -12,6 +12,11 @@ export interface TabPanelScrollApi {
   addPageScroller: (pageCacheId: string, ...selectorIds: string[]) => void
 }
 
+const resolveScrollElement = (selector: string): HTMLElement | null =>
+  selector.startsWith('#')
+    ? document.getElementById(selector.slice(1))
+    : (document.querySelector(selector) as HTMLElement | null)
+
 export const createTabPanelScroll = (context: StackTabsRuntimeContext): TabPanelScrollApi => {
   const { scrollPositionsByPageId } = context
 
@@ -20,9 +25,7 @@ export const createTabPanelScroll = (context: StackTabsRuntimeContext): TabPanel
     if (!positions) return
 
     for (const [selector, position] of positions) {
-      const element = selector.startsWith('#')
-        ? document.getElementById(selector.slice(1))
-        : (document.querySelector(selector) as HTMLElement | null)
+      const element = resolveScrollElement(selector)
       if (element) {
         element.scrollTop = position.top
         element.scrollLeft = position.left
@@ -35,9 +38,7 @@ export const createTabPanelScroll = (context: StackTabsRuntimeContext): TabPanel
     if (!positions) return
 
     for (const selector of positions.keys()) {
-      const element = selector.startsWith('#')
-        ? document.getElementById(selector.slice(1))
-        : (document.querySelector(selector) as HTMLElement | null)
+      const element = resolveScrollElement(selector)
       positions.set(selector, {
         top: element?.scrollTop ?? 0,
         left: element?.scrollLeft ?? 0

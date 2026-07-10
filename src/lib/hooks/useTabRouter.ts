@@ -6,7 +6,12 @@ import type { ITabPage } from '../model/TabModel'
 import { isNavigationFailure, useRoute, useRouter } from 'vue-router'
 
 import useTabPanel from './useTabPanel'
-import { parseUrl, cloneLocationQuery, clonePage } from '../utils/urlParser'
+import {
+  parseUrl,
+  cloneLocationQuery,
+  clonePage,
+  isSameQueryIgnoringReserved
+} from '../utils/urlParser'
 import { TabEventType, useTabEmitter } from './useTabEventBus'
 
 import { runNavigationTransaction } from './tabPanel/navigationTransaction'
@@ -84,19 +89,7 @@ export default function useTabRouter() {
     if (tab) {
       const top = tab.pages.peek()
       if (top && top.path === to.path) {
-        const topQuery = { ...(top.query || {}) }
-        const tq = { ...targetQuery }
-        delete topQuery.__tab
-        delete topQuery._back
-        delete tq.__tab
-        delete tq._back
-
-        const isSameQuery =
-          Object.keys(tq).length === 0 ||
-          (Object.keys(tq).length === Object.keys(topQuery).length &&
-            Object.keys(tq).every((k) => String(tq[k] ?? '') === String(topQuery[k] ?? '')))
-
-        if (isSameQuery) {
+        if (isSameQueryIgnoringReserved(targetQuery, top.query || {})) {
           if (!tab.active) {
             activateTab(tab.id)
           }
@@ -112,7 +105,7 @@ export default function useTabRouter() {
     let optimisticPageId = ''
     runNavigationTransaction({
       apply: () => {
-        const snapshot = tab ? tab.pages.list().map((p) => clonePage(p)) : []
+        const snapshot = tab ? tab.pages.readonlyList().map((p) => clonePage(p)) : []
         if (tab) {
           optimisticPageId = createPageId()
           tab.pages.push({
@@ -165,26 +158,13 @@ export default function useTabRouter() {
       const pages = stack.readonlyList()
       let found = false
 
-      const isQueryMatch = (pageQuery?: Record<string, unknown>) => {
-        const pq = { ...(pageQuery || {}) }
-        const tq = { ...targetQuery }
-        delete pq.__tab
-        delete pq._back
-        delete tq.__tab
-        delete tq._back
-
-        const tqKeys = Object.keys(tq)
-        if (tqKeys.length === 0) return true
-
-        return tqKeys.every((k) => String(tq[k] ?? '') === String(pq[k] ?? ''))
-      }
-
       for (let i = stack.size() - 2; i >= 0; i--) {
         steps++
         const page = pages[i]
-        const isSamePath = page?.path === parsed.path
-        const isSameQuery = isQueryMatch(page?.query)
-        if (isSamePath && isSameQuery) {
+        if (
+          page?.path === parsed.path &&
+          isSameQueryIgnoringReserved(targetQuery, page?.query || {})
+        ) {
           found = true
           break
         }
@@ -208,7 +188,7 @@ export default function useTabRouter() {
 
     if (steps <= 0) return false
 
-    const originalPages = stack.list().map((p) => clonePage(p))
+    const originalPages = stack.readonlyList().map((p) => clonePage(p))
     const recyclingBin: string[] = []
     for (let i = 0; i < steps; i++) {
       const popped = stack.pop()

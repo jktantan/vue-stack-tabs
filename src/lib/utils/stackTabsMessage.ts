@@ -11,8 +11,7 @@ interface StackTabsMessageEnvelope {
 
 const OPEN_TAB_MESSAGE_TYPES = new Set(['vue-stack-tabs:openTab', 'openTab'])
 
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value)
+import { isRecord } from './typeGuards'
 
 const isLocationQueryValueRaw = (value: unknown): value is LocationQueryValueRaw =>
   typeof value === 'string' || typeof value === 'number' || value === null || value === undefined

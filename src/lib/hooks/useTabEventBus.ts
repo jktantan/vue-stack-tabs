@@ -28,17 +28,8 @@ export interface TabEventPayloadMap extends Record<EventType, unknown> {
 
 export const tabEmitterKey: InjectionKey<Emitter<TabEventPayloadMap>> = Symbol('tabEmitter')
 
-const plugin = {
-  install(): void {
-    // 事件总线由唯一 <VueStackTabs> runtime context 提供。
-    // 保留 no-op plugin 仅避免内部迁移期间破坏旧安装链路。
-  }
-}
-
 /** 获取标签事件总线，用于组件间通信 */
 export const useTabEmitter = (): Emitter<TabEventPayloadMap> => {
   const injected = hasInjectionContext() ? inject(tabEmitterKey, null) : null
   return injected ?? resolveStackTabsRuntimeContext().eventBus
 }
-
-export default plugin

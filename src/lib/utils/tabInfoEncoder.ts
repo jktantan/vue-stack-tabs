@@ -33,8 +33,7 @@ const DEFAULT_TAB_INFO: ITabBase = {
   iframeRefreshMode: 'postMessage'
 }
 
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value)
+import { isRecord } from './typeGuards'
 
 const toTabInfo = (payload: unknown): ITabBase => {
   if (!isRecord(payload)) return { ...DEFAULT_TAB_INFO }

@@ -120,6 +120,26 @@ export function clonePage<T extends CloneablePage>(page: T): T {
   }
 }
 
+export function isSameQueryIgnoringReserved(
+  a: LocationQueryRaw = {},
+  b: LocationQueryRaw = {}
+): boolean {
+  const clean = (q: LocationQueryRaw): Record<string, string> => {
+    const result: Record<string, string> = {}
+    for (const [key, value] of Object.entries(q)) {
+      if (STACK_TABS_RESERVED_QUERY_KEYS.has(key) || key === '_back') continue
+      result[key] = String(value ?? '')
+    }
+    return result
+  }
+  const ca = clean(a)
+  const cb = clean(b)
+  const keysB = Object.keys(cb)
+  if (keysB.length === 0) return true
+  if (keysB.length !== Object.keys(ca).length) return false
+  return keysB.every((k) => ca[k] === cb[k])
+}
+
 export function omitStackTabsReservedQuery(query: LocationQueryRaw = {}): LocationQueryRaw {
   const sanitized: LocationQueryRaw = {}
   for (const [key, value] of Object.entries(query)) {

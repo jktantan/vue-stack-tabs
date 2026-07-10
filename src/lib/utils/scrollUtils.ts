@@ -89,10 +89,15 @@ export const getScrollbarWidth = (function () {
   }
 })()
 
+const Z_INDEX_CEILING = 89999
+
 /** 获取指定选择器下元素的最大 z-index + 1，用于最大化时置顶 */
 export const getMaxZIndex = (key = '.stack-tab__container *'): number => {
-  const allZIndex = Array.from(document.querySelectorAll(key)).map(
-    (e) => +window.getComputedStyle(e).zIndex || 0
-  )
-  return allZIndex.length ? Math.max(...allZIndex.filter((item) => item < 90000)) + 1 : 1
+  const elements = document.querySelectorAll(key)
+  let max = 0
+  for (let i = 0; i < elements.length; i++) {
+    const z = +window.getComputedStyle(elements[i]!).zIndex || 0
+    if (z < Z_INDEX_CEILING && z > max) max = z
+  }
+  return max + 1
 }

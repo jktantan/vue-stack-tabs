@@ -18,13 +18,11 @@ import {
   onBeforeMount,
   onBeforeUnmount,
   provide,
-  reactive,
-  ref,
-  watch
+  ref
 } from 'vue'
 import type { TransitionProps } from 'vue'
 import { getMaxZIndex } from './utils/scrollUtils'
-import { isAllowedTabUrl, toSafeTabUrl } from './utils/urlParser'
+import { isAllowedTabUrl } from './utils/urlParser'
 import { applyStackTabsLocale } from './i18n/stackTabsLocale'
 import { type ITabData, TabScrollMode } from './model/TabModel'
 import TabHeader from './components/TabHeader/index.vue'
@@ -40,8 +38,8 @@ import {
   stackTabsContextKey,
   unregisterStackTabsRuntimeContext
 } from './hooks/stackTabsContext'
-import { getPostMessageTargetOrigin, isStackTabsOpenTabMessage } from './utils/stackTabsMessage'
 import { getStackTabPanelId, getStackTabTabId } from './utils/stackTabsA11y'
+import { useIframeManager } from './hooks/useIframeManager'
 type StackTabsIframeReferrerPolicy =
   | ''
   | 'no-referrer'
@@ -56,18 +54,12 @@ type StackTabsIframeReferrerPolicy =
 const emit = defineEmits(['onActive', 'onPageLoaded'])
 const props = withDefaults(
   defineProps<{
-    // 初始页签数据
     defaultTabs?: ITabData[]
-    // 最大打开数量
     max?: number
-    // 右键菜单
     contextmenu?: boolean | object
-    // 页面转场效果
     pageTransition?: string
     pageTransitionBack?: string
-    // 标签转场效果
     tabTransition?: string | TransitionProps
-    // tab 滚动效果
     tabScrollMode?: TabScrollMode
     width?: string
     height?: string
@@ -76,7 +68,6 @@ const props = withDefaults(
     globalScroll?: boolean
     iframePath: string
     sessionPrefix?: string
-    /** 允许通过 postMessage 调用 openTab 的 iframe 来源，默认仅同源 */
     iframeAllowedOrigins?: string[]
     iframeSandbox?: string
     iframeReferrerPolicy?: StackTabsIframeReferrerPolicy
@@ -122,7 +113,6 @@ if (isRuntimeContextOwner) {
   provide(stackTabsContextKey, runtimeContext)
   provide(tabEmitterKey, runtimeContext.eventBus)
 }
-/** 是否最大化显示，通过 provide 向下传递 */
 const maximum = ref<boolean>(false)
 if (isRuntimeContextOwner) {
   provide(maximumKey, maximum)
@@ -161,22 +151,19 @@ if (isRuntimeContextOwner) {
   setMaxSize(props.max)
   applyStackTabsLocale(changeLocale, props.i18n)
 }
-/** 标签激活时向外转发 */
+
 const onTabActive = (id: string) => {
   emit('onActive', id)
 }
-/** 页面组件加载完成时向外转发 */
 const onComponentLoaded = () => {
   emit('onPageLoaded')
 }
-/** 当前页面转场动画名，前进/后退时由 useTabRouter 发出 FORWARD/BACKWARD 事件切换 */
+
 const pageSwitch = ref<string>(props.pageTransition)
 const emitter = runtimeContext.eventBus
-/** 前进时使用 pageTransition */
 const forwardHandler = () => {
   pageSwitch.value = props.pageTransition
 }
-/** 后退时使用 pageTransitionBack */
 const backwardHandler = () => {
   pageSwitch.value = props.pageTransitionBack
 }
@@ -185,243 +172,34 @@ if (isRuntimeContextOwner) {
   emitter.on(TabEventType.BACKWARD, backwardHandler)
 }
 
-/** iframe 标签列表，computed 避免重复 filter */
-const iframeTabs = computed(() => tabs.value.filter((item) => item.iframe))
-const activeNonIframeTab = computed(() => tabs.value.find((item) => item.active && !item.iframe))
-const hasActiveNonIframeTab = computed(() => Boolean(activeNonIframeTab.value))
-
-/** 已激活过的 iframe 使用真实 URL（保留内容），未激活过的用 about:blank（按需加载，切换不重载） */
-const iframeEverActivated = reactive<Record<string, boolean>>({})
-/** 当前激活且有有效 URL 的 iframe 列表（供 watch 复用，减少重复 filter） */
-const activeIframesWithUrl = computed(() =>
-  iframeTabs.value.filter((f) => f.active && (f.url ?? '') && isAllowedTabUrl(f.url ?? ''))
-)
-/**
- * 获取 iframe 的 src：未激活过的用 about:blank 延迟加载，已激活的保留真实 URL
- * @param frame - iframe 标签项
- * @returns 实际加载的 URL
- */
-const appendIframeRefreshKey = (src: string, refreshKey: number): string => {
-  if (refreshKey <= 0 || src === 'about:blank') return src
-
-  const hashIndex = src.indexOf('#')
-  const baseWithSearch = hashIndex >= 0 ? src.slice(0, hashIndex) : src
-  const hash = hashIndex >= 0 ? src.slice(hashIndex) : ''
-  const searchIndex = baseWithSearch.indexOf('?')
-  const path = searchIndex >= 0 ? baseWithSearch.slice(0, searchIndex) : baseWithSearch
-  const search = searchIndex >= 0 ? baseWithSearch.slice(searchIndex + 1) : ''
-  const searchParams = new URLSearchParams(search)
-  searchParams.set('__stack_tabs_refresh', String(refreshKey))
-
-  return `${path}?${searchParams.toString()}${hash}`
-}
-
-const getIframeRefreshKey = (frameId: string): number => iframeRefreshKeys.value[frameId] ?? 0
-const getIframeSrc = (frame: { id: string; url?: string }, refreshKey = getIframeRefreshKey(frame.id)) => {
-  const safeUrl = toSafeTabUrl(frame.url ?? '')
-  const src = iframeEverActivated[frame.id] ? safeUrl : 'about:blank'
-  return appendIframeRefreshKey(src, refreshKey)
-}
-
-/** iframe 的 key：包含刷新 key，确保错误态重试与 reload refresh 都能重建 iframe */
-const getIframeKey = (frame: { id: string }) => `${frame.id}-${getIframeRefreshKey(frame.id)}`
-
-const iframeSrcMap = computed<Record<string, string>>(() => {
-  const map: Record<string, string> = {}
-  for (const frame of iframeTabs.value) {
-    const refreshKey = getIframeRefreshKey(frame.id)
-    map[frame.id] = getIframeSrc(frame, refreshKey)
-  }
-  return map
+const {
+  iframeTabs,
+  activeNonIframeTab,
+  hasActiveNonIframeTab,
+  iframeSrcMap,
+  getIframeRefreshKey,
+  getIframeKey,
+  getIframeLoadState,
+  shouldShowIframeLoading,
+  shouldShowIframeError,
+  retryIframe,
+  setIframeRef,
+  handleIframeLoad,
+  handleRefreshIframePostMessage,
+  createMessageHandler
+} = useIframeManager({
+  tabs,
+  iframeRefreshKeys,
+  iframeLoadTimeout: props.iframeLoadTimeout,
+  t
 })
 
-type IframeLoadStatus = 'idle' | 'loading' | 'loaded' | 'timeout'
-
-interface IframeLoadState {
-  status: IframeLoadStatus
-  message?: string
-}
-
-const iframeLoadStates = reactive<Record<string, IframeLoadState>>({})
-const getIframeLoadState = (frameId: string): IframeLoadState =>
-  iframeLoadStates[frameId] ?? { status: 'idle' }
-/** iframe 加载超时定时器 Map，用于兜底清理 loading 状态 */
-const loadTimeoutIds = new Map<string, ReturnType<typeof setTimeout>>()
-
-const clearIframeLoadTimeout = (frameId: string) => {
-  const timeoutId = loadTimeoutIds.get(frameId)
-  if (!timeoutId) return
-  clearTimeout(timeoutId)
-  loadTimeoutIds.delete(frameId)
-}
-
-/** 标记 iframe 已加载完成，清除超时并隐藏 loading */
-const setIframeLoaded = (frameId: string) => {
-  clearIframeLoadTimeout(frameId)
-  iframeLoadStates[frameId] = { status: 'loaded' }
-}
-
-/** 为 iframe 显示 loading 状态，已加载过的切回时不重复显示；设置超时兜底 */
-const setIframeLoading = (frameId: string, options: { force?: boolean } = {}) => {
-  const current = getIframeLoadState(frameId)
-  if (current.status === 'loaded' && !options.force) return
-
-  clearIframeLoadTimeout(frameId)
-  iframeLoadStates[frameId] = { status: 'loading' }
-  loadTimeoutIds.set(
-    frameId,
-    setTimeout(() => {
-      loadTimeoutIds.delete(frameId)
-      if (getIframeLoadState(frameId).status === 'loading') {
-        iframeLoadStates[frameId] = {
-          status: 'timeout',
-          message: t('VueStackTab.iframeLoadTimeout')
-        }
-      }
-    }, props.iframeLoadTimeout)
-  )
-}
-
-const retryIframe = (frameId: string) => {
-  iframeLoadStates[frameId] = { status: 'idle' }
-  iframeRefreshKeys.value = {
-    ...iframeRefreshKeys.value,
-    [frameId]: (iframeRefreshKeys.value[frameId] ?? 0) + 1
-  }
-  setIframeLoading(frameId, { force: true })
-}
-
-const shouldShowIframeLoading = (frameId: string) => getIframeLoadState(frameId).status === 'loading'
-const shouldShowIframeError = (frameId: string) => getIframeLoadState(frameId).status === 'timeout'
-
-watch(
-  activeIframesWithUrl,
-  (frames) => {
-    for (const f of frames) {
-      iframeEverActivated[f.id] = true
-      setIframeLoading(f.id)
-    }
-  },
-  { immediate: true }
-)
-
-const handleIframeLoad = (frame: { id: string; url?: string }, event: Event) => {
-  const iframe = event.currentTarget as HTMLIFrameElement | null
-  const refreshKey = Number(iframe?.dataset.refreshKey ?? 0)
-  if (!iframeEverActivated[frame.id]) return
-  if (getIframeSrc(frame, refreshKey) === 'about:blank') return
-  if (refreshKey !== getIframeRefreshKey(frame.id)) return
-  if (iframe !== iframeElRefs[frame.id]) return
-  setIframeLoaded(frame.id)
-}
-
-watch(
-  iframeRefreshKeys,
-  (keys, previousKeys = {}) => {
-    for (const frame of iframeTabs.value) {
-      if (!frame.active) continue
-      const nextKey = keys[frame.id] ?? 0
-      const previousKey = previousKeys[frame.id] ?? 0
-      if (nextKey !== previousKey) {
-        setIframeLoading(frame.id, { force: true })
-      }
-    }
-  },
-  { deep: true }
-)
-
-/** iframe 元素 refs，key 为 tabId，用于 postMessage 刷新时获取 contentWindow */
-const iframeElRefs = reactive<Record<string, HTMLIFrameElement | null>>({})
-/** 注册/注销 iframe 的 DOM 引用 */
-const setIframeRef = (id: string, el: HTMLIFrameElement | null) => {
-  if (el) {
-    iframeElRefs[id] = el
-  } else {
-    delete iframeElRefs[id]
-  }
-}
-
-watch(
-  iframeTabs,
-  (frames, oldFrames) => {
-    if (oldFrames && frames.length < oldFrames.length) {
-      const activeIds = new Set(frames.map((frame) => frame.id))
-      const removedFrames = oldFrames.filter((f) => !activeIds.has(f.id))
-      for (const removed of removedFrames) {
-        const id = removed.id
-        clearIframeLoadTimeout(id)
-        delete iframeLoadStates[id]
-        delete iframeEverActivated[id]
-        delete iframeElRefs[id]
-      }
-    } else if (!oldFrames) {
-      const activeIds = new Set(frames.map((frame) => frame.id))
-      for (const id of Object.keys(iframeLoadStates)) {
-        if (!activeIds.has(id)) {
-          clearIframeLoadTimeout(id)
-          delete iframeLoadStates[id]
-          delete iframeEverActivated[id]
-          delete iframeElRefs[id]
-        }
-      }
-    }
-  },
-  { immediate: true }
-)
-
-/** postMessage 刷新：向 iframe 发送消息，由其自行刷新 */
-const handleRefreshIframePostMessage = (tabId: string) => {
-  const iframe = iframeElRefs[tabId]
-  const tab = tabs.value.find((item) => item.id === tabId)
-  if (iframe?.contentWindow) {
-    try {
-      const targetOrigin = getPostMessageTargetOrigin(tab?.url ?? '')
-      if (!targetOrigin) {
-        if (!import.meta.env.PROD) {
-          console.warn(
-            `[vue-stack-tabs] Skip refresh postMessage because iframe URL is invalid: ${tabId}`
-          )
-        }
-        return
-      }
-      iframe.contentWindow.postMessage({ type: 'vue-stack-tabs:refresh' }, targetOrigin)
-    } catch (e) {
-      if (!import.meta.env.PROD) {
-        console.warn(`[vue-stack-tabs] Failed to send refresh postMessage to iframe: ${tabId}`, e)
-      }
-    }
-  } else {
-    if (!import.meta.env.PROD) {
-      console.warn(
-        `[vue-stack-tabs] IFrame element not found for tabId: ${tabId} when trying to refresh.`
-      )
-    }
-  }
-}
-
-/** 允许通过 postMessage 调用 openTab 的来源白名单 */
 const allowedOrigins = computed(() => {
   const origin = typeof window !== 'undefined' ? window.location.origin : ''
   const extra = props.iframeAllowedOrigins ?? []
   return [origin, ...extra].filter(Boolean)
 })
-/** 校验 postMessage 来源必须是当前实例管理的 iframe */
-const isManagedIframeSource = (source: Parameters<typeof isStackTabsOpenTabMessage>[0]['source']) =>
-  Object.values(iframeElRefs).some((iframe) => iframe?.contentWindow === source)
-
-/** 处理 iframe 发来的 postMessage，校验 origin/source/payload 后调用 openTab */
-const handleMessage = (ev: MessageEvent) => {
-  if (!allowedOrigins.value.includes(ev.origin)) return
-
-  const payload = isStackTabsOpenTabMessage(ev, isManagedIframeSource)
-  if (!payload) return
-
-  openTab(payload).catch((error: unknown) => {
-    if (!import.meta.env.PROD) {
-      console.warn('[vue-stack-tabs] Failed to open tab from iframe message:', error)
-    }
-  })
-}
+const handleMessage = createMessageHandler(allowedOrigins, openTab)
 
 if (isRuntimeContextOwner) {
   emitter.on(TabEventType.REFRESH_IFRAME_POSTMESSAGE, handleRefreshIframePostMessage)
@@ -434,8 +212,6 @@ onBeforeMount(() => {
   window.addEventListener('message', handleMessage)
 })
 onBeforeUnmount(() => {
-  for (const timeoutId of loadTimeoutIds.values()) clearTimeout(timeoutId)
-  loadTimeoutIds.clear()
   if (!isRuntimeContextOwner) return
   window.removeEventListener('message', handleMessage)
   emitter.off(TabEventType.REFRESH_IFRAME_POSTMESSAGE, handleRefreshIframePostMessage)
