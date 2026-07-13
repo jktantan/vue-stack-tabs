@@ -251,21 +251,24 @@ onBeforeUnmount(() => {
       </template>
     </tab-header>
     <div class="stack-tab__container">
-      <div
-        :id="activeNonIframeTab ? getStackTabPanelId(activeNonIframeTab.id) : undefined"
-        :hidden="!hasActiveNonIframeTab"
-        class="stack-tab__keep-alive-panel"
-        :role="activeNonIframeTab ? 'tabpanel' : undefined"
-        :aria-labelledby="activeNonIframeTab ? getStackTabTabId(activeNonIframeTab.id) : undefined"
-        :aria-hidden="activeNonIframeTab ? undefined : 'true'"
-      >
-        <StackKeepAlive :transition-name="pageSwitch" @loaded="onComponentLoaded" />
-      </div>
+      <Transition :name="pageSwitch" appear>
+        <div
+          v-show="hasActiveNonIframeTab"
+          :id="activeNonIframeTab ? getStackTabPanelId(activeNonIframeTab.id) : undefined"
+          :key="'keep-alive'"
+          class="stack-tab__keep-alive-panel"
+          :role="activeNonIframeTab ? 'tabpanel' : undefined"
+          :aria-labelledby="activeNonIframeTab ? getStackTabTabId(activeNonIframeTab.id) : undefined"
+          :aria-hidden="activeNonIframeTab ? undefined : 'true'"
+        >
+          <StackKeepAlive :transition-name="pageSwitch" @loaded="onComponentLoaded" />
+        </div>
+      </Transition>
       <div class="stack-tab__iframes">
         <Transition
           v-for="frame of iframeTabs"
           :key="getIframeKey(frame)"
-          :name="pageTransition"
+          :name="pageSwitch"
           appear
         >
           <div
