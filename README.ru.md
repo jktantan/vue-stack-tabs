@@ -175,6 +175,54 @@ const { openTab } = useTabActions()
 
 ---
 
+## ESM-only и суб-вход iframe bridge
+
+`vue-stack-tabs` начиная с текущей версии поддерживает только ESM import; `require('vue-stack-tabs')` больше не поддерживается.
+
+Основное приложение продолжает использовать корневой вход:
+
+```ts
+import VueStackTabs from 'vue-stack-tabs'
+import 'vue-stack-tabs/dist/vue-stack-tabs.css'
+```
+
+Для iframe-страниц используйте суб-вход без побочных эффектов стилей:
+
+```ts
+import { postOpenTab, onRefreshRequest } from 'vue-stack-tabs/iframe-bridge'
+
+postOpenTab(
+  { title: 'Детали заказа', path: '/orders/1' },
+  { targetOrigin: 'https://parent.example.com' }
+)
+
+const off = onRefreshRequest(() => window.location.reload(), {
+  allowedOrigins: ['https://parent.example.com']
+})
+```
+
+Если `targetOrigin` не указан, по умолчанию используется `window.location.origin` страницы iframe, подходит для родительских страниц с тем же источником; для кросс-доменных родительских страниц необходимо явно передать `targetOrigin`. В продакшене рекомендуется явно передавать и `targetOrigin`, и `allowedOrigins`.
+
+---
+
+## Политика безопасности iframe
+
+`VueStackTabs` поддерживает настройку атрибутов безопасности iframe:
+
+```vue
+<VueStackTabs
+  iframe-path="/__iframe"
+  iframe-sandbox="allow-scripts allow-forms allow-popups allow-downloads allow-same-origin"
+  iframe-referrer-policy="strict-origin-when-cross-origin"
+  iframe-allow="fullscreen"
+  :iframe-load-timeout="15000"
+/>
+```
+
+Sandbox по умолчанию сохраняет типичные возможности бизнес-страниц и ориентирован на совместимость, не на строгую изоляцию. Для строгой изоляции удалите `allow-same-origin` и продолжайте уменьшать токены sandbox по потребностям бизнеса.
+
+---
+
 ## Справочник API
 
 ### useTabActions
@@ -201,7 +249,7 @@ const {
 | `openTab(tab, renew?)` | Открыть новую вкладку. При `renew=true` очищает стек страниц и открывает заново   |
 | `closeTab(id)`         | Закрыть указанную вкладку, возвращает ID новой активной вкладки                    |
 | `closeAllTabs()`       | Закрыть все закрываемые вкладки                                                   |
-| `refreshTab(id)`       | Обновить указанную вкладку (заменяет ULID, пересоздаёт экземпляр компонента)      |
+| `refreshTab(id)`       | Обновить указанную вкладку (заменяет ID кэша, пересоздаёт экземпляр компонента)      |
 | `refreshAllTabs()`     | Обновить все вкладки                                                              |
 | `activeTab(id)`        | Активировать указанную вкладку (переключить вкладку)                               |
 | `reset()`              | Закрыть все вкладки и сбросить состояние                                          |
@@ -288,6 +336,10 @@ fetchData().finally(() => closeTabLoading())
 | Свойство               | Тип                         | По умолчанию            | Описание                                                      |
 | ----------------------- | --------------------------- | ----------------------- | ------------------------------------------------------------- |
 | `iframePath`            | `string`                    | **Обязательно**         | Путь маршрута-заглушки для iframe                              |
+| `iframeSandbox`         | `string`                    | `allow-scripts allow-forms allow-popups allow-downloads allow-same-origin` | Политика sandbox для iframe; по умолчанию совместимость, не строгая изоляция — удалите `allow-same-origin` для строгой изоляции; пустая строка отключает sandbox (не рекомендуется) |
+| `iframeReferrerPolicy`  | `ReferrerPolicy`            | `strict-origin-when-cross-origin`                                          | Атрибут referrerpolicy для iframe                             |
+| `iframeAllow`           | `string`                    | `''`                                                                       | Атрибут allow для iframe, например `fullscreen`               |
+| `iframeLoadTimeout`     | `number`                    | `15000`                                                                    | Тайм-аут загрузки iframe в мс                                |
 | `defaultTabs`           | `ITabData[]`                | `[]`                    | Начальный список вкладок                                      |
 | `max`                   | `number`                    | `20`                    | Максимальное количество вкладок                                |
 | `contextmenu`           | `boolean \| object`         | `true`                  | Включить контекстное меню                                      |
@@ -334,20 +386,28 @@ openTab({
 Если iframe-страница может ссылаться на код библиотеки (или импортировать инструменты из `iframeBridge.ts`), рекомендуется этот подход:
 
 ```ts
-import { postOpenTab, onRefreshRequest } from 'vue-stack-tabs'
+import { postOpenTab, onRefreshRequest } from 'vue-stack-tabs/iframe-bridge'
+
+const parentOrigin = 'https://parent.example.com'
 
 // Открыть вкладку
-postOpenTab({
-  title: 'Новая страница',
-  path: '/detail',
-  query: { id: '1' }
-})
+postOpenTab(
+  {
+    title: 'Новая страница',
+    path: '/detail',
+    query: { id: '1' }
+  },
+  { targetOrigin: parentOrigin }
+)
 
 // Слушать запросы на обновление
-onRefreshRequest(() => {
-  // Пользовательская логика обновления
-  location.reload()
-})
+const off = onRefreshRequest(
+  () => {
+    // Пользовательская логика обновления
+    location.reload()
+  },
+  { allowedOrigins: [parentOrigin] }
+)
 ```
 
 #### 2. Нативная интеграция
@@ -355,6 +415,8 @@ onRefreshRequest(() => {
 Если невозможно импортировать утилиты библиотеки или требуется нулевая зависимость, используйте нативный API:
 
 ```ts
+const parentOrigin = 'https://parent.example.com'
+
 // Открыть вкладку
 window.parent.postMessage(
   {
@@ -364,11 +426,13 @@ window.parent.postMessage(
       path: '/detail'
     }
   },
-  '*'
+  parentOrigin
 )
 
 // Слушать запросы на обновление
 window.addEventListener('message', (ev) => {
+  if (ev.origin !== parentOrigin) return
+  if (ev.source !== window.parent) return
   if (ev.data?.type === 'vue-stack-tabs:refresh') {
     // Выполнить обновление
     location.reload()
@@ -416,7 +480,7 @@ app.use(VueStackTabs, [
 ```ts
 /** Данные, передаваемые при открытии вкладки */
 interface ITabData {
-  id?: string // ID вкладки (автоматически генерируемый ULID, если не указан)
+  id?: string // ID вкладки (автоматически генерируемый UUID, если не указан)
   title: string // Заголовок вкладки
   path: string // Путь маршрута или URL iframe
   query?: Record<string, string> // Параметры маршрута

@@ -257,7 +257,7 @@ const {
 | `openTab(tab, renew?)` | 打开新标签。`renew=true` 时若已存在则清空页面栈后重新打开 |
 | `closeTab(id)`         | 关闭指定标签，返回新激活的标签 ID                         |
 | `closeAllTabs()`       | 关闭所有可关闭标签                                        |
-| `refreshTab(id)`       | 刷新指定标签（替换 ULID，重建组件实例）                   |
+| `refreshTab(id)`       | 刷新指定标签（替换缓存 ID，重建组件实例）                   |
 | `refreshAllTabs()`     | 刷新所有标签                                              |
 | `activeTab(id)`        | 激活指定标签（切换 Tab）                                  |
 | `reset()`              | 关闭所有标签并重置状态                                    |
@@ -488,7 +488,7 @@ app.use(VueStackTabs, [
 ```ts
 /** 打开标签时传入的数据 */
 interface ITabData {
-  id?: string // 标签 ID（不传则自动生成 ULID）
+  id?: string // 标签 ID（不传则自动生成 UUID）
   title: string // 标签标题
   path: string // 路由路径或 iframe URL
   query?: Record<string, string> // 路由参数

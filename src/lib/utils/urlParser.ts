@@ -1,3 +1,9 @@
+/**
+ * URL 解析与安全校验工具。
+ *
+ * 提供标签 URL 的安全检查（防止 javascript: 等危险 scheme）、
+ * 跨域判断、query 参数克隆与比较、保留参数过滤等功能。
+ */
 import type { LocationQueryRaw } from 'vue-router'
 
 const ALLOWED_ABOUT_URLS = new Set(['about:blank'])
@@ -99,6 +105,7 @@ export function parseUrl(uri: string): { path: string; query: LocationQueryRaw }
   return { path: pathPart, query }
 }
 
+/** 浅克隆 LocationQueryRaw，避免引用共享导致的副作用 */
 export function cloneLocationQuery(query: LocationQueryRaw = {}): LocationQueryRaw {
   const cloned: LocationQueryRaw = {}
   for (const [key, value] of Object.entries(query)) {
@@ -112,6 +119,7 @@ export interface CloneablePage {
   _backParams?: Record<string, unknown>
 }
 
+/** 深克隆页面对象的 query 和 _backParams，防止跨页面引用污染 */
 export function clonePage<T extends CloneablePage>(page: T): T {
   return {
     ...page,
@@ -120,6 +128,7 @@ export function clonePage<T extends CloneablePage>(page: T): T {
   }
 }
 
+/** 忽略 __tab/__src/_back 等内部保留 key 后比较两个 query 是否等价 */
 export function isSameQueryIgnoringReserved(
   a: LocationQueryRaw = {},
   b: LocationQueryRaw = {}
@@ -140,6 +149,7 @@ export function isSameQueryIgnoringReserved(
   return keysB.every((k) => ca[k] === cb[k])
 }
 
+/** 移除 query 中的 vue-stack-tabs 保留参数（__tab、__src），返回干净的 query */
 export function omitStackTabsReservedQuery(query: LocationQueryRaw = {}): LocationQueryRaw {
   const sanitized: LocationQueryRaw = {}
   for (const [key, value] of Object.entries(query)) {

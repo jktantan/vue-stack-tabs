@@ -18,7 +18,7 @@
 ### 2.1 路由与缓存
 
 - **路由结构**：`/demo` 为父级，`test2`、`test3`、`iframe` 等为其 `children`，同一层级。
-- **缓存标识**：`createPageId(tabId, path, query)`，以 `tabId + path + query`（不含 `__tab`）生成 keep-alive 缓存 ID。
+- **缓存标识**：`createPageId()` 生成 UUID 作为 keep-alive 缓存 ID，每个页面实例唯一。
 - **路径处理**：`normalizePathForCache(route)` 使用 `route.matched` 最后一项的 `path` 或 `route.path`，已覆盖带动态参数等路径（如 `/detail/:id`）。
 - **页面栈**：每个 tab 有 `Stack<ITabPage>`，每页包含 `id`（即 cacheName）、`path`、`query`。
 
@@ -63,7 +63,7 @@ route 变化 → router-view 渲染 (Component, route)
 |------|------|------|
 | `route.path` | ✅ 已支持 | 子路由如 `/demo/test2/detail`，`route.path` 为完整路径 |
 | `normalizePathForCache` | ✅ 已支持 | 当 `matchPath !== path` 时返回 `route.path`（见 spec） |
-| `createPageId` | ✅ 已支持 | 以完整 path + query 生成唯一 cacheName |
+| `createPageId` | ✅ 已支持 | 生成 UUID 作为唯一 cacheName |
 | `pages` 栈 | ✅ 已支持 | 每种子路径对应一个 page，可分别缓存 |
 | `forward`/`backward` | ✅ 已支持 | 基于 path 匹配回退，可处理多级路径 |
 
@@ -184,13 +184,13 @@ if (pages[i]?.path === parsed.path) { found = true; break }
 
 ### 7.1 多级子路由是否支持？
 
-✅ **支持**。`createPageId(tabId, path, query)` 使用完整 `route.path`，多级路径（如 `/demo/test2/detail/edit`）会得到唯一 cacheName，每一级都能正确缓存。
+✅ **支持**。`createPageId()` 为每个页面实例生成唯一 UUID 作为 cacheName，多级路径（如 `/demo/test2/detail/edit`）各自拥有独立缓存。
 
 ### 7.2 缓存机制简述
 
 | 环节 | 逻辑 |
 |------|------|
-| **缓存标识** | `cacheName = hash(tabId + path + query)`，不同 path 得到不同 cache，互不共享 |
+| **缓存标识** | `cacheName = createPageId()` 生成 UUID，每个页面实例唯一，不同 path 互不共享 |
 | **keep-alive** | `include=caches`，每个 cacheName 对应一个组件实例 |
 | **组件命名** | 包装组件 `name: cacheName`，用于 keep-alive 匹配 |
 | **驱逐** | `backward` 时 pop 并 `markCacheForEviction`；关 tab 时 `markTabPagesForEviction` 遍历栈内所有 page |

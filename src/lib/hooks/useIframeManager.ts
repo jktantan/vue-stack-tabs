@@ -1,3 +1,9 @@
+/**
+ * iframe 标签页生命周期管理。
+ *
+ * 统一管理所有 iframe 标签的 src 计算、加载状态追踪、超时检测、
+ * 刷新控制、DOM ref 收集，以及 postMessage 通信。
+ */
 import { computed, onBeforeUnmount, reactive, watch, type Ref } from 'vue'
 import type { ITabItem } from '../model/TabModel'
 import { isAllowedTabUrl, toSafeTabUrl } from '../utils/urlParser'
@@ -24,6 +30,7 @@ export function useIframeManager(options: UseIframeManagerOptions) {
   const activeNonIframeTab = computed(() => tabs.value.find((item) => item.active && !item.iframe))
   const hasActiveNonIframeTab = computed(() => Boolean(activeNonIframeTab.value))
 
+  // iframe 首次激活时才加载真实 URL，未激活前使用 about:blank 避免不必要的请求
   const iframeEverActivated = reactive<Record<string, boolean>>({})
   const activeIframesWithUrl = computed(() =>
     iframeTabs.value.filter((f) => f.active && (f.url ?? '') && isAllowedTabUrl(f.url ?? ''))
@@ -126,9 +133,8 @@ export function useIframeManager(options: UseIframeManagerOptions) {
     }
   }
 
+  // 当 iframe 标签首次变为 active 时，标记为已激活并开始跟踪加载状态
   watch(
-    activeIframesWithUrl,
-    (frames) => {
       for (const f of frames) {
         iframeEverActivated[f.id] = true
         setIframeLoading(f.id)
@@ -137,6 +143,7 @@ export function useIframeManager(options: UseIframeManagerOptions) {
     { immediate: true }
   )
 
+  // refreshKey 变化时重新触发对应 iframe 的加载状态
   watch(
     iframeRefreshKeys,
     (keys, previousKeys = {}) => {
@@ -152,6 +159,7 @@ export function useIframeManager(options: UseIframeManagerOptions) {
     { deep: true }
   )
 
+  // 标签关闭时清理对应 iframe 的加载状态、激活记录和 DOM 引用
   watch(
     iframeTabs,
     (frames, oldFrames) => {

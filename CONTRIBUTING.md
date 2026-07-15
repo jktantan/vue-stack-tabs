@@ -99,7 +99,7 @@ export default defineNuxtConfig({
 | `useTabPanel` | 内部核心 hook，管理 tabs、caches、components、驱逐、滚动等 |
 | `useTabActions` | 对外 hook，提供 openTab、closeTab、refreshTab、activeTab 等 |
 | `useTabRouter` | 对外 hook，在标签内页面使用，提供 forward、backward、addScrollTarget |
-| `createPageId` | tabId + path + query 生成 keep-alive 缓存 ID |
+| `createPageId` | 生成 UUID 作为 keep-alive 缓存 ID |
 | iframe 路由 | 渲染 iframe 标签页的占位路由，需与 `iframe-path` 一致 |
 
 ---

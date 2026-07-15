@@ -1,3 +1,9 @@
+/**
+ * vue-stack-tabs Nuxt 模块。
+ *
+ * 自动注册客户端插件、注入 composables（useTabActions 等），
+ * 并通过 runtimeConfig 传递 locale 配置。
+ */
 import { addPlugin, addImports, createResolver, defineNuxtModule } from 'nuxt/kit'
 
 export interface ModuleOptions {

@@ -1,3 +1,9 @@
+/**
+ * 标签事件总线。
+ *
+ * 基于 mitt 实现组件间事件通信，用于 tab 激活、页面 loading、
+ * 栈内导航（forward/backward）、iframe 刷新等事件的发布/订阅。
+ */
 import type { InjectionKey } from 'vue'
 import { hasInjectionContext, inject } from 'vue'
 import type { Emitter, EventType } from 'mitt'

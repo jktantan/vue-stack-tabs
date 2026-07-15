@@ -1,3 +1,4 @@
+/** 在浏览器控制台输出带样式的库版本标识 */
 const logVersion = (version: string) => {
   if (typeof window === 'undefined') return
 

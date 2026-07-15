@@ -1,3 +1,9 @@
+/**
+ * 国际化模块。
+ *
+ * 自动加载 lang/ 目录下的语言文件，支持用户通过 plugin options
+ * 传入自定义语言包并与内置语言深度合并。
+ */
 import { createI18n } from 'vue-i18n-lite'
 
 export interface LocaleMessageOption {
@@ -47,10 +53,7 @@ export default () => {
   // 此处使用了 VITE 的 import.meta.globEager。非 VITE 的 可以使用 require.context
   const modules = import.meta.glob('./lang/*', { eager: true })
 
-  /**
-   * 获取所有语言文件
-   * @param {Object} mList
-   */
+  /** 从 glob 导入结果中提取语言文件并合并到 msg 对象 */
   function getLangFiles(
     mList: Record<string, { default?: Record<string, unknown> }>,
     msg: Record<string, Record<string, unknown>>
@@ -65,37 +68,12 @@ export default () => {
     }
   }
 
-  /**
-   * 注册i18n实例并引入语言文件
-   */
-  // const i18n = createI18n({
-  //   fallbackLocale: 'zh-CN',
-  //   // 定义默认语言为中文
-  //   locale: 'zh-CN',
-  //   legacy: false,
-  //   // 挂载到全局，不然会报错
-  //   // globalInjection: true,
-  //   messages: getAllLang(),
-  // })
-  /**
-   * 局部使用i18n
-   */
-  // const i18n = useI18n({
-  //   useScope: 'local',
-  //   locale: 'zh-CN',
-  //   messages: getAllLang(),
-  // })
-
-  // 假设你还有其他目录下的语言文件 它的路径是 src/views/home/locales/en-US.ts
-  // 那么你就可以 使用 :lower:（小写） :upper:（大写） 来引入文件
-  // const viewModules = import.meta.globEager('../views/**/locales/[[:lower:]][[:lower:]]-[[:upper:]][[:upper:]].ts')
-
   const allLangs = (): Record<string, Record<string, unknown>> => {
     const message: Record<string, Record<string, unknown>> = {}
     getLangFiles(modules as Record<string, { default?: Record<string, unknown> }>, message)
     return message
   }
-  // const localeI18n = inject('locales') as { locale: string; messages: object }
+  /** 创建 i18n 实例，合并内置语言与用户自定义语言包 */
   const getI18n = (localeI18n?: LocaleMessageOption[]) => {
     const combinateMessage = mergeLocaleMessages(allLangs(), localeI18n)
 
@@ -104,12 +82,6 @@ export default () => {
       fallbackLocale: 'en',
       messages: combinateMessage as Record<string, Record<string, string>>
     })
-    // const combinateMessage = { ...allLangs(), ...localeI18n.messages }
-    // return useI18n({
-    //   useScope: 'local',
-    //   locale: localeI18n.locale,
-    //   messages: combinateMessage
-    // })
   }
   return {
     getI18n

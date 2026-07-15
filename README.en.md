@@ -175,6 +175,54 @@ const { openTab } = useTabActions()
 
 ---
 
+## ESM-only and iframe bridge sub-entry
+
+`vue-stack-tabs` only supports ESM import from the current version onward; `require('vue-stack-tabs')` is no longer supported.
+
+Main application continues to use the root entry:
+
+```ts
+import VueStackTabs from 'vue-stack-tabs'
+import 'vue-stack-tabs/dist/vue-stack-tabs.css'
+```
+
+For iframe inner pages, use the side-effect-free sub-entry:
+
+```ts
+import { postOpenTab, onRefreshRequest } from 'vue-stack-tabs/iframe-bridge'
+
+postOpenTab(
+  { title: 'Order Detail', path: '/orders/1' },
+  { targetOrigin: 'https://parent.example.com' }
+)
+
+const off = onRefreshRequest(() => window.location.reload(), {
+  allowedOrigins: ['https://parent.example.com']
+})
+```
+
+When `targetOrigin` is not provided, the iframe page's own `window.location.origin` is used by default, suitable for same-origin parent pages; cross-origin parent pages must explicitly pass `targetOrigin`. In production, it is recommended to explicitly pass both `targetOrigin` and `allowedOrigins`.
+
+---
+
+## iframe Security Policy
+
+`VueStackTabs` supports configuring iframe security attributes:
+
+```vue
+<VueStackTabs
+  iframe-path="/__iframe"
+  iframe-sandbox="allow-scripts allow-forms allow-popups allow-downloads allow-same-origin"
+  iframe-referrer-policy="strict-origin-when-cross-origin"
+  iframe-allow="fullscreen"
+  :iframe-load-timeout="15000"
+/>
+```
+
+The default sandbox retains common business page capabilities and is compatibility-first, not strict isolation. For strict isolation, remove `allow-same-origin` and continue reducing sandbox tokens per business needs. If your same-origin business pages cannot work under sandbox, you can pass an empty string to disable sandbox, but this reduces isolation strength.
+
+---
+
 ## API Reference
 
 ### useTabActions
@@ -201,7 +249,7 @@ const {
 | `openTab(tab, renew?)` | Open a new tab. When `renew=true`, clears page stack and reopens if exists |
 | `closeTab(id)`         | Close the specified tab, returns newly activated tab ID                  |
 | `closeAllTabs()`       | Close all closable tabs                                                  |
-| `refreshTab(id)`       | Refresh the specified tab (replaces ULID, rebuilds component instance)   |
+| `refreshTab(id)`       | Refresh the specified tab (replaces cache ID, rebuilds component instance)   |
 | `refreshAllTabs()`     | Refresh all tabs                                                         |
 | `activeTab(id)`        | Activate the specified tab (switch tab)                                  |
 | `reset()`              | Close all tabs and reset state                                           |
@@ -288,6 +336,10 @@ fetchData().finally(() => closeTabLoading())
 | Prop                   | Type                        | Default                 | Description                                              |
 | ---------------------- | --------------------------- | ----------------------- | -------------------------------------------------------- |
 | `iframePath`           | `string`                    | **Required**            | Path of the iframe placeholder route                     |
+| `iframeSandbox`        | `string`                    | `allow-scripts allow-forms allow-popups allow-downloads allow-same-origin` | iframe sandbox policy; default is compatibility-first, not strict isolation — remove `allow-same-origin` for strict isolation; pass empty string to disable sandbox (not recommended) |
+| `iframeReferrerPolicy` | `ReferrerPolicy`            | `strict-origin-when-cross-origin`                                          | iframe referrerpolicy attribute                              |
+| `iframeAllow`          | `string`                    | `''`                                                                       | iframe allow attribute, e.g. `fullscreen`                    |
+| `iframeLoadTimeout`    | `number`                    | `15000`                                                                    | iframe load timeout in ms                                    |
 | `defaultTabs`          | `ITabData[]`                | `[]`                    | Initial tab list                                         |
 | `max`                  | `number`                    | `20`                    | Maximum number of tabs                                   |
 | `contextmenu`          | `boolean \| object`         | `true`                  | Enable context menu                                      |
@@ -334,20 +386,28 @@ Within an iframe tab, you can communicate with the host container via `postMessa
 If the iframe page can reference the library code (or import the tools exported from `iframeBridge.ts`), this approach is recommended:
 
 ```ts
-import { postOpenTab, onRefreshRequest } from 'vue-stack-tabs'
+import { postOpenTab, onRefreshRequest } from 'vue-stack-tabs/iframe-bridge'
+
+const parentOrigin = 'https://parent.example.com'
 
 // Open a tab
-postOpenTab({
-  title: 'New Page',
-  path: '/detail',
-  query: { id: '1' }
-})
+postOpenTab(
+  {
+    title: 'New Page',
+    path: '/detail',
+    query: { id: '1' }
+  },
+  { targetOrigin: parentOrigin }
+)
 
 // Listen for refresh requests
-onRefreshRequest(() => {
-  // Custom refresh logic
-  location.reload()
-})
+const off = onRefreshRequest(
+  () => {
+    // Custom refresh logic
+    location.reload()
+  },
+  { allowedOrigins: [parentOrigin] }
+)
 ```
 
 #### 2. Native Integration
@@ -355,6 +415,8 @@ onRefreshRequest(() => {
 If you cannot import the library utilities or want zero dependencies, use the native API:
 
 ```ts
+const parentOrigin = 'https://parent.example.com'
+
 // Open a tab
 window.parent.postMessage(
   {
@@ -364,11 +426,13 @@ window.parent.postMessage(
       path: '/detail'
     }
   },
-  '*'
+  parentOrigin
 )
 
 // Listen for refresh requests
 window.addEventListener('message', (ev) => {
+  if (ev.origin !== parentOrigin) return
+  if (ev.source !== window.parent) return
   if (ev.data?.type === 'vue-stack-tabs:refresh') {
     // Perform refresh
     location.reload()
@@ -416,7 +480,7 @@ app.use(VueStackTabs, [
 ```ts
 /** Data passed when opening a tab */
 interface ITabData {
-  id?: string // Tab ID (auto-generated ULID if omitted)
+  id?: string // Tab ID (auto-generated UUID if omitted)
   title: string // Tab title
   path: string // Route path or iframe URL
   query?: Record<string, string> // Route params

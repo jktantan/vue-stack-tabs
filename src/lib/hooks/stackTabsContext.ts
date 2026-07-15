@@ -1,3 +1,10 @@
+/**
+ * VueStackTabs 全局运行时上下文管理。
+ *
+ * 负责创建、注册、解析全局唯一的 StackTabsRuntimeContext，
+ * 支持通过 Vue provide/inject 或模块级单例两种方式访问。
+ * 每个 Vue app 只允许注册一个 <VueStackTabs> 实例。
+ */
 import type { App, DefineComponent, InjectionKey, Ref, ShallowRef } from 'vue'
 import { hasInjectionContext, inject, ref } from 'vue'
 import type { Emitter } from 'mitt'
@@ -54,6 +61,7 @@ let activeRuntimeContext: StackTabsRuntimeContext | null = null
 let isFallbackRuntimeContextOwnerRegistered = false
 const runtimeContextOwnersByApp = new WeakSet<App>()
 
+/** 创建一个新的运行时上下文实例 */
 export const createStackTabsRuntimeContext = (
   options: CreateStackTabsRuntimeContextOptions = {}
 ): StackTabsRuntimeContext => {
@@ -69,9 +77,11 @@ export const createStackTabsRuntimeContext = (
   }
 }
 
+/** 获取当前活跃的运行时上下文（模块级单例） */
 export const getActiveStackTabsRuntimeContext = (): StackTabsRuntimeContext | null =>
   activeRuntimeContext
 
+/** 注册运行时上下文，重复注册会在开发环境抛出错误 */
 export const registerStackTabsRuntimeContext = (
   context: StackTabsRuntimeContext,
   options: RegisterStackTabsRuntimeContextOptions = {}
@@ -103,6 +113,7 @@ export const registerStackTabsRuntimeContext = (
   throw new Error(STACK_TABS_DUPLICATE_INSTANCE_MESSAGE)
 }
 
+/** 注销运行时上下文，组件卸载时调用 */
 export const unregisterStackTabsRuntimeContext = (
   context: StackTabsRuntimeContext,
   options: UnregisterStackTabsRuntimeContextOptions = {}
@@ -113,6 +124,7 @@ export const unregisterStackTabsRuntimeContext = (
   if (activeRuntimeContext === context) activeRuntimeContext = null
 }
 
+/** 解析当前可用的运行时上下文，优先使用 inject，回退到模块单例 */
 export const resolveStackTabsRuntimeContext = (): StackTabsRuntimeContext => {
   const injected = hasInjectionContext() ? inject(stackTabsContextKey, null) : null
   const context = injected ?? activeRuntimeContext

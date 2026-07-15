@@ -66,6 +66,7 @@ const normalizeOpenTabPayload = (payload: unknown): ITabData | null => {
   }
 }
 
+/** 校验 MessageEvent 是否为合法的 openTab 请求，返回解析后的 ITabData 或 null */
 export const isStackTabsOpenTabMessage = (
   event: MessageEvent,
   isManagedSource: ManagedSourceChecker
@@ -79,6 +80,7 @@ export const isStackTabsOpenTabMessage = (
   return normalizeOpenTabPayload(envelope.payload)
 }
 
+/** 根据 iframe URL 计算安全的 postMessage targetOrigin，非法 URL 返回 null */
 export const getPostMessageTargetOrigin = (url: string, fallbackOrigin?: string): string | null => {
   if (!url || !isAllowedTabUrl(url)) return null
 

@@ -1,6 +1,6 @@
 # vue-stack-tabs 架构设计文档
 
-> 供开发者与 AI 助手理解项目内部设计。最后更新：2026-02-25
+> 供开发者与 AI 助手理解项目内部设计。最后更新：2026-07-15
 
 ---
 
@@ -45,14 +45,14 @@ classDiagram
         +string url
     }
     class ITabPage {
-        +string id         «ULID, 即 cacheName»
+        +string id         «UUID, 即 cacheName»
         +string tabId
         +string path
         +Record query
         +Record _backParams «内存临时参数»
     }
     class Stack~T~ {
-        -Map~number,T~ items
+        -T[] items
         +push(element)
         +pop() T
         +peek() T
@@ -65,7 +65,7 @@ classDiagram
 
 | 字段                   | 说明                                                                                 |
 | ---------------------- | ------------------------------------------------------------------------------------ |
-| `ITabPage.id`          | ULID，同时作为 keep-alive 的 `include` 键和 `<component :key>`，**每个页面实例唯一** |
+| `ITabPage.id`          | UUID，同时作为 keep-alive 的 `include` 键和 `<component :key>`，**每个页面实例唯一** |
 | `ITabPage.path`        | 路由路径（不含 query），用于 `updatePageState` 中与当前路由比对                      |
 | `ITabPage._backParams` | `backward` 时传递给目标页面的临时闭包参数，不污染 URL，消费后自动清空                |
 
@@ -114,14 +114,14 @@ graph TB
 | `addPage(route, component)` | 调用 `updatePageState` 后，返回包装好的 `cacheComponent` 供 `<component :is>` 使用                        |
 | `resolvePageComponent(ctx)` | 创建或复用 `defineComponent`（name = cacheName），注册到 `components` Map                                 |
 | `active(id)`                | Tab 切换：将栈顶 URL + `__tab` 编码走路由                                                                 |
-| `refreshTab(id)`            | 替换栈顶的 ULID，驱逐旧缓存，触发组件重建                                                                 |
+| `refreshTab(id)`            | 替换栈顶的缓存 ID，驱逐旧缓存，触发组件重建                                                                 |
 | `removeTab(id)`             | 关闭标签，驱逐所有 pages 缓存                                                                             |
 
 ### 3.2 useTabRouter（栈内导航）
 
 | 函数                        | 职责                                                      |
 | --------------------------- | --------------------------------------------------------- |
-| `forward(to)`               | 数据前置压栈（创建新 ULID）→ 带 `__tab` 走 `router.push`  |
+| `forward(to)`               | 数据前置压栈（创建新缓存 ID）→ 带 `__tab` 走 `router.push`  |
 | `backward(to, backQuery?)`  | 出栈 → 用栈顶 URL + `__tab` 走路由 → 异步驱逐被弹出的缓存 |
 | `addScrollTarget(selector)` | 注册需要记忆滚动位置的 DOM 选择器                         |
 
@@ -203,9 +203,9 @@ sequenceDiagram
 
 ## 5. 缓存机制
 
-### 5.1 ULID 作为缓存标识
+### 5.1 UUID 作为缓存标识
 
-每个 `ITabPage.id` 是一个 [ULID](https://github.com/ulid/spec)，同时作为：
+每个 `ITabPage.id` 由 `crypto.randomUUID()` 生成，同时作为：
 
 - `cacheComponent.name`（keep-alive 按 name 匹配）
 - `<component :key>`（`activeCacheKey`，确保同路由不同实例创建独立缓存）
@@ -230,7 +230,7 @@ sequenceDiagram
 
 ## 6. 刷新策略
 
-刷新 = **替换栈顶 ULID + 驱逐旧缓存**：
+刷新 = **替换栈顶缓存 ID + 驱逐旧缓存**：
 
 1. 取当前栈顶 `oldId`
 2. 创建新 `newId = createPageId()`
@@ -269,6 +269,8 @@ src/lib/
 ├── StackTabs.vue              # 主组件（router-view + keep-alive + iframe 层）
 ├── index.ts                   # 入口与导出
 ├── iframe.vue                 # iframe 内置页面组件
+├── iframe-bridge.ts           # iframe-bridge 子入口（vue-stack-tabs/iframe-bridge）
+├── versionLogger.ts           # 控制台版本标识输出
 ├── hooks/
 │   ├── useTabPanel.tsx         # 核心引擎（状态管理 + 路由适配）
 │   ├── useTabRouter.ts         # 栈内导航（forward / backward）
@@ -276,22 +278,29 @@ src/lib/
 │   ├── useTabLoading.ts        # 页面 Loading 状态
 │   ├── useTabEventBus.ts       # 事件总线
 │   ├── useContextMenu.ts       # 右键菜单逻辑
+│   ├── useIframeManager.ts     # iframe 生命周期管理
+│   ├── stackTabsContext.ts     # 全局运行时上下文
 │   └── tabPanel/               # 内部子模块
 │       ├── state.ts            # 共享响应式状态
 │       ├── evict.ts            # 缓存驱逐
 │       ├── scroll.ts           # 滚动位置记忆
-│       └── session.ts          # Session 持久化
+│       ├── session.ts          # Session 持久化
+│       └── navigationTransaction.ts  # 导航事务管理
 ├── model/
 │   └── TabModel.ts             # 类型定义 + Stack 类
 ├── components/
 │   ├── TabHeader/              # 标签栏 UI
 │   ├── ContextMenu/            # 右键菜单 UI
-│   └── PageLoading.vue         # 页面加载指示器
+│   ├── PageLoading.vue         # 页面加载指示器
+│   └── StackKeepAlive/         # keep-alive 缓存渲染
 ├── utils/
-│   ├── tabInfoEncoder.ts       # __tab 编解码 + ULID 生成
-│   ├── urlParser.ts            # URL 解析工具
+│   ├── tabInfoEncoder.ts       # __tab 编解码 + UUID 生成
+│   ├── urlParser.ts            # URL 解析与安全校验
 │   ├── scrollUtils.ts          # DOM 滚动工具
-│   └── iframeBridge.ts         # iframe postMessage 桥接
+│   ├── iframeBridge.ts         # iframe postMessage 桥接
+│   ├── stackTabsMessage.ts     # postMessage 消息校验
+│   ├── stackTabsA11y.ts        # WAI-ARIA 无障碍 ID 生成
+│   └── typeGuards.ts           # 类型守卫工具
 ├── nuxt/                       # Nuxt 模块（vue-stack-tabs/nuxt）
 ├── assets/style/               # SCSS 样式
 └── i18n/                       # 国际化
@@ -306,5 +315,5 @@ src/lib/
 | **\_\_tab 必带**          | 所有路由跳转（forward / backward / Tab 切换 / openTab）必须在 query 中携带 `__tab` 编码，否则 `parseTabInfoFromRoute` 会创建匿名 Tab |
 | **先导航再驱逐**          | 缓存驱逐必须在路由导航完成后异步执行，否则会触发 `updatePageState` 在旧上下文中重入                                                  |
 | **path-only 比对**        | `updatePageState` 仅比对 `route.path` 与栈顶的 `page.path`，不比对 query。栈是唯一真相源                                             |
-| **ULID 唯一性**           | 同一路由多次压栈会产生不同的 ULID，确保 keep-alive 缓存隔离                                                                          |
+| **UUID 唯一性**           | 同一路由多次压栈会产生不同的 UUID，确保 keep-alive 缓存隔离                                                                          |
 | **\_backParams 生命周期** | 后退参数存在 `ITabPage._backParams` 内存中，由目标页的 `onMounted` / `onActivated` 消费后清空                                        |

@@ -49,3 +49,22 @@
 **现状**: `updatePageState` 同时负责解析路由、查找/创建 tab、更新 active 状态、添加 page 等，职责较多。
 
 **已实施**: 拆分为 `parseTabInfoFromRoute(route)`、`findOrCreateTargetTab(tabInfo, route, cacheName, page)`，`updatePageState` 主流程更简洁，便于单测和维护。
+
+---
+
+## 6. evict.ts — addCache/removeCache 线性扫描优化 ✅ 已优化
+
+**文件**: `src/lib/hooks/tabPanel/evict.ts`
+
+**现状**: `addCache` 和 `removeCache` 原先使用数组展开操作（`[...caches, id]`），在缓存数量多时产生频繁的数组拷贝。
+
+**已实施**: 改为线性扫描 + 逐项重建数组，减少不必要的数组拷贝开销。
+
+---
+
+## 7. 近期性能优化汇总（2026-07）
+
+以下优化在 2026 年 7 月的多次提交中完成（d482f39, 7799cfa, be523a0, 23061af, fb76cee）：
+
+- evict.ts 中 addCache/removeCache 改为线性扫描 + 逐项重建
+- 整体性能调优与代码精简
