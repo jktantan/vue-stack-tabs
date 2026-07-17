@@ -21,6 +21,16 @@ describe('evict', () => {
     expect(context.caches.value.filter((cacheId) => cacheId === 'c1')).toHaveLength(1)
   })
 
+  it('外部恢复 caches 后仍然避免重复缓存 id', () => {
+    eviction.addCache('c1')
+    eviction.evictPageCache('c1')
+    context.caches.value = ['c1']
+
+    eviction.addCache('c1')
+
+    expect(context.caches.value).toEqual(['c1'])
+  })
+
   it('removeCache 移除指定 id', () => {
     eviction.addCache('c1')
     eviction.removeCache('c1')

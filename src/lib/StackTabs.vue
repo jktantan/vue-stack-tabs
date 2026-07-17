@@ -260,6 +260,7 @@ onBeforeUnmount(() => {
           :role="activeNonIframeTab ? 'tabpanel' : undefined"
           :aria-labelledby="activeNonIframeTab ? getStackTabTabId(activeNonIframeTab.id) : undefined"
           :aria-hidden="activeNonIframeTab ? undefined : 'true'"
+          :hidden="!hasActiveNonIframeTab"
         >
           <StackKeepAlive :transition-name="pageSwitch" @loaded="onComponentLoaded" />
         </div>

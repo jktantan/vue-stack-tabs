@@ -188,7 +188,10 @@ export default () => {
 
   /** 从路由解析 tabInfo，若无则创建默认信息，调用方负责把编码信息写入内部 page.query */
   const parseTabInfoFromRoute = (route: RouteLocationNormalizedLoaded): ITabBase => {
-    if (route.query.__tab) return decodeTabInfo(route.query.__tab as string)
+    if (typeof route.query.__tab === 'string') {
+      const tabInfo = decodeTabInfo(route.query.__tab)
+      if (tabInfo.id) return tabInfo
+    }
 
     const path = normalizePathForCache(route)
     const activeTab = tabs.value.find((tab) => tab.active)

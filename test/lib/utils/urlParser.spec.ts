@@ -3,6 +3,7 @@ import {
   decodeSafeTabUrl,
   isAllowedTabUrl,
   isInvalidIframeUrl,
+  isSameQueryIgnoringReserved,
   parseUrl,
   toSafeTabUrl
 } from '@/lib/utils/urlParser'
@@ -99,5 +100,16 @@ describe('parseUrl', () => {
 
   it('保留空 query value，避免丢失 Vue Router query 语义', () => {
     expect(parseUrl('/p?key=')).toEqual({ path: '/p', query: { key: '' } })
+  })
+})
+
+describe('isSameQueryIgnoringReserved', () => {
+  it('同路径的新 query 不会被误判为已有页面', () => {
+    expect(isSameQueryIgnoringReserved({ id: '2' }, {})).toBe(false)
+  })
+
+  it('按数组元素比较 query，避免字符串化冲突', () => {
+    expect(isSameQueryIgnoringReserved({ tag: ['a', 'b'] }, { tag: 'a,b' })).toBe(false)
+    expect(isSameQueryIgnoringReserved({ tag: ['a', 'b'] }, { tag: ['a', 'b'] })).toBe(true)
   })
 })

@@ -38,9 +38,25 @@ export const createTabPanelSession = (context: StackTabsRuntimeContext): TabPane
 
   const restoreTabFromSession = (storedJson: string | null): ITabItem | null => {
     if (storedJson == null) return null
-    return JSON.parse(storedJson, (key, value) =>
-      key === 'pages' ? new Stack<ITabPage>(value) : value
-    ) as ITabItem
+    try {
+      const tab = JSON.parse(storedJson, (key, value) =>
+        key === 'pages' && Array.isArray(value) ? new Stack<ITabPage>(value) : value
+      ) as Partial<ITabItem>
+      if (
+        !tab ||
+        typeof tab.id !== 'string' ||
+        !tab.id ||
+        typeof tab.title !== 'string' ||
+        !(tab.pages instanceof Stack)
+      ) {
+        clearSession()
+        return null
+      }
+      return tab as ITabItem
+    } catch {
+      clearSession()
+      return null
+    }
   }
 
   return {

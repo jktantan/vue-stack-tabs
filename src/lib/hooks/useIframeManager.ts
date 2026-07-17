@@ -135,6 +135,8 @@ export function useIframeManager(options: UseIframeManagerOptions) {
 
   // 当 iframe 标签首次变为 active 时，标记为已激活并开始跟踪加载状态
   watch(
+    activeIframesWithUrl,
+    (frames) => {
       for (const f of frames) {
         iframeEverActivated[f.id] = true
         setIframeLoading(f.id)

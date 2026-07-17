@@ -133,20 +133,32 @@ export function isSameQueryIgnoringReserved(
   a: LocationQueryRaw = {},
   b: LocationQueryRaw = {}
 ): boolean {
-  const clean = (q: LocationQueryRaw): Record<string, string> => {
-    const result: Record<string, string> = {}
+  const clean = (q: LocationQueryRaw): Record<string, string | string[]> => {
+    const result: Record<string, string | string[]> = {}
     for (const [key, value] of Object.entries(q)) {
       if (STACK_TABS_RESERVED_QUERY_KEYS.has(key) || key === '_back') continue
-      result[key] = String(value ?? '')
+      result[key] = Array.isArray(value) ? value.map((item) => String(item ?? '')) : String(value ?? '')
     }
     return result
   }
   const ca = clean(a)
   const cb = clean(b)
+  const keysA = Object.keys(ca)
   const keysB = Object.keys(cb)
-  if (keysB.length === 0) return true
-  if (keysB.length !== Object.keys(ca).length) return false
-  return keysB.every((k) => ca[k] === cb[k])
+  if (keysA.length !== keysB.length) return false
+  return keysA.every((key) => {
+    const aValue = ca[key]
+    const bValue = cb[key]
+    if (Array.isArray(aValue) || Array.isArray(bValue)) {
+      return (
+        Array.isArray(aValue) &&
+        Array.isArray(bValue) &&
+        aValue.length === bValue.length &&
+        aValue.every((value, index) => value === bValue[index])
+      )
+    }
+    return aValue === bValue
+  })
 }
 
 /** 移除 query 中的 vue-stack-tabs 保留参数（__tab、__src），返回干净的 query */

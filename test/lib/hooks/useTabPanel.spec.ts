@@ -142,6 +142,38 @@ describe('useTabPanel', () => {
     runtime.cleanup()
   })
 
+  it('initialize 忽略损坏的 session 并清理存储', async () => {
+    const runtime = await withRuntimeContext()
+    const { default: useTabPanel } = await import('@/lib/hooks/useTabPanel')
+    const panel = useTabPanel()
+    window.sessionStorage.setItem('stacktab-active-tab', '{invalid-json')
+
+    expect(() => panel.initialize([])).not.toThrow()
+    expect(panel.tabs.value).toEqual([])
+    expect(window.sessionStorage.getItem('stacktab-active-tab')).toBeNull()
+
+    panel.destroy()
+    runtime.cleanup()
+  })
+
+  it('无效 __tab 不会创建空 id 标签', async () => {
+    const runtime = await withRuntimeContext()
+    const { default: useTabPanel } = await import('@/lib/hooks/useTabPanel')
+    const panel = useTabPanel()
+    const route = {
+      ...mockRoute('/invalid-tab-info'),
+      query: { __tab: 'invalid-tab-info' }
+    }
+
+    panel.addPage(route, {} as never)
+
+    expect(panel.tabs.value).toHaveLength(1)
+    expect(panel.tabs.value[0]?.id).not.toBe('')
+
+    panel.destroy()
+    runtime.cleanup()
+  })
+
   it('从路由 __src 创建 iframe tab 时清洗非法 url', async () => {
     const runtime = await withRuntimeContext()
     const { encodeTabInfo } = await import('@/lib/utils/tabInfoEncoder')
