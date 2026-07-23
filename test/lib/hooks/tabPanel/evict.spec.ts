@@ -74,6 +74,20 @@ describe('evict', () => {
     expect(context.cacheIdsToEvict.has('c1')).toBe(false)
   })
 
+  it('replacePageCaches 批量替换缓存并清理旧组件', () => {
+    eviction.addCache('c1')
+    eviction.addCache('c2')
+    context.components.set('c1', {} as never)
+    context.components.set('c2', {} as never)
+    const cacheList = context.caches.value
+
+    eviction.replacePageCaches(['c1', 'c2'], ['next-1', 'next-2'])
+
+    expect(context.caches.value).toBe(cacheList)
+    expect(context.caches.value).toEqual(['next-1', 'next-2'])
+    expect(context.components.size).toBe(0)
+  })
+
   it('evictMarkedCaches 执行所有待驱逐', () => {
     eviction.addCache('c1')
     eviction.addCache('c2')

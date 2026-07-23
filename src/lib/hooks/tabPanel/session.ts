@@ -5,8 +5,19 @@
  */
 import type { ITabItem, ITabPage } from '../../model/TabModel'
 import { Stack } from '../../model/TabModel'
+import { isRecord } from '../../utils/typeGuards'
 import type { StackTabsRuntimeContext } from '../stackTabsContext'
 import { SESSION_TAB_NAME } from './state'
+
+const isRestoredTab = (value: unknown): value is ITabItem =>
+  isRecord(value) &&
+  typeof value.id === 'string' &&
+  typeof value.title === 'string' &&
+  typeof value.closable === 'boolean' &&
+  typeof value.refreshable === 'boolean' &&
+  typeof value.iframe === 'boolean' &&
+  typeof value.active === 'boolean' &&
+  value.pages instanceof Stack
 
 export interface TabPanelSessionApi {
   getSessionKey: () => string
@@ -38,9 +49,19 @@ export const createTabPanelSession = (context: StackTabsRuntimeContext): TabPane
 
   const restoreTabFromSession = (storedJson: string | null): ITabItem | null => {
     if (storedJson == null) return null
-    return JSON.parse(storedJson, (key, value) =>
-      key === 'pages' ? new Stack<ITabPage>(value) : value
-    ) as ITabItem
+    try {
+      const restored = JSON.parse(storedJson, (key, value) =>
+        key === 'pages' && Array.isArray(value) ? new Stack<ITabPage>(value) : value
+      )
+      if (!isRestoredTab(restored)) {
+        clearSession()
+        return null
+      }
+      return restored as ITabItem
+    } catch {
+      clearSession()
+      return null
+    }
   }
 
   return {

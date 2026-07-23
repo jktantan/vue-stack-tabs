@@ -5,8 +5,8 @@
  * 刷新控制、DOM ref 收集，以及 postMessage 通信。
  */
 import { computed, onBeforeUnmount, reactive, watch, type Ref } from 'vue'
-import type { ITabItem } from '../model/TabModel'
-import { isAllowedTabUrl, toSafeTabUrl } from '../utils/urlParser'
+import type { ITabData, ITabItem } from '../model/TabModel'
+import { toSafeTabUrl } from '../utils/urlParser'
 import { getPostMessageTargetOrigin, isStackTabsOpenTabMessage } from '../utils/stackTabsMessage'
 
 type IframeLoadStatus = 'idle' | 'loading' | 'loaded' | 'timeout'
@@ -32,9 +32,6 @@ export function useIframeManager(options: UseIframeManagerOptions) {
 
   // iframe 首次激活时才加载真实 URL，未激活前使用 about:blank 避免不必要的请求
   const iframeEverActivated = reactive<Record<string, boolean>>({})
-  const activeIframesWithUrl = computed(() =>
-    iframeTabs.value.filter((f) => f.active && (f.url ?? '') && isAllowedTabUrl(f.url ?? ''))
-  )
 
   const appendIframeRefreshKey = (src: string, refreshKey: number): string => {
     if (refreshKey <= 0 || src === 'about:blank') return src
@@ -133,14 +130,23 @@ export function useIframeManager(options: UseIframeManagerOptions) {
     }
   }
 
-  // 当 iframe 标签首次变为 active 时，标记为已激活并开始跟踪加载状态
+  /** 同步 iframe 激活和移除状态，避免用多个 watcher 重复遍历 iframe 列表。 */
   watch(
-    iframeTabs,
+    () => iframeTabs.value.map((frame) => ({ id: frame.id, active: frame.active })),
     (frames) => {
       for (const f of frames) {
         if (!f.active) continue
         iframeEverActivated[f.id] = true
         setIframeLoading(f.id)
+      }
+      const activeIds = new Set(frames.map((frame) => frame.id))
+      for (const id of Object.keys(iframeLoadStates)) {
+        if (!activeIds.has(id)) {
+          clearIframeLoadTimeout(id)
+          delete iframeLoadStates[id]
+          delete iframeEverActivated[id]
+          delete iframeElRefs[id]
+        }
       }
     },
     { immediate: true }
@@ -160,35 +166,6 @@ export function useIframeManager(options: UseIframeManagerOptions) {
       }
     },
     { deep: true }
-  )
-
-  // 标签关闭时清理对应 iframe 的加载状态、激活记录和 DOM 引用
-  watch(
-    iframeTabs,
-    (frames, oldFrames) => {
-      if (oldFrames && frames.length < oldFrames.length) {
-        const activeIds = new Set(frames.map((frame) => frame.id))
-        const removedFrames = oldFrames.filter((f) => !activeIds.has(f.id))
-        for (const removed of removedFrames) {
-          const id = removed.id
-          clearIframeLoadTimeout(id)
-          delete iframeLoadStates[id]
-          delete iframeEverActivated[id]
-          delete iframeElRefs[id]
-        }
-      } else if (!oldFrames) {
-        const activeIds = new Set(frames.map((frame) => frame.id))
-        for (const id of Object.keys(iframeLoadStates)) {
-          if (!activeIds.has(id)) {
-            clearIframeLoadTimeout(id)
-            delete iframeLoadStates[id]
-            delete iframeEverActivated[id]
-            delete iframeElRefs[id]
-          }
-        }
-      }
-    },
-    { immediate: true }
   )
 
   const handleIframeLoad = (frame: { id: string; url?: string }, event: Event) => {
@@ -232,7 +209,7 @@ export function useIframeManager(options: UseIframeManagerOptions) {
 
   const createMessageHandler = (
     allowedOrigins: Ref<string[]>,
-    openTab: (tab: any) => Promise<string | undefined>
+    openTab: (tab: ITabData) => Promise<string | undefined>
   ) => {
     const isManagedIframeSource = (
       source: Parameters<typeof isStackTabsOpenTabMessage>[0]['source']

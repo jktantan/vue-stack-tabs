@@ -6,7 +6,7 @@
   - 包裹在 router-view 外层，将路由渲染到对应标签的缓存页面中
 
   数据流：
-  - useTabPanel：tabs/caches/excludedCacheIdsForRefresh/refreshKey
+  - useTabPanel：tabs、缓存列表与页面级刷新版本
   - useTabActions：openTab/closeTab 等，需 setIFramePath
   - keep-alive include=caches，exclude=excludedCacheIdsForRefresh（刷新时排除）
 -->
@@ -18,7 +18,8 @@ import {
   onBeforeMount,
   onBeforeUnmount,
   provide,
-  ref
+  ref,
+  watch
 } from 'vue'
 import type { TransitionProps } from 'vue'
 import { getMaxZIndex } from './utils/scrollUtils'
@@ -114,9 +115,13 @@ if (isRuntimeContextOwner) {
   provide(tabEmitterKey, runtimeContext.eventBus)
 }
 const maximum = ref<boolean>(false)
+const maximumZIndex = ref<number>()
 if (isRuntimeContextOwner) {
   provide(maximumKey, maximum)
 }
+watch(maximum, (isMaximum) => {
+  maximumZIndex.value = isMaximum ? getMaxZIndex('body *:not(.stack-tab,.stack-tab *)') : undefined
+})
 const panelApi = isRuntimeContextOwner
   ? useTabPanel()
   : {
@@ -231,7 +236,7 @@ onBeforeUnmount(() => {
     :style="{
       width: width,
       height: height,
-      'z-index': maximum ? getMaxZIndex('body *:not(.stack-tab,.stack-tab *)') : undefined
+      'z-index': maximumZIndex
     }"
     :class="{ 'stack-tab__maximum': maximum }"
   >
@@ -258,7 +263,9 @@ onBeforeUnmount(() => {
           :key="'keep-alive'"
           class="stack-tab__keep-alive-panel"
           :role="activeNonIframeTab ? 'tabpanel' : undefined"
-          :aria-labelledby="activeNonIframeTab ? getStackTabTabId(activeNonIframeTab.id) : undefined"
+          :aria-labelledby="
+            activeNonIframeTab ? getStackTabTabId(activeNonIframeTab.id) : undefined
+          "
           :aria-hidden="activeNonIframeTab ? undefined : 'true'"
         >
           <StackKeepAlive :transition-name="pageSwitch" @loaded="onComponentLoaded" />
@@ -290,7 +297,11 @@ onBeforeUnmount(() => {
                 <span class="stack-tab__iframe-loading-text">{{ t('VueStackTab.loading') }}</span>
               </slot>
             </div>
-            <div v-if="shouldShowIframeError(frame.id)" class="stack-tab__iframe-error" role="alert">
+            <div
+              v-if="shouldShowIframeError(frame.id)"
+              class="stack-tab__iframe-error"
+              role="alert"
+            >
               <slot name="iframeError" :tab="frame" :retry="retryIframe">
                 <span class="stack-tab__iframe-error-text">
                   {{ getIframeLoadState(frame.id).message ?? t('VueStackTab.iframeLoadTimeout') }}

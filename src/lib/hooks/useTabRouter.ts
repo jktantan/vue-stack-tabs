@@ -173,7 +173,7 @@ export default function useTabRouter() {
         if (!import.meta.env.PROD) {
           console.warn(
             `[vue-stack-tabs] backward failed: target url '${to}' not found in history stack. Current stack: `,
-            JSON.parse(JSON.stringify(pages))
+            pages.map((page) => clonePage(page))
           )
         }
         return false

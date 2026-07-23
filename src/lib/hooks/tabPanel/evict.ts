@@ -14,6 +14,10 @@ export interface TabPanelEvictionApi {
   addCache: (cacheName: string) => void
   removeCache: (cacheName: string) => void
   evictPageCache: (cacheName: string) => void
+  replacePageCaches: (
+    cacheNamesToEvict: Iterable<string>,
+    cacheNamesToAdd: Iterable<string>
+  ) => void
   evictMarkedCaches: () => void
 }
 
@@ -70,6 +74,41 @@ export const createTabPanelEviction = (context: StackTabsRuntimeContext): TabPan
     components.delete(cacheName)
   }
 
+  /** 批量替换缓存 id，仅在所有变更完成后通知一次，供刷新全部等操作使用。 */
+  const replacePageCaches = (
+    cacheNamesToEvict: Iterable<string>,
+    cacheNamesToAdd: Iterable<string>
+  ): void => {
+    syncCacheSet()
+    const toEvict = new Set(cacheNamesToEvict)
+    let changed = false
+
+    if (toEvict.size > 0) {
+      for (let index = cacheList.length - 1; index >= 0; index--) {
+        const cacheName = cacheList[index]
+        if (cacheName && toEvict.has(cacheName)) {
+          cacheList.splice(index, 1)
+          changed = true
+        }
+      }
+      for (const cacheName of toEvict) {
+        cacheSet.delete(cacheName)
+        cacheIdsToEvict.delete(cacheName)
+        components.delete(cacheName)
+      }
+    }
+
+    for (const cacheName of cacheNamesToAdd) {
+      if (!cacheSet.has(cacheName)) {
+        cacheSet.add(cacheName)
+        cacheList.push(cacheName)
+        changed = true
+      }
+    }
+
+    if (changed) triggerRef(caches)
+  }
+
   const evictMarkedCaches = (): void => {
     if (cacheIdsToEvict.size <= 0) return
 
@@ -94,6 +133,7 @@ export const createTabPanelEviction = (context: StackTabsRuntimeContext): TabPan
     addCache,
     removeCache,
     evictPageCache,
+    replacePageCaches,
     evictMarkedCaches
   }
 }
