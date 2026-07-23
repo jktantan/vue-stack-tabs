@@ -29,13 +29,33 @@ export interface TabPanelSessionApi {
 
 export const createTabPanelSession = (context: StackTabsRuntimeContext): TabPanelSessionApi => {
   const getSessionKey = (): string => context.sessionPrefix.value + SESSION_TAB_NAME
+  let pendingWrite: { tab: ITabItem; version: number } | null = null
+  let writeVersion = 0
+  let writeScheduled = false
+
+  const flushPendingWrite = () => {
+    writeScheduled = false
+    const write = pendingWrite
+    pendingWrite = null
+    if (!write || write.version !== writeVersion) return
+    window.sessionStorage.setItem(getSessionKey(), JSON.stringify(write.tab))
+  }
+
+  const invalidatePendingWrite = () => {
+    writeVersion++
+    pendingWrite = null
+  }
 
   const saveActiveTabToSession = (tab: ITabItem): void => {
     if (!tab.id) return
-    window.sessionStorage.setItem(getSessionKey(), JSON.stringify(tab))
+    pendingWrite = { tab, version: ++writeVersion }
+    if (writeScheduled) return
+    writeScheduled = true
+    queueMicrotask(flushPendingWrite)
   }
 
   const clearSession = (): void => {
+    invalidatePendingWrite()
     window.sessionStorage.removeItem(getSessionKey())
   }
 
@@ -44,6 +64,7 @@ export const createTabPanelSession = (context: StackTabsRuntimeContext): TabPane
       clearSession()
       return
     }
+    invalidatePendingWrite()
     window.sessionStorage.setItem(getSessionKey(), storedJson)
   }
 
