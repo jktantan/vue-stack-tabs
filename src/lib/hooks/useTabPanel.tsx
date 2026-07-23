@@ -18,6 +18,7 @@ import {
   onDeactivated,
   onMounted,
   onUnmounted,
+  computed,
   ref,
   shallowRef,
   cloneVNode
@@ -453,6 +454,11 @@ export default () => {
 
   /** 当前正在渲染的页面的缓存 Key（ULID），供 StackTabs.vue 的 :key 绑定使用 */
   const activeCacheKey = ref<string>('')
+  /** 只随当前活动页面刷新变化，避免一个 Tab 刷新导致其他 Tab 的缓存 key 失效。 */
+  const activePageRefreshVersion = computed(() => {
+    const activeTab = tabs.value.find((tab) => tab.active)
+    return activeTab?.pages.peek()?.refreshVersion ?? 0
+  })
 
   let lastRouteKey = ''
   let lastAddPageResult: DefineComponent | null = null
@@ -638,21 +644,19 @@ export default () => {
     const currentPage = tab.pages.peek()
     if (!currentPage) return
 
-    const oldId = currentPage.id
-    evictPageCache(oldId)
-
-    currentPage.id = createPageId()
-    addCache(currentPage.id)
-
     if (tab.active) {
-      lastRouteKey = ''
-      lastAddPageResult = null
-      refreshKey.value++
+      // 保持 cache id 稳定，只变更当前页面的 key，既保留动画也不影响其他 Tab 的缓存。
+      currentPage.refreshVersion = (currentPage.refreshVersion ?? 0) + 1
+      return
     }
+
+    evictPageCache(currentPage.id)
+    currentPage.id = createPageId()
+    currentPage.refreshVersion = 0
+    addCache(currentPage.id)
   }
 
   const refreshAllTabs = () => {
-    let needsActiveRefresh = false
     const iframeKeysUpdate = { ...iframeRefreshKeys.value }
     let iframeKeysChanged = false
 
@@ -668,13 +672,13 @@ export default () => {
       } else {
         const currentPage = tab.pages.peek()
         if (currentPage) {
-          const oldId = currentPage.id
-          evictPageCache(oldId)
-          currentPage.id = createPageId()
-          addCache(currentPage.id)
-
           if (tab.active) {
-            needsActiveRefresh = true
+            currentPage.refreshVersion = (currentPage.refreshVersion ?? 0) + 1
+          } else {
+            evictPageCache(currentPage.id)
+            currentPage.id = createPageId()
+            currentPage.refreshVersion = 0
+            addCache(currentPage.id)
           }
         }
       }
@@ -682,12 +686,6 @@ export default () => {
 
     if (iframeKeysChanged) {
       iframeRefreshKeys.value = iframeKeysUpdate
-    }
-
-    if (needsActiveRefresh) {
-      lastRouteKey = ''
-      lastAddPageResult = null
-      refreshKey.value++
     }
   }
 
@@ -772,6 +770,7 @@ export default () => {
     caches,
     refreshKey,
     activeCacheKey,
+    activePageRefreshVersion,
     isInitialized,
     setMaxSize: (value: number) => {
       runtimeContext.maxTabCount.value = value

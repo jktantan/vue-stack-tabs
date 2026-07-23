@@ -15,16 +15,29 @@ beforeEach(() => {
 
 describe('evict', () => {
   it('addCache 添加缓存 id', () => {
+    const cacheList = context.caches.value
     eviction.addCache('c1')
     expect(context.caches.value).toContain('c1')
+    expect(context.caches.value).toBe(cacheList)
     eviction.addCache('c1')
     expect(context.caches.value.filter((cacheId) => cacheId === 'c1')).toHaveLength(1)
   })
 
   it('removeCache 移除指定 id', () => {
     eviction.addCache('c1')
+    const cacheList = context.caches.value
     eviction.removeCache('c1')
     expect(context.caches.value).not.toContain('c1')
+    expect(context.caches.value).toBe(cacheList)
+  })
+
+  it('上下文重置 caches 后仍能重新添加缓存', () => {
+    eviction.addCache('old-cache')
+    context.caches.value = []
+
+    eviction.addCache('new-cache')
+
+    expect(context.caches.value).toEqual(['new-cache'])
   })
 
   it('markCacheForEviction 标记待驱逐', () => {

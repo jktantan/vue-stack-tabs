@@ -4,6 +4,7 @@
  * 职责：基于当前 StackTabsRuntimeContext 标记待驱逐缓存、执行驱逐、维护 caches / components。
  */
 import type { ITabPage } from '../../model/TabModel'
+import { triggerRef } from 'vue'
 import type { StackTabsRuntimeContext } from '../stackTabsContext'
 
 export interface TabPanelEvictionApi {
@@ -20,6 +21,15 @@ export const createTabPanelEviction = (context: StackTabsRuntimeContext): TabPan
   const { caches, components, cacheIdsToEvict, tabIdsToEvict } = context
 
   const cacheSet = new Set<string>(caches.value)
+  let cacheList = caches.value
+
+  /** 外部重置 caches（例如 destroy）后，同步内部 Set，避免后续 addCache 被错误跳过。 */
+  const syncCacheSet = () => {
+    if (cacheList === caches.value) return
+    cacheList = caches.value
+    cacheSet.clear()
+    for (const cacheName of cacheList) cacheSet.add(cacheName)
+  }
 
   const markCacheForEviction = (cacheName: string): void => {
     cacheIdsToEvict.add(cacheName)
@@ -35,16 +45,21 @@ export const createTabPanelEviction = (context: StackTabsRuntimeContext): TabPan
   }
 
   const addCache = (cacheName: string): void => {
+    syncCacheSet()
     if (!cacheSet.has(cacheName)) {
       cacheSet.add(cacheName)
-      caches.value = [...caches.value, cacheName]
+      cacheList.push(cacheName)
+      triggerRef(caches)
     }
   }
 
   const removeCache = (cacheName: string): void => {
+    syncCacheSet()
     if (cacheSet.has(cacheName)) {
       cacheSet.delete(cacheName)
-      caches.value = caches.value.filter((c) => c !== cacheName)
+      const index = cacheList.indexOf(cacheName)
+      if (index >= 0) cacheList.splice(index, 1)
+      triggerRef(caches)
     }
   }
 
@@ -58,12 +73,17 @@ export const createTabPanelEviction = (context: StackTabsRuntimeContext): TabPan
   const evictMarkedCaches = (): void => {
     if (cacheIdsToEvict.size <= 0) return
 
+    syncCacheSet()
     const toEvict = new Set(cacheIdsToEvict)
-    caches.value = caches.value.filter((c) => !toEvict.has(c))
+    for (let index = cacheList.length - 1; index >= 0; index--) {
+      const cacheName = cacheList[index]
+      if (cacheName && toEvict.has(cacheName)) cacheList.splice(index, 1)
+    }
     for (const cacheName of toEvict) {
       cacheSet.delete(cacheName)
       components.delete(cacheName)
     }
+    triggerRef(caches)
     cacheIdsToEvict.clear()
   }
 

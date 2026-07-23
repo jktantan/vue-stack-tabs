@@ -8,6 +8,7 @@ import StackCacheRenderer from '@/lib/components/StackKeepAlive/StackCacheRender
 
 const refreshKey = ref(0)
 const activeCacheKey = ref('cache-a')
+const activePageRefreshVersion = ref(0)
 const addPageMock = vi.fn()
 
 enableAutoUnmount(afterEach)
@@ -16,6 +17,7 @@ vi.mock('@/lib/hooks/useTabPanel', () => ({
   default: () => ({
     refreshKey,
     activeCacheKey,
+    activePageRefreshVersion,
     addPage: addPageMock
   })
 }))
@@ -24,6 +26,7 @@ interface RendererSlotProps {
   wrappedComponent: DefineComponent
   activeCacheKey: string
   refreshKey: number
+  activePageRefreshVersion: number
   component?: VNode | null
 }
 
@@ -106,6 +109,7 @@ function mountRenderer(props?: {
 beforeEach(() => {
   refreshKey.value = 0
   activeCacheKey.value = 'cache-a'
+  activePageRefreshVersion.value = 0
   addPageMock.mockReset()
   addPageMock.mockReturnValue(WrappedPage)
 })

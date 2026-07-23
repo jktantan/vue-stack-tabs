@@ -302,12 +302,19 @@ describe('useTabPanel', () => {
 
     panel.addPage(route, {} as never)
     const firstTabId = panel.tabs.value[0]?.id
+    const firstPageId = panel.tabs.value[0]?.pages.peek()?.id
 
     panel.refreshTab(firstTabId!)
     panel.addPage(route, {} as never)
 
     expect(panel.tabs.value).toHaveLength(1)
     expect(panel.tabs.value[0]?.id).toBe(firstTabId)
+    // 活动页刷新不能替换 keep-alive 的缓存身份；外层 refreshKey 负责重建与动画。
+    expect(panel.tabs.value[0]?.pages.peek()).toMatchObject({
+      id: firstPageId,
+      refreshVersion: 1
+    })
+    expect(panel.refreshKey.value).toBe(0)
 
     panel.destroy()
     runtime.cleanup()
