@@ -5,8 +5,19 @@
  */
 import type { ITabItem, ITabPage } from '../../model/TabModel'
 import { Stack } from '../../model/TabModel'
+import { isRecord } from '../../utils/typeGuards'
 import type { StackTabsRuntimeContext } from '../stackTabsContext'
 import { SESSION_TAB_NAME } from './state'
+
+const isRestoredTab = (value: unknown): value is ITabItem =>
+  isRecord(value) &&
+  typeof value.id === 'string' &&
+  typeof value.title === 'string' &&
+  typeof value.closable === 'boolean' &&
+  typeof value.refreshable === 'boolean' &&
+  typeof value.iframe === 'boolean' &&
+  typeof value.active === 'boolean' &&
+  value.pages instanceof Stack
 
 export interface TabPanelSessionApi {
   getSessionKey: () => string
@@ -18,13 +29,33 @@ export interface TabPanelSessionApi {
 
 export const createTabPanelSession = (context: StackTabsRuntimeContext): TabPanelSessionApi => {
   const getSessionKey = (): string => context.sessionPrefix.value + SESSION_TAB_NAME
+  let pendingWrite: { tab: ITabItem; version: number } | null = null
+  let writeVersion = 0
+  let writeScheduled = false
+
+  const flushPendingWrite = () => {
+    writeScheduled = false
+    const write = pendingWrite
+    pendingWrite = null
+    if (!write || write.version !== writeVersion) return
+    window.sessionStorage.setItem(getSessionKey(), JSON.stringify(write.tab))
+  }
+
+  const invalidatePendingWrite = () => {
+    writeVersion++
+    pendingWrite = null
+  }
 
   const saveActiveTabToSession = (tab: ITabItem): void => {
     if (!tab.id) return
-    window.sessionStorage.setItem(getSessionKey(), JSON.stringify(tab))
+    pendingWrite = { tab, version: ++writeVersion }
+    if (writeScheduled) return
+    writeScheduled = true
+    queueMicrotask(flushPendingWrite)
   }
 
   const clearSession = (): void => {
+    invalidatePendingWrite()
     window.sessionStorage.removeItem(getSessionKey())
   }
 
@@ -33,26 +64,21 @@ export const createTabPanelSession = (context: StackTabsRuntimeContext): TabPane
       clearSession()
       return
     }
+    invalidatePendingWrite()
     window.sessionStorage.setItem(getSessionKey(), storedJson)
   }
 
   const restoreTabFromSession = (storedJson: string | null): ITabItem | null => {
     if (storedJson == null) return null
     try {
-      const tab = JSON.parse(storedJson, (key, value) =>
+      const restored = JSON.parse(storedJson, (key, value) =>
         key === 'pages' && Array.isArray(value) ? new Stack<ITabPage>(value) : value
-      ) as Partial<ITabItem>
-      if (
-        !tab ||
-        typeof tab.id !== 'string' ||
-        !tab.id ||
-        typeof tab.title !== 'string' ||
-        !(tab.pages instanceof Stack)
-      ) {
+      )
+      if (!isRestoredTab(restored)) {
         clearSession()
         return null
       }
-      return tab as ITabItem
+      return restored as ITabItem
     } catch {
       clearSession()
       return null

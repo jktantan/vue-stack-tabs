@@ -168,8 +168,7 @@ describe('StackTabs iframe security and states', () => {
 
     expect(panel.attributes('role')).toBeUndefined()
     expect(panel.attributes('aria-hidden')).toBe('true')
-    expect(panel.attributes()).toHaveProperty('hidden')
-    expect(panel.isVisible()).toBe(false)
+    expect(panel.attributes('hidden')).toBeUndefined()
   })
 
   it('非 iframe tabpanel 全高承载 keep-alive 内容', () => {

@@ -72,6 +72,8 @@ export interface ITabPage {
   tabId: string
   path: string
   query?: LocationQueryRaw
+  /** 页面级刷新版本；仅影响当前页面的 keep-alive 缓存 key */
+  refreshVersion?: number
   /** 该页面从别的页面被后退唤醒时附带的临时闭包参数，不污染 URL */
   _backParams?: Record<string, unknown>
 }

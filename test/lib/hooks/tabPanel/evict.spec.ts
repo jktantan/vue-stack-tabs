@@ -15,8 +15,10 @@ beforeEach(() => {
 
 describe('evict', () => {
   it('addCache 添加缓存 id', () => {
+    const cacheList = context.caches.value
     eviction.addCache('c1')
     expect(context.caches.value).toContain('c1')
+    expect(context.caches.value).toBe(cacheList)
     eviction.addCache('c1')
     expect(context.caches.value.filter((cacheId) => cacheId === 'c1')).toHaveLength(1)
   })
@@ -33,8 +35,19 @@ describe('evict', () => {
 
   it('removeCache 移除指定 id', () => {
     eviction.addCache('c1')
+    const cacheList = context.caches.value
     eviction.removeCache('c1')
     expect(context.caches.value).not.toContain('c1')
+    expect(context.caches.value).toBe(cacheList)
+  })
+
+  it('上下文重置 caches 后仍能重新添加缓存', () => {
+    eviction.addCache('old-cache')
+    context.caches.value = []
+
+    eviction.addCache('new-cache')
+
+    expect(context.caches.value).toEqual(['new-cache'])
   })
 
   it('markCacheForEviction 标记待驱逐', () => {
@@ -69,6 +82,20 @@ describe('evict', () => {
     expect(context.caches.value).not.toContain('c1')
     expect(context.components.has('c1')).toBe(false)
     expect(context.cacheIdsToEvict.has('c1')).toBe(false)
+  })
+
+  it('replacePageCaches 批量替换缓存并清理旧组件', () => {
+    eviction.addCache('c1')
+    eviction.addCache('c2')
+    context.components.set('c1', {} as never)
+    context.components.set('c2', {} as never)
+    const cacheList = context.caches.value
+
+    eviction.replacePageCaches(['c1', 'c2'], ['next-1', 'next-2'])
+
+    expect(context.caches.value).toBe(cacheList)
+    expect(context.caches.value).toEqual(['next-1', 'next-2'])
+    expect(context.components.size).toBe(0)
   })
 
   it('evictMarkedCaches 执行所有待驱逐', () => {

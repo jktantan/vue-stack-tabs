@@ -9,6 +9,7 @@ import StackKeepAlive from '@/lib/components/StackKeepAlive/StackKeepAlive.vue'
 const caches = ref<string[]>([])
 const refreshKey = ref(0)
 const activeCacheKey = ref('')
+const activePageRefreshVersion = ref(0)
 const addPageMock = vi.fn()
 
 enableAutoUnmount(afterEach)
@@ -18,6 +19,7 @@ vi.mock('@/lib/hooks/useTabPanel', () => ({
     caches,
     refreshKey,
     activeCacheKey,
+    activePageRefreshVersion,
     addPage: addPageMock
   })
 }))
@@ -130,6 +132,7 @@ beforeEach(() => {
   caches.value = ['cache-a']
   refreshKey.value = 7
   activeCacheKey.value = 'cache-a'
+  activePageRefreshVersion.value = 0
   addPageMock.mockReset()
   wrappedInstanceId = 0
   addPageMock.mockReturnValue(WrappedPage as Component)
@@ -167,7 +170,7 @@ describe('StackKeepAlive', () => {
     expect(addPageMock).toHaveBeenCalledTimes(1)
   })
 
-  it('refreshKey 变化时重建缓存页实例并重新调用 addPage', async () => {
+  it('refreshKey 变化时重新调用 addPage，但不影响当前缓存 key', async () => {
     const wrapper = mountKeepAlive()
     await nextTick()
 
@@ -184,7 +187,7 @@ describe('StackKeepAlive', () => {
       .find('[data-test="wrapped-page"]')
       .attributes('data-instance-id')
 
-    expect(secondInstanceId).not.toBe(firstInstanceId)
+    expect(secondInstanceId).toBe(firstInstanceId)
     expect(addPageMock).toHaveBeenCalledTimes(2)
   })
 

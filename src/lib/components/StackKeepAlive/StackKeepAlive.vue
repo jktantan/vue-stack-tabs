@@ -38,7 +38,7 @@ const emitLoaded = () => {
 <template>
   <router-view v-slot="{ Component, route }">
     <StackCacheRenderer
-      v-slot="{ wrappedComponent, activeCacheKey, refreshKey, component }"
+      v-slot="{ wrappedComponent, activeCacheKey, activePageRefreshVersion, component }"
       :route="route"
       :component="Component"
     >
@@ -46,7 +46,7 @@ const emitLoaded = () => {
         <keep-alive :include="caches">
           <component
             :is="wrappedComponent"
-            :key="`${activeCacheKey}-${refreshKey}`"
+            :key="`${activeCacheKey}-${activePageRefreshVersion}`"
             :vnode="component"
             @on-loaded="emitLoaded"
           />

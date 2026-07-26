@@ -18,6 +18,7 @@ import {
   onDeactivated,
   onMounted,
   onUnmounted,
+  computed,
   ref,
   shallowRef,
   cloneVNode
@@ -46,6 +47,7 @@ import { resolveStackTabsRuntimeContext } from './stackTabsContext'
 import { createTabPanelEviction } from './tabPanel/evict'
 import { createTabPanelScroll } from './tabPanel/scroll'
 import { createTabPanelSession } from './tabPanel/session'
+import { createTabPanelRefresh } from './tabPanel/refresh'
 
 /* eslint-disable vue/one-component-per-file */
 /** 占位组件：当路由组件为空或标签已被标记删除时返回 */
@@ -92,7 +94,8 @@ export default () => {
     addCache,
     removeCache,
     evictMarkedCaches,
-    evictPageCache
+    evictPageCache,
+    replacePageCaches
   } = createTabPanelEviction(runtimeContext)
   const { restoreScroller, saveScroller, removeScroller, addPageScroller } =
     createTabPanelScroll(runtimeContext)
@@ -456,6 +459,11 @@ export default () => {
 
   /** 当前正在渲染的页面的缓存 Key（ULID），供 StackTabs.vue 的 :key 绑定使用 */
   const activeCacheKey = ref<string>('')
+  /** 只随当前活动页面刷新变化，避免一个 Tab 刷新导致其他 Tab 的缓存 key 失效。 */
+  const activePageRefreshVersion = computed(() => {
+    const activeTab = tabs.value.find((tab) => tab.active)
+    return activeTab?.pages.peek()?.refreshVersion ?? 0
+  })
 
   let lastRouteKey = ''
   let lastAddPageResult: DefineComponent | null = null
@@ -536,16 +544,21 @@ export default () => {
     return activeTabId
   }
 
+  /** 批量关闭满足条件的可关闭标签，并统一标记其页面缓存待驱逐。 */
+  const removeTabs = (shouldRemove: (tab: ITabItem, index: number) => boolean) => {
+    const tabList = tabs.value
+    for (let index = tabList.length - 1; index >= 0; index--) {
+      const tab = tabList[index]
+      if (!tab || !tab.closable || !shouldRemove(tab, index)) continue
+      markTabPagesForEviction(tab)
+      tab.pages.clear()
+      tabList.splice(index, 1)
+    }
+  }
+
   const removeAllTabs = () => {
     const tabList = tabs.value
-    for (let i = tabList.length - 1; i >= 0; i--) {
-      const tab = tabList[i]
-      if (tab?.closable) {
-        markTabPagesForEviction(tab)
-        tab.pages.clear()
-        tabList.splice(i, 1)
-      }
-    }
+    removeTabs(() => true)
     const hasActive = tabList.some((t) => t.active)
     if (hasActive) {
       evictMarkedCaches()
@@ -558,18 +571,8 @@ export default () => {
 
   const removeOtherTabs = (id: string) => {
     const tabList = tabs.value
-    let activeTab: ITabItem | undefined
-    for (let i = tabList.length - 1; i >= 0; i--) {
-      const tab = tabList[i]
-      if (!tab) continue
-      if (tab.id === id) {
-        activeTab = tab as ITabItem
-      } else if (tab.closable) {
-        markTabPagesForEviction(tab)
-        tab.pages.clear()
-        tabList.splice(i, 1)
-      }
-    }
+    const activeTab = tabList.find((tab) => tab.id === id)
+    removeTabs((tab) => tab.id !== id)
     if (activeTab && !activeTab.active) {
       emitter.emit(TabEventType.TAB_ACTIVE, { id })
     } else {
@@ -583,14 +586,7 @@ export default () => {
     const pivot = tabList.findIndex((t) => t?.id === id)
     if (pivot <= 0) return
 
-    for (let i = pivot - 1; i >= 0; i--) {
-      const tab = tabList[i]
-      if (tab?.closable) {
-        markTabPagesForEviction(tab)
-        tab.pages.clear()
-        tabList.splice(i, 1)
-      }
-    }
+    removeTabs((_, index) => index < pivot)
     if (tabList.some((t) => t.active)) {
       evictMarkedCaches()
       tabIdsToEvict.clear()
@@ -605,14 +601,7 @@ export default () => {
     const pivot = tabList.findIndex((t) => t?.id === id)
     if (pivot < 0 || pivot >= tabList.length - 1) return
 
-    for (let i = tabList.length - 1; i > pivot; i--) {
-      const tab = tabList[i]
-      if (tab?.closable) {
-        markTabPagesForEviction(tab)
-        tab.pages.clear()
-        tabList.splice(i, 1)
-      }
-    }
+    removeTabs((_, index) => index > pivot)
     if (tabList.some((t) => t.active)) {
       evictMarkedCaches()
       tabIdsToEvict.clear()
@@ -622,77 +611,16 @@ export default () => {
     if (last) emitter.emit(TabEventType.TAB_ACTIVE, { id: last.id })
   }
 
-  const refreshTab = (id: string) => {
-    const tab = getTab(id)
-    if (!tab?.refreshable) return
-
-    if (tab.iframe) {
-      if (tab.iframeRefreshMode === 'reload') {
-        iframeRefreshKeys.value = {
-          ...iframeRefreshKeys.value,
-          [id]: (iframeRefreshKeys.value[id] ?? 0) + 1
-        }
-      } else {
-        emitter.emit(TabEventType.REFRESH_IFRAME_POSTMESSAGE, id)
-      }
-      return
-    }
-
-    const currentPage = tab.pages.peek()
-    if (!currentPage) return
-
-    const oldId = currentPage.id
-    evictPageCache(oldId)
-
-    currentPage.id = createPageId()
-    addCache(currentPage.id)
-
-    if (tab.active) {
-      lastRouteKey = ''
-      lastAddPageResult = null
-      refreshKey.value++
-    }
-  }
-
-  const refreshAllTabs = () => {
-    let needsActiveRefresh = false
-    const iframeKeysUpdate = { ...iframeRefreshKeys.value }
-    let iframeKeysChanged = false
-
-    for (const tab of tabs.value) {
-      if (!tab?.refreshable) continue
-      if (tab.iframe) {
-        if (tab.iframeRefreshMode === 'reload') {
-          iframeKeysUpdate[tab.id] = (iframeKeysUpdate[tab.id] ?? 0) + 1
-          iframeKeysChanged = true
-        } else {
-          emitter.emit(TabEventType.REFRESH_IFRAME_POSTMESSAGE, tab.id)
-        }
-      } else {
-        const currentPage = tab.pages.peek()
-        if (currentPage) {
-          const oldId = currentPage.id
-          evictPageCache(oldId)
-          currentPage.id = createPageId()
-          addCache(currentPage.id)
-
-          if (tab.active) {
-            needsActiveRefresh = true
-          }
-        }
-      }
-    }
-
-    if (iframeKeysChanged) {
-      iframeRefreshKeys.value = iframeKeysUpdate
-    }
-
-    if (needsActiveRefresh) {
-      lastRouteKey = ''
-      lastAddPageResult = null
-      refreshKey.value++
-    }
-  }
+  const { refreshTab, refreshAllTabs } = createTabPanelRefresh({
+    tabs,
+    iframeRefreshKeys,
+    getTab,
+    createPageId,
+    addCache,
+    evictPageCache,
+    replacePageCaches,
+    refreshIframeByPostMessage: (id) => emitter.emit(TabEventType.REFRESH_IFRAME_POSTMESSAGE, id)
+  })
 
   const getComponent = (id: string) => components.get(id)
 
@@ -775,6 +703,7 @@ export default () => {
     caches,
     refreshKey,
     activeCacheKey,
+    activePageRefreshVersion,
     isInitialized,
     setMaxSize: (value: number) => {
       runtimeContext.maxTabCount.value = value

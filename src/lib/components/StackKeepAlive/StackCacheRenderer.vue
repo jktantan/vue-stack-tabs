@@ -25,6 +25,7 @@ interface StackCacheRendererSlotProps {
   wrappedComponent: DefineComponent
   activeCacheKey: string
   refreshKey: number
+  activePageRefreshVersion: number
   component?: VNode | null
 }
 
@@ -34,7 +35,7 @@ defineSlots<{
   default(props: StackCacheRendererSlotProps): unknown
 }>()
 
-const { refreshKey, activeCacheKey, addPage } = useTabPanel()
+const { refreshKey, activeCacheKey, activePageRefreshVersion, addPage } = useTabPanel()
 
 const EmptyRendererComponent = defineComponent({
   name: 'StackCacheRendererEmpty',
@@ -50,11 +51,7 @@ const getComponentIdentity = (component?: VNode | null): unknown => {
 }
 
 watch(
-  [
-    () => props.route.fullPath,
-    () => getComponentIdentity(props.component),
-    () => refreshKey.value
-  ],
+  [() => props.route.fullPath, () => getComponentIdentity(props.component), () => refreshKey.value],
   () => {
     wrappedComponent.value = addPage(props.route, props.component)
   },
@@ -67,6 +64,7 @@ watch(
     :wrapped-component="wrappedComponent"
     :active-cache-key="activeCacheKey"
     :refresh-key="refreshKey"
+    :active-page-refresh-version="activePageRefreshVersion"
     :component="component"
   />
 </template>
