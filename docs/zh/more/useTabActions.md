@@ -12,6 +12,7 @@ const {
   refreshTab,
   refreshAllTabs,
   activeTab,
+  moveTab,
   reset,
   tabs,
   setIFramePath,
@@ -60,6 +61,7 @@ const {
 | 方法                      | 说明                           |
 | ------------------------- | ------------------------------ |
 | `activeTab(id, isRoute?)` | 激活指定标签                   |
+| `moveTab(id, targetIndex)` | 将标签移动到指定索引；标签栏也支持鼠标拖放排序 |
 | `reset()`                 | 重置                           |
 | `tabs`                    | 标签列表（只读）               |
 | `setIFramePath(path)`     | 设置 iframe 路由路径（内部用） |

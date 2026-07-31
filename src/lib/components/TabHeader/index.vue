@@ -29,6 +29,10 @@
             @click.middle.prevent="handleCloseTab(item as ITabItem)"
             @close="handleCloseTab"
             @active="handleActivateTab"
+            @dragstart="handleTabDragStart"
+            @dragover="handleTabDragOver"
+            @drop="handleTabDrop"
+            @dragend="handleTabDragEnd"
           />
         </transition-group>
       </template>
@@ -109,7 +113,8 @@ const props = withDefaults(
     max: 20
   }
 )
-const { closeTab, activeTab, tabs } = useTabActions()
+const { closeTab, activeTab, moveTab, tabs } = useTabActions()
+const draggingTabId = ref<string | null>(null)
 
 /** 右键菜单是否启用；仅 false 明确禁用，其余旧对象值保持启用以兼容历史写法 */
 const isContextMenuEnabled = computed<boolean>(() => props.contextmenu !== false)
@@ -135,6 +140,28 @@ const handleTabContextMenu = (e: MouseEvent, item: ITabItem, index: number, max:
   e.preventDefault()
   contextMenuTriggerElement.value = getContextMenuFocusElement(e)
   showContextMenu(e, item, index, max)
+}
+
+/** 原生拖放只在释放鼠标时更新顺序，避免拖动经过标签时反复变更响应式列表。 */
+const handleTabDragStart = (item: ITabItem) => {
+  draggingTabId.value = item.id
+}
+
+const handleTabDragOver = (_item: ITabItem, event: DragEvent) => {
+  if (!draggingTabId.value || !event.dataTransfer) return
+  event.dataTransfer.dropEffect = 'move'
+}
+
+const handleTabDrop = (target: ITabItem) => {
+  const sourceId = draggingTabId.value
+  draggingTabId.value = null
+  if (!sourceId || sourceId === target.id) return
+  const targetIndex = tabs.value.findIndex((tab) => tab.id === target.id)
+  if (targetIndex >= 0) moveTab(sourceId, targetIndex)
+}
+
+const handleTabDragEnd = () => {
+  draggingTabId.value = null
 }
 
 /** 标签列表 transition 的 props，支持 string 或对象 */

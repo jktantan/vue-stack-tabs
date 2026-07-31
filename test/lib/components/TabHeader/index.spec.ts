@@ -11,6 +11,7 @@ import TabHeader from '@/lib/components/TabHeader/index.vue'
 
 const activeTabMock = vi.fn()
 const closeTabMock = vi.fn()
+const moveTabMock = vi.fn()
 const removeLeftTabsMock = vi.fn()
 const removeRightTabsMock = vi.fn()
 const removeOtherTabsMock = vi.fn()
@@ -26,6 +27,7 @@ vi.mock('@/lib/hooks/useTabActions', () => ({
   default: () => ({
     activeTab: activeTabMock,
     closeTab: closeTabMock,
+    moveTab: moveTabMock,
     tabs
   })
 }))
@@ -63,7 +65,7 @@ const TabHeaderItemStub = defineComponent({
       required: true
     }
   },
-  emits: ['contextmenu', 'active', 'close'],
+  emits: ['contextmenu', 'active', 'close', 'dragstart', 'dragover', 'drop', 'dragend'],
   setup(props, { emit }) {
     return () => {
       const item = props.item as ITabItem
@@ -212,6 +214,7 @@ async function triggerTabContextMenu(wrapper: ReturnType<typeof mountHeader>) {
 beforeEach(() => {
   activeTabMock.mockReset()
   closeTabMock.mockReset()
+  moveTabMock.mockReset()
   removeLeftTabsMock.mockReset()
   removeRightTabsMock.mockReset()
   removeOtherTabsMock.mockReset()
@@ -310,6 +313,34 @@ describe('TabHeader contextmenu', () => {
 
     const menu = wrapper.getComponent({ name: 'ContextMenu' })
     expect(menu.props('restoreFocusElement')).toBe(trigger.element)
+  })
+})
+
+describe('TabHeader drag and drop', () => {
+  it('拖放到另一标签时调用 moveTab 调整顺序', async () => {
+    tabs.value = [
+      makeTab({ id: 'tab-1', title: 'One', active: true }),
+      makeTab({ id: 'tab-2', title: 'Two', active: false })
+    ]
+    const wrapper = mountHeader()
+    const items = wrapper.findAllComponents(TabHeaderItemStub)
+
+    items[0]!.vm.$emit('dragstart', tabs.value[0])
+    items[1]!.vm.$emit('drop', tabs.value[1])
+    await nextTick()
+
+    expect(moveTabMock).toHaveBeenCalledWith('tab-1', 1)
+  })
+
+  it('拖放到自身时不调整顺序', async () => {
+    const wrapper = mountHeader()
+    const item = wrapper.findComponent(TabHeaderItemStub)
+
+    item.vm.$emit('dragstart', tabs.value[0])
+    item.vm.$emit('drop', tabs.value[0])
+    await nextTick()
+
+    expect(moveTabMock).not.toHaveBeenCalled()
   })
 })
 

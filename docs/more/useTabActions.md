@@ -12,6 +12,7 @@ const {
   refreshTab,
   refreshAllTabs,
   activeTab,
+  moveTab,
   reset,
   tabs,
   setIFramePath,
@@ -58,6 +59,7 @@ Close left/right/others are available via the right-click context menu.
 | Method | Description |
 |--------|-------------|
 | `activeTab(id, isRoute?)` | Activate tab |
+| `moveTab(id, targetIndex)` | Move a tab to an index; the tab header also supports mouse drag-and-drop reordering |
 | `reset()` | Reset all |
 | `tabs` | Tab list (read-only) |
 | `setIFramePath(path)` | Set iframe path (internal) |

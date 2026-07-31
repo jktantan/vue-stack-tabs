@@ -5,10 +5,16 @@
     class="stack-tab__item"
     :class="{
       'is-active': item.active,
-      'is-icon': item.closable
+      'is-icon': item.closable,
+      'is-dragging': dragging
     }"
+    :draggable="true"
     @click.self="handleActivate(true)"
     @contextmenu="$emit('contextmenu', $event)"
+    @dragstart="handleDragStart"
+    @dragend="handleDragEnd"
+    @dragover.prevent="$emit('dragover', item, $event)"
+    @drop.prevent="$emit('drop', item, $event)"
   >
     <button
       :id="getStackTabTabId(item.id)"
@@ -52,11 +58,20 @@ import type { ITabItem } from '../../model/TabModel'
 import { TabEventType, useTabEmitter } from '../../hooks/useTabEventBus'
 import { getStackTabPanelId, getStackTabTabId } from '../../utils/stackTabsA11y'
 import { useI18n } from 'vue-i18n-lite'
-const emit = defineEmits(['close', 'active', 'contextmenu'])
+const emit = defineEmits([
+  'close',
+  'active',
+  'contextmenu',
+  'dragstart',
+  'dragover',
+  'drop',
+  'dragend'
+])
 const emitter = useTabEmitter()
 const { t } = useI18n()
 /** 当前标签 DOM 元素，用于滚动到可视区域 */
 const tabElementRef = ref<HTMLElement>()
+const dragging = ref(false)
 const props = defineProps<{
   item: ITabItem
 }>()
@@ -79,6 +94,16 @@ const title = computed<string>(() => props.item.title || t('VueStackTab.undefine
 /** 关闭按钮点击，向父级 emit close */
 const handleClose = () => {
   emit('close', props.item)
+}
+const handleDragStart = (event: DragEvent) => {
+  dragging.value = true
+  event.dataTransfer?.setData('text/plain', props.item.id)
+  if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move'
+  emit('dragstart', props.item, event)
+}
+const handleDragEnd = (event: DragEvent) => {
+  dragging.value = false
+  emit('dragend', props.item, event)
 }
 /** 激活当前标签，向父级 emit active 并传递 DOM 引用 */
 const handleActivate = (isRoute = true) => {

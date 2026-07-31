@@ -197,6 +197,10 @@
       border-left: $stack-tab-border;
     }
 
+    &.is-dragging {
+      opacity: 0.55;
+    }
+
     /*
     激活右键菜单的页签
      */

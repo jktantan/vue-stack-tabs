@@ -113,6 +113,27 @@ describe('useTabPanel', () => {
     runtime.cleanup()
   })
 
+  it('moveTab 仅重排标签，不影响标签对象及其页面栈', async () => {
+    const runtime = await withRuntimeContext()
+    const { default: useTabPanel } = await import('@/lib/hooks/useTabPanel')
+    const panel = useTabPanel()
+    panel.initialize([
+      { id: 'tab-1', title: '第一页', path: '/one' },
+      { id: 'tab-2', title: '第二页', path: '/two' },
+      { id: 'tab-3', title: '第三页', path: '/three' }
+    ])
+    const firstTab = panel.tabs.value[0]
+
+    expect(panel.moveTab('tab-1', 2)).toBe(true)
+    expect(panel.tabs.value.map((tab: ITabItem) => tab.id)).toEqual(['tab-2', 'tab-3', 'tab-1'])
+    expect(panel.tabs.value[2]).toBe(firstTab)
+    expect(panel.moveTab('tab-1', 2)).toBe(false)
+    expect(panel.moveTab('missing', 0)).toBe(false)
+
+    panel.destroy()
+    runtime.cleanup()
+  })
+
   it('initialize 恢复 session iframe tab 时清洗非法 url', async () => {
     const runtime = await withRuntimeContext()
     const { Stack } = await import('@/lib/model/TabModel')

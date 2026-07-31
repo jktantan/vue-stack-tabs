@@ -189,6 +189,29 @@ export default () => {
 
   const getTab = (id: string) => tabs.value.find((t) => t.id === id) ?? null
 
+  /**
+   * 将指定标签移动到目标索引。标签对象本身不变，因此其页面栈和缓存关联保持不受影响。
+   * @returns 是否实际调整了顺序
+   */
+  const moveTab = (id: string, targetIndex: number): boolean => {
+    const sourceIndex = tabs.value.findIndex((tab) => tab.id === id)
+    if (
+      sourceIndex < 0 ||
+      targetIndex < 0 ||
+      targetIndex >= tabs.value.length ||
+      sourceIndex === targetIndex
+    ) {
+      return false
+    }
+
+    const reorderedTabs = tabs.value.slice()
+    const [tab] = reorderedTabs.splice(sourceIndex, 1)
+    if (!tab) return false
+    reorderedTabs.splice(targetIndex, 0, tab)
+    tabs.value = reorderedTabs
+    return true
+  }
+
   /** 从路由解析 tabInfo，若无则创建默认信息，调用方负责把编码信息写入内部 page.query */
   const parseTabInfoFromRoute = (route: RouteLocationNormalizedLoaded): ITabBase => {
     if (typeof route.query.__tab === 'string') {
@@ -718,6 +741,7 @@ export default () => {
     addCache,
     removeCache,
     getTab,
+    moveTab,
     addTab,
     removeTab,
     removeAllTabs,

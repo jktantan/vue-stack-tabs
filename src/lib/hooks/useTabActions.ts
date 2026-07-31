@@ -38,6 +38,7 @@ export default function useTabActions() {
     renewTab,
     getTab,
     tabs,
+    moveTab,
     removeTab,
     removeAllTabs,
     refreshTab,
@@ -169,6 +170,7 @@ export default function useTabActions() {
 
     // 激活与重置
     activeTab: active,
+    moveTab,
     reset,
 
     // 数据与配置

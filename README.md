@@ -247,6 +247,7 @@ const {
   refreshTab, // (id: string) => void
   refreshAllTabs, // () => void
   activeTab, // (id: string, isRoute?: boolean) => void
+  moveTab, // (id: string, targetIndex: number) => boolean
   reset, // () => void
   tabs // Ref<ITabItem[]>
 } = useTabActions()
@@ -260,6 +261,7 @@ const {
 | `refreshTab(id)`       | 刷新指定标签（替换缓存 ID，重建组件实例）                   |
 | `refreshAllTabs()`     | 刷新所有标签                                              |
 | `activeTab(id)`        | 激活指定标签（切换 Tab）                                  |
+| `moveTab(id, targetIndex)` | 将标签移动到指定索引；标签栏也支持鼠标拖放排序            |
 | `reset()`              | 关闭所有标签并重置状态                                    |
 
 ---
