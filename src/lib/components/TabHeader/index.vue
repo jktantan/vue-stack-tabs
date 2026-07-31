@@ -17,11 +17,14 @@
           v-bind="tabTransitionProps"
           appear
           @keydown="handleTabListKeydown"
+          @dragover.prevent="handleTabListDragOver"
+          @drop.prevent="handleTabListDrop"
         >
           <tab-header-item
             v-for="(item, index) in tabs"
             :key="item.id"
             :item="item as ITabItem"
+            :drop-position="dropIndicator?.tabId === item.id ? dropIndicator.position : undefined"
             @contextmenu="
               (e: MouseEvent) =>
                 handleTabContextMenu(e, item as unknown as ITabItem, index, tabs.length)
@@ -115,6 +118,8 @@ const props = withDefaults(
 )
 const { closeTab, activeTab, moveTab, tabs } = useTabActions()
 const draggingTabId = ref<string | null>(null)
+type DropPosition = 'before' | 'after'
+const dropIndicator = ref<{ tabId: string; position: DropPosition } | null>(null)
 
 /** 右键菜单是否启用；仅 false 明确禁用，其余旧对象值保持启用以兼容历史写法 */
 const isContextMenuEnabled = computed<boolean>(() => props.contextmenu !== false)
@@ -147,21 +152,60 @@ const handleTabDragStart = (item: ITabItem) => {
   draggingTabId.value = item.id
 }
 
-const handleTabDragOver = (_item: ITabItem, event: DragEvent) => {
-  if (!draggingTabId.value || !event.dataTransfer) return
-  event.dataTransfer.dropEffect = 'move'
+const handleTabDragOver = (item: ITabItem, event: DragEvent) => {
+  if (!draggingTabId.value || draggingTabId.value === item.id) {
+    dropIndicator.value = null
+    return
+  }
+  const tabElement = event.currentTarget instanceof HTMLElement ? event.currentTarget : null
+  if (!tabElement) return
+
+  const { left, width } = tabElement.getBoundingClientRect()
+  dropIndicator.value = {
+    tabId: item.id,
+    position: event.clientX < left + width / 2 ? 'before' : 'after'
+  }
+  if (event.dataTransfer) event.dataTransfer.dropEffect = 'move'
 }
 
 const handleTabDrop = (target: ITabItem) => {
   const sourceId = draggingTabId.value
+  const indicator = dropIndicator.value
   draggingTabId.value = null
-  if (!sourceId || sourceId === target.id) return
+  dropIndicator.value = null
+  if (!sourceId || sourceId === target.id || indicator?.tabId !== target.id) return
+  const sourceIndex = tabs.value.findIndex((tab) => tab.id === sourceId)
   const targetIndex = tabs.value.findIndex((tab) => tab.id === target.id)
-  if (targetIndex >= 0) moveTab(sourceId, targetIndex)
+  if (sourceIndex < 0 || targetIndex < 0) return
+
+  let destinationIndex = targetIndex
+  if (indicator.position === 'before' && sourceIndex < targetIndex) destinationIndex--
+  if (indicator.position === 'after' && sourceIndex > targetIndex) destinationIndex++
+  moveTab(sourceId, destinationIndex)
 }
 
 const handleTabDragEnd = () => {
   draggingTabId.value = null
+  dropIndicator.value = null
+}
+
+/** 标签列表末端的留白也是投放区，便于明确地将标签移动到最后。 */
+const isTabItemDragEvent = (event: DragEvent) =>
+  event.target instanceof Element && Boolean(event.target.closest('.stack-tab__item'))
+
+const handleTabListDragOver = (event: DragEvent) => {
+  if (!draggingTabId.value || isTabItemDragEvent(event)) return
+  const lastTab = tabs.value[tabs.value.length - 1]
+  if (!lastTab || lastTab.id === draggingTabId.value) return
+
+  dropIndicator.value = { tabId: lastTab.id, position: 'after' }
+  if (event.dataTransfer) event.dataTransfer.dropEffect = 'move'
+}
+
+const handleTabListDrop = (event: DragEvent) => {
+  if (isTabItemDragEvent(event)) return
+  const lastTab = tabs.value[tabs.value.length - 1]
+  if (lastTab) handleTabDrop(lastTab as ITabItem)
 }
 
 /** 标签列表 transition 的 props，支持 string 或对象 */

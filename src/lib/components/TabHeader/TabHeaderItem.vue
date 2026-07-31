@@ -6,7 +6,9 @@
     :class="{
       'is-active': item.active,
       'is-icon': item.closable,
-      'is-dragging': dragging
+      'is-dragging': dragging,
+      'is-drop-before': dropPosition === 'before',
+      'is-drop-after': dropPosition === 'after'
     }"
     :draggable="true"
     @click.self="handleActivate(true)"
@@ -74,6 +76,7 @@ const tabElementRef = ref<HTMLElement>()
 const dragging = ref(false)
 const props = defineProps<{
   item: ITabItem
+  dropPosition?: 'before' | 'after'
 }>()
 
 /** TAB_ACTIVE 事件 payload */

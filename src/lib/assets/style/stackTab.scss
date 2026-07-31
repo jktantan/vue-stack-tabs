@@ -164,7 +164,7 @@
     position: relative;
     display: inline-flex;
     height: 100%;
-    padding: 0;
+    padding: 0 16px 0 0;
     margin: 0;
     list-style: none;
     flex-wrap: nowrap;
@@ -199,6 +199,27 @@
 
     &.is-dragging {
       opacity: 0.55;
+    }
+
+    &.is-drop-before::before,
+    &.is-drop-after::after {
+      position: absolute;
+      z-index: 2;
+      top: 2px;
+      bottom: 2px;
+      width: 5px;
+      content: '';
+      background: $stack-tab-color-primary;
+      border-radius: 2px;
+      box-shadow: 0 0 6px rgba($stack-tab-color-primary, 0.8);
+    }
+
+    &.is-drop-before::before {
+      left: -3px;
+    }
+
+    &.is-drop-after::after {
+      right: -3px;
     }
 
     /*

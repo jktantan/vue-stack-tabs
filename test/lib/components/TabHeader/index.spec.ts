@@ -63,7 +63,8 @@ const TabHeaderItemStub = defineComponent({
     item: {
       type: Object,
       required: true
-    }
+    },
+    dropPosition: String
   },
   emits: ['contextmenu', 'active', 'close', 'dragstart', 'dragover', 'drop', 'dragend'],
   setup(props, { emit }) {
@@ -326,6 +327,11 @@ describe('TabHeader drag and drop', () => {
     const items = wrapper.findAllComponents(TabHeaderItemStub)
 
     items[0]!.vm.$emit('dragstart', tabs.value[0])
+    items[1]!.vm.$emit('dragover', tabs.value[1], {
+      currentTarget: items[1]!.element,
+      clientX: 100,
+      dataTransfer: {}
+    })
     items[1]!.vm.$emit('drop', tabs.value[1])
     await nextTick()
 
@@ -337,10 +343,32 @@ describe('TabHeader drag and drop', () => {
     const item = wrapper.findComponent(TabHeaderItemStub)
 
     item.vm.$emit('dragstart', tabs.value[0])
+    item.vm.$emit('dragover', tabs.value[0], {
+      currentTarget: item.element,
+      clientX: 100,
+      dataTransfer: {}
+    })
     item.vm.$emit('drop', tabs.value[0])
     await nextTick()
 
     expect(moveTabMock).not.toHaveBeenCalled()
+  })
+
+  it('拖到标签列表末尾留白时移动到最后', async () => {
+    tabs.value = [
+      makeTab({ id: 'tab-1', title: 'One', active: true }),
+      makeTab({ id: 'tab-2', title: 'Two', active: false })
+    ]
+    const wrapper = mountHeader()
+    const firstItem = wrapper.findComponent(TabHeaderItemStub)
+    const tablist = wrapper.get('[role="tablist"]')
+
+    firstItem.vm.$emit('dragstart', tabs.value[0])
+    tablist.element.dispatchEvent(new Event('dragover', { bubbles: true, cancelable: true }))
+    tablist.element.dispatchEvent(new Event('drop', { bubbles: true, cancelable: true }))
+    await nextTick()
+
+    expect(moveTabMock).toHaveBeenCalledWith('tab-1', 1)
   })
 })
 
