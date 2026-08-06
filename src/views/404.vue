@@ -8,7 +8,6 @@ const backto = () => {
 </script>
 
 <template>
-  <el-button @click="backto"> </el-button>
   <div>404</div>
 </template>
 
