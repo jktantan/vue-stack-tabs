@@ -4,6 +4,7 @@
  * 将 keep-alive 包装、VNode 注入和页面激活生命周期从 tab 状态编排中隔离，
  * 使 useTabPanel 只负责领域状态与路由协调。
  */
+/* eslint-disable vue/one-component-per-file -- 此工厂需要创建占位组件和按页面缓存的动态组件。 */
 import {
   cloneVNode,
   defineComponent,
@@ -14,7 +15,7 @@ import {
   ref,
   shallowRef
 } from 'vue'
-import type { DefineComponent, VNode } from 'vue'
+import type { DefineComponent, PropType, VNode } from 'vue'
 import type { ITabBase, ITabItem } from '../../model/TabModel'
 import PageLoading from '../../components/PageLoading.vue'
 import type { StackTabsRuntimeContext } from '../stackTabsContext'
@@ -60,11 +61,11 @@ export const createPageComponentFactory = (options: PageComponentFactoryOptions)
       return existing
     }
 
-    const cacheComponent = defineComponent({
+    const cacheComponent = defineComponent<{ vnode?: VNode }>({
       name: cacheName,
       props: {
         vnode: {
-          type: Object as () => VNode,
+          type: Object as PropType<VNode>,
           required: false,
           default: undefined
         }
@@ -72,7 +73,7 @@ export const createPageComponentFactory = (options: PageComponentFactoryOptions)
       emits: ['onLoaded'],
       setup(props, context) {
         const localBackParams = ref<Record<string, unknown> | null>(null)
-        const lastVnode = shallowRef<VNode | null>(null)
+        const lastVnode = shallowRef<VNode | null | undefined>(null)
         const lastCloned = shallowRef<VNode | null>(null)
         const lastBackParams = shallowRef<Record<string, unknown> | null>(null)
 
@@ -107,7 +108,7 @@ export const createPageComponentFactory = (options: PageComponentFactoryOptions)
         onUnmounted(() => removeScroller(cacheName))
 
         return () => {
-          const vnode = props.vnode as VNode | undefined
+          const vnode = props.vnode
           const backParams = localBackParams.value
           if (vnode !== lastVnode.value || backParams !== lastBackParams.value) {
             lastCloned.value = vnode
