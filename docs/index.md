@@ -3,7 +3,7 @@ layout: home
 
 hero:
   name: Vue Stack Tabs
-  tagline: A route-based tab component for Vue 3 and Vue Router
+  tagline: iframe-like tab isolation for Vue 3 and Vue Router
   image:
     src: '/img/logo.svg'
   actions:

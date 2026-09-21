@@ -2,7 +2,7 @@
 
 [中文](./README.md) | **English** | [Русский](./README.ru.md)
 
-> A Vue 3 multi-tab management library based on Vue Router. Achieves iframe-like TabPanel behavior using Vue scopes — **each tab has its own isolated component scope**.
+> A Vue 3 multi-tab manager built on Vue Router. It delivers iframe-like tab isolation through independent Vue scopes: every tab keeps its own page instance, cache, and navigation stack.
 
 ## Features
 

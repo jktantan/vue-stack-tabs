@@ -3,7 +3,7 @@ layout: home
 
 hero:
   name: Vue Stack Tabs
-  tagline: 基于 Vue Router 的路由页签组件
+  tagline: 为 Vue 3 与 Vue Router 提供 iframe 级隔离的多标签页方案
   image:
     src: /img/logo.svg
   actions:

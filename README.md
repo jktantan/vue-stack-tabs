@@ -2,7 +2,7 @@
 
 **中文** | [English](./README.en.md) | [Русский](./README.ru.md)
 
-> Vue 3 多标签页管理库，基于 Vue Router。用 Vue 作用域实现类似 iframe TabPanel 的效果——**每个 Tab 间组件作用域互不干扰**。
+> 基于 Vue Router 的 Vue 3 多标签页管理库。以独立 Vue 作用域实现类似 iframe 的标签隔离体验：每个标签都有自己的页面实例、缓存和导航栈，彼此互不干扰。
 
 ## ✨ 特性
 
