@@ -1,8 +1,9 @@
 /**
  * VueStackTabs 全局运行时上下文管理。
  *
- * 负责创建、注册、解析全局唯一的 StackTabsRuntimeContext，
- * 支持通过 Vue provide/inject 或模块级单例两种方式访问。
+ * 负责创建、注册、解析 StackTabsRuntimeContext。
+ * 业务运行时通过 Vue provide/inject 隔离；模块级回退仅保留给没有 App
+ * 容器的兼容调用（例如旧的单元测试），绝不能承载某个 Vue App 的状态。
  * 每个 Vue app 只允许注册一个 <VueStackTabs> 实例。
  */
 import type { App, DefineComponent, InjectionKey, Ref, ShallowRef } from 'vue'
@@ -77,7 +78,10 @@ export const createStackTabsRuntimeContext = (
   }
 }
 
-/** 获取当前活跃的运行时上下文（模块级单例） */
+/**
+ * 获取非 App 容器下注册的兼容上下文。
+ * @deprecated App 内的 composable 必须依赖 provide/inject，不应使用这个回退。
+ */
 export const getActiveStackTabsRuntimeContext = (): StackTabsRuntimeContext | null =>
   activeRuntimeContext
 
@@ -86,22 +90,21 @@ export const registerStackTabsRuntimeContext = (
   context: StackTabsRuntimeContext,
   options: RegisterStackTabsRuntimeContextOptions = {}
 ): boolean => {
-  if (!activeRuntimeContext) {
-    activeRuntimeContext = context
-  }
-
   if (options.app && !runtimeContextOwnersByApp.has(options.app)) {
     runtimeContextOwnersByApp.add(options.app)
     return true
   }
 
-  if (
-    !options.app &&
-    activeRuntimeContext === context &&
-    !isFallbackRuntimeContextOwnerRegistered
-  ) {
-    isFallbackRuntimeContextOwnerRegistered = true
-    return true
+  if (!options.app) {
+    if (!activeRuntimeContext) {
+      activeRuntimeContext = context
+      isFallbackRuntimeContextOwnerRegistered = true
+      return true
+    }
+    if (activeRuntimeContext === context && !isFallbackRuntimeContextOwnerRegistered) {
+      isFallbackRuntimeContextOwnerRegistered = true
+      return true
+    }
   }
 
   const isProduction = options.isProduction ?? import.meta.env.PROD
@@ -118,13 +121,15 @@ export const unregisterStackTabsRuntimeContext = (
   context: StackTabsRuntimeContext,
   options: UnregisterStackTabsRuntimeContextOptions = {}
 ): void => {
-  if (options.app) runtimeContextOwnersByApp.delete(options.app)
-  if (!options.app && activeRuntimeContext === context)
-    isFallbackRuntimeContextOwnerRegistered = false
+  if (options.app) {
+    runtimeContextOwnersByApp.delete(options.app)
+    return
+  }
+  if (activeRuntimeContext === context) isFallbackRuntimeContextOwnerRegistered = false
   if (activeRuntimeContext === context) activeRuntimeContext = null
 }
 
-/** 解析当前可用的运行时上下文，优先使用 inject，回退到模块单例 */
+/** 解析当前可用的运行时上下文，优先使用 inject，兼容回退仅限非 App 容器。 */
 export const resolveStackTabsRuntimeContext = (): StackTabsRuntimeContext => {
   const injected = hasInjectionContext() ? inject(stackTabsContextKey, null) : null
   const context = injected ?? activeRuntimeContext

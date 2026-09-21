@@ -1,3 +1,4 @@
+/** @vitest-environment happy-dom */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { decodeTabInfo } from '@/lib/utils/tabInfoEncoder'
 
@@ -9,7 +10,7 @@ const getTab = vi.fn()
 const renewTab = vi.fn()
 const refreshKey = { value: 0 }
 const tabs = { value: [] }
-const pages = { list: vi.fn(), clear: vi.fn(), push: vi.fn() }
+const pages = { list: vi.fn(), clear: vi.fn(), push: vi.fn(), peek: vi.fn() }
 const rollbackRenew = vi.fn()
 const runtimeContext = {
   iframePath: { value: '/iframe' }
@@ -58,6 +59,7 @@ describe('useTabActions', () => {
     pages.list.mockReset()
     pages.clear.mockReset()
     pages.push.mockReset()
+    pages.peek.mockReset()
     rollbackRenew.mockReset()
     runtimeContext.iframePath.value = '/iframe'
     refreshKey.value = 0
@@ -204,5 +206,22 @@ describe('useTabActions', () => {
     expect(route.query.foo).toBe('1')
     expect(route.query.bar).toBe('2')
     expect(route.query.__tab).toEqual(expect.any(String))
+  })
+
+  it('getWrapper 可按 tabId 或 pageId 精确获取缓存容器，未传参数保持兼容行为', async () => {
+    document.body.innerHTML = [
+      '<div id="W-page-1" class="cache-page-wrapper"></div>',
+      '<div id="W-page-2" class="cache-page-wrapper"></div>'
+    ].join('')
+    pages.peek.mockReturnValue({ id: 'page-2' })
+    getTab.mockReturnValue({ pages })
+
+    const { default: useTabActions } = await import('@/lib/hooks/useTabActions')
+    const { getWrapper } = useTabActions()
+
+    expect(getWrapper()).toBe(document.getElementById('W-page-1'))
+    expect(getWrapper({ tabId: 'tab-2' })).toBe(document.getElementById('W-page-2'))
+    expect(getWrapper({ pageId: 'page-1' })).toBe(document.getElementById('W-page-1'))
+    expect(getWrapper({ pageId: 'missing' })).toBeUndefined()
   })
 })

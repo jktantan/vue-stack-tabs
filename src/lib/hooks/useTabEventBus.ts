@@ -7,7 +7,7 @@
 import type { InjectionKey } from 'vue'
 import { hasInjectionContext, inject } from 'vue'
 import type { Emitter, EventType } from 'mitt'
-import { resolveStackTabsRuntimeContext } from './stackTabsContext'
+import { resolveStackTabsRuntimeContext, type StackTabsRuntimeContext } from './stackTabsContext'
 
 declare module '@vue/runtime-core' {
   export interface ComponentCustomProperties {
@@ -35,7 +35,9 @@ export interface TabEventPayloadMap extends Record<EventType, unknown> {
 export const tabEmitterKey: InjectionKey<Emitter<TabEventPayloadMap>> = Symbol('tabEmitter')
 
 /** 获取标签事件总线，用于组件间通信 */
-export const useTabEmitter = (): Emitter<TabEventPayloadMap> => {
+export const useTabEmitter = (
+  runtimeContext?: StackTabsRuntimeContext
+): Emitter<TabEventPayloadMap> => {
   const injected = hasInjectionContext() ? inject(tabEmitterKey, null) : null
-  return injected ?? resolveStackTabsRuntimeContext().eventBus
+  return injected ?? runtimeContext?.eventBus ?? resolveStackTabsRuntimeContext().eventBus
 }

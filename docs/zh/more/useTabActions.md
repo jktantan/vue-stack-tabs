@@ -65,5 +65,5 @@ const {
 | `reset()`                 | 重置                           |
 | `tabs`                    | 标签列表（只读）               |
 | `setIFramePath(path)`     | 设置 iframe 路由路径（内部用） |
-| `getWrapper()`            | 获取内容区 DOM（内部用）       |
+| `getWrapper({ tabId?, pageId? })` | 获取内容区 DOM；不传参数兼容返回首个容器，多标签时应传 `tabId` 或 `pageId`。 |
 | `openInNewWindow(id)`     | iframe 标签在新窗口打开（无法嵌入时降级） |

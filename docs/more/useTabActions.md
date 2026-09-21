@@ -63,5 +63,5 @@ Close left/right/others are available via the right-click context menu.
 | `reset()` | Reset all |
 | `tabs` | Tab list (read-only) |
 | `setIFramePath(path)` | Set iframe path (internal) |
-| `getWrapper()` | Get content DOM (internal) |
+| `getWrapper({ tabId?, pageId? })` | Get a content DOM node. Omit parameters for legacy first-node behavior; use `tabId` or `pageId` when multiple tabs exist. |
 | `openInNewWindow(id)` | Open iframe tab in new window (fallback) |

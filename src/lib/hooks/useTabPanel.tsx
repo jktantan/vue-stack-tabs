@@ -12,17 +12,7 @@
  * 使用范围：内部 hook，由 StackTabs、useTabActions、useTabRouter、ContextMenu 调用
  */
 import type { ITabBase, ITabData, ITabItem, ITabPage } from '../model/TabModel'
-import {
-  defineComponent,
-  onActivated,
-  onDeactivated,
-  onMounted,
-  onUnmounted,
-  computed,
-  ref,
-  shallowRef,
-  cloneVNode
-} from 'vue'
+import { computed, ref } from 'vue'
 import type { DefineComponent, VNode } from 'vue'
 import { isNavigationFailure, useRouter } from 'vue-router'
 import type { RouteLocationNormalizedLoaded } from 'vue-router'
@@ -38,25 +28,19 @@ import {
   cloneLocationQuery,
   clonePage
 } from '../utils/urlParser'
-import PageLoading from '../components/PageLoading.vue'
 import { TabEventType, useTabEmitter } from './useTabEventBus'
 import { runNavigationTransaction } from './tabPanel/navigationTransaction'
 import { useI18n } from 'vue-i18n-lite'
 
-import { resolveStackTabsRuntimeContext } from './stackTabsContext'
+import { resolveStackTabsRuntimeContext, type StackTabsRuntimeContext } from './stackTabsContext'
 import { createTabPanelEviction } from './tabPanel/evict'
 import { createTabPanelScroll } from './tabPanel/scroll'
 import { createTabPanelSession } from './tabPanel/session'
 import { createTabPanelRefresh } from './tabPanel/refresh'
-
-/* eslint-disable vue/one-component-per-file */
-/** 占位组件：当路由组件为空或标签已被标记删除时返回 */
-const EmptyPlaceholderComponent = defineComponent({
-  name: 'StackTabEmptyPlaceholder',
-  setup() {
-    return () => null
-  }
-})
+import {
+  createPageComponentFactory,
+  getEmptyPlaceholderComponent
+} from './tabPanel/pageComponentFactory'
 
 const cloneRouteQuery = (route: RouteLocationNormalizedLoaded, tabInfo: ITabBase) => ({
   ...cloneLocationQuery(route.query),
@@ -71,11 +55,11 @@ export const normalizePathForCache = (route: RouteLocationNormalizedLoaded): str
   return matchPath === path ? path : route.path
 }
 
-export default () => {
+export default (providedRuntimeContext?: StackTabsRuntimeContext) => {
   const router = useRouter()
-  const emitter = useTabEmitter()
+  const runtimeContext = providedRuntimeContext ?? resolveStackTabsRuntimeContext()
+  const emitter = useTabEmitter(runtimeContext)
   const { t } = useI18n()
-  const runtimeContext = resolveStackTabsRuntimeContext()
   const {
     tabs,
     defaultTabs,
@@ -190,6 +174,31 @@ export default () => {
   const getTab = (id: string) => tabs.value.find((t) => t.id === id) ?? null
 
   /**
+   * 唯一的标签激活状态写入口。即使标签对象保持不变，也替换列表引用，
+   * 让 TabHeader 与 iframe 视图在同一个响应式提交中观察到一致状态。
+   */
+  const setActiveTab = (id: string): ITabItem | null => {
+    let activeTab: ITabItem | null = null
+    tabs.value = tabs.value.map((tab) => {
+      tab.active = tab.id === id
+      if (tab.active) activeTab = tab
+      return tab
+    })
+    return activeTab
+  }
+
+  const { resolvePageComponent } = createPageComponentFactory({
+    runtimeContext,
+    getTab,
+    addCache,
+    evictMarkedCaches,
+    addPageScroller,
+    saveScroller,
+    restoreScroller,
+    removeScroller
+  })
+
+  /**
    * 将指定标签移动到目标索引。标签对象本身不变，因此其页面栈和缓存关联保持不受影响。
    * @returns 是否实际调整了顺序
    */
@@ -251,11 +260,7 @@ export default () => {
     cacheName: string,
     page: ITabPage
   ): ITabItem => {
-    let targetTab: ITabItem | null = null
-    for (const tab of tabs.value) {
-      tab.active = false
-      if (tab.id === tabInfo.id) targetTab = tab as ITabItem
-    }
+    let targetTab = tabInfo.id ? getTab(tabInfo.id) : null
 
     if (targetTab === null) {
       const pages = new Stack<ITabPage>()
@@ -272,10 +277,11 @@ export default () => {
         active: true,
         pages
       } as unknown as ITabItem
+      setActiveTab('')
       addTab(targetTab)
       emitter.emit(TabEventType.TAB_ACTIVE, { id: tabInfo.id!, isRoute: false })
     } else {
-      targetTab.active = true
+      setActiveTab(targetTab.id)
       if (targetTab.pages.isEmpty() || targetTab.pages.peek()!.id !== page.id) {
         targetTab.pages.push(page)
       }
@@ -373,111 +379,11 @@ export default () => {
     if (page) {
       targetTab = findOrCreateTargetTab(tabInfo, route, cacheName, page)
     } else {
-      for (const t of tabs.value) t.active = false
-      targetTab!.active = true
+      setActiveTab(targetTab!.id)
     }
 
     saveActiveTabToSession(targetTab!)
     return { cacheName, tabInfo, targetTab: targetTab! }
-  }
-
-  /**
-   * 获取或创建与 cacheName 对应的 cacheComponent（keep-alive 包装组件）。
-   */
-  const resolvePageComponent = (ctx: {
-    cacheName: string
-    tabInfo: ITabBase
-    targetTab: ITabItem
-  }): DefineComponent => {
-    const { cacheName, tabInfo } = ctx
-
-    if (components.has(cacheName)) {
-      addCache(cacheName)
-      return components.get(cacheName)!
-    }
-
-    const cacheComponent = defineComponent({
-      name: cacheName,
-      props: {
-        vnode: {
-          type: Object as () => VNode,
-          required: false,
-          default: undefined
-        }
-      },
-      emits: ['onLoaded'],
-      setup(props, context) {
-        const localBackParams = ref<Record<string, unknown> | null>(null)
-        const lastVnode = shallowRef<VNode | null>(null)
-        const lastCloned = shallowRef<VNode | null>(null)
-        const lastBackParams = shallowRef<Record<string, unknown> | null>(null)
-
-        const checkAndConsumeBackParams = () => {
-          try {
-            const tab = getTab(tabInfo.id!)
-            const top = tab?.pages.peek()
-            if (top && top.id === cacheName && top._backParams) {
-              localBackParams.value = { ...top._backParams }
-              delete top._backParams
-            } else {
-              localBackParams.value = null
-            }
-          } catch {
-            localBackParams.value = null
-          }
-        }
-
-        onMounted(() => {
-          context.emit('onLoaded')
-          addPageScroller(cacheName, `#W-${cacheName}`)
-          checkAndConsumeBackParams()
-        })
-
-        onDeactivated(() => saveScroller(cacheName))
-
-        onActivated(() => {
-          context.emit('onLoaded')
-          restoreScroller(cacheName)
-          evictMarkedCaches()
-          tabIdsToEvict.clear()
-          checkAndConsumeBackParams()
-        })
-
-        onUnmounted(() => removeScroller(cacheName))
-
-        return () => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const Node = (props as any).vnode as VNode
-          const backParams = localBackParams.value
-
-          if (Node !== lastVnode.value || backParams !== lastBackParams.value) {
-            const dynamicBackProps = backParams ? { _back: backParams } : {}
-            lastCloned.value = Node
-              ? cloneVNode(Node, { tId: tabInfo.id, pId: cacheName, ...dynamicBackProps })
-              : null
-            lastVnode.value = Node
-            lastBackParams.value = backParams
-          }
-
-          return (
-            <div
-              class="cache-page-wrapper"
-              id={`W-${cacheName}`}
-              style={[
-                runtimeContext.useGlobalScroll.value ? 'overflow:auto' : 'overflow:hidden',
-                'height: 100%'
-              ]}
-            >
-              {lastCloned.value}
-              <PageLoading tabId={tabInfo.id!} />
-            </div>
-          )
-        }
-      }
-    }) as DefineComponent
-    components.set(cacheName, cacheComponent)
-    addCache(cacheName)
-    return cacheComponent
   }
 
   /** 当前正在渲染的页面的缓存 Key（ULID），供 StackTabs.vue 的 :key 绑定使用 */
@@ -495,7 +401,7 @@ export default () => {
     route: RouteLocationNormalizedLoaded,
     component?: VNode | null
   ): DefineComponent => {
-    if (!component) return EmptyPlaceholderComponent as DefineComponent
+    if (!component) return getEmptyPlaceholderComponent()
 
     const routeKey = route.fullPath + (route.query.__tab || '')
     if (routeKey === lastRouteKey && lastAddPageResult) {
@@ -503,7 +409,7 @@ export default () => {
     }
 
     const state = updatePageState(route)
-    if ('empty' in state) return EmptyPlaceholderComponent as DefineComponent
+    if ('empty' in state) return getEmptyPlaceholderComponent()
     if ('recovered' in state) {
       addCache(state.cacheName)
       activeCacheKey.value = state.cacheName
@@ -554,7 +460,7 @@ export default () => {
     if (tabList.length > 1 && tab.active) {
       activeTabId = (i === 0 ? tabList[1] : tabList[i - 1])?.id ?? ''
     }
-    tabList.splice(i, 1)
+    tabs.value = [...tabList.slice(0, i), ...tabList.slice(i + 1)]
 
     if (activeTabId) {
       emitter.emit(TabEventType.TAB_ACTIVE, { id: activeTabId })
@@ -569,32 +475,32 @@ export default () => {
 
   /** 批量关闭满足条件的可关闭标签，并统一标记其页面缓存待驱逐。 */
   const removeTabs = (shouldRemove: (tab: ITabItem, index: number) => boolean) => {
-    const tabList = tabs.value
-    for (let index = tabList.length - 1; index >= 0; index--) {
-      const tab = tabList[index]
-      if (!tab || !tab.closable || !shouldRemove(tab, index)) continue
+    const removed: ITabItem[] = []
+    const remaining = tabs.value.filter((tab, index) => {
+      if (!tab.closable || !shouldRemove(tab, index)) return true
       markTabPagesForEviction(tab)
       tab.pages.clear()
-      tabList.splice(index, 1)
-    }
+      removed.push(tab)
+      return false
+    })
+    tabs.value = remaining
+    return removed
   }
 
   const removeAllTabs = () => {
-    const tabList = tabs.value
     removeTabs(() => true)
-    const hasActive = tabList.some((t) => t.active)
+    const hasActive = tabs.value.some((t) => t.active)
     if (hasActive) {
       evictMarkedCaches()
       tabIdsToEvict.clear()
       return
     }
-    const last = tabList[tabList.length - 1]
+    const last = tabs.value.at(-1)
     if (last) emitter.emit(TabEventType.TAB_ACTIVE, { id: last.id })
   }
 
   const removeOtherTabs = (id: string) => {
-    const tabList = tabs.value
-    const activeTab = tabList.find((tab) => tab.id === id)
+    const activeTab = getTab(id)
     removeTabs((tab) => tab.id !== id)
     if (activeTab && !activeTab.active) {
       emitter.emit(TabEventType.TAB_ACTIVE, { id })
@@ -605,32 +511,30 @@ export default () => {
   }
 
   const removeLeftTabs = (id: string) => {
-    const tabList = tabs.value
-    const pivot = tabList.findIndex((t) => t?.id === id)
+    const pivot = tabs.value.findIndex((t) => t?.id === id)
     if (pivot <= 0) return
 
     removeTabs((_, index) => index < pivot)
-    if (tabList.some((t) => t.active)) {
+    if (tabs.value.some((t) => t.active)) {
       evictMarkedCaches()
       tabIdsToEvict.clear()
       return
     }
-    const first = tabList[0]
+    const first = tabs.value[0]
     if (first) emitter.emit(TabEventType.TAB_ACTIVE, { id: first.id })
   }
 
   const removeRightTabs = (id: string) => {
-    const tabList = tabs.value
-    const pivot = tabList.findIndex((t) => t?.id === id)
-    if (pivot < 0 || pivot >= tabList.length - 1) return
+    const pivot = tabs.value.findIndex((t) => t?.id === id)
+    if (pivot < 0 || pivot >= tabs.value.length - 1) return
 
     removeTabs((_, index) => index > pivot)
-    if (tabList.some((t) => t.active)) {
+    if (tabs.value.some((t) => t.active)) {
       evictMarkedCaches()
       tabIdsToEvict.clear()
       return
     }
-    const last = tabList[tabList.length - 1]
+    const last = tabs.value.at(-1)
     if (last) emitter.emit(TabEventType.TAB_ACTIVE, { id: last.id })
   }
 
@@ -660,11 +564,8 @@ export default () => {
 
     const top = target.pages.peek()
     const activateTarget = () => {
-      for (const tab of tabs.value) {
-        tab.active = tab.id === id
-      }
-      saveActiveTabToSession(target as ITabItem)
-      tabs.value = tabs.value.slice()
+      const activeTab = setActiveTab(id)
+      if (activeTab) saveActiveTabToSession(activeTab)
     }
 
     if (!route) {
@@ -694,10 +595,7 @@ export default () => {
       },
       navigate: () => router.push({ path: top.path, query }),
       rollback: (snapshot) => {
-        for (const tab of tabs.value) {
-          tab.active = tab.id === snapshot.prevActiveId
-        }
-        tabs.value = tabs.value.slice()
+        setActiveTab(snapshot.prevActiveId ?? '')
         restoreActiveTabSession(snapshot.sessionSnapshot)
       },
       isFailureResult: isNavigationFailure,

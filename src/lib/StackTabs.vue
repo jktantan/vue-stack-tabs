@@ -123,7 +123,7 @@ watch(maximum, (isMaximum) => {
   maximumZIndex.value = isMaximum ? getMaxZIndex('body *:not(.stack-tab,.stack-tab *)') : undefined
 })
 const panelApi = isRuntimeContextOwner
-  ? useTabPanel()
+  ? useTabPanel(runtimeContext)
   : {
       tabs: runtimeContext.tabs,
       iframeRefreshKeys: runtimeContext.iframeRefreshKeys,
@@ -143,7 +143,7 @@ const {
   setSessionPrefix
 } = panelApi
 const tabActions = isRuntimeContextOwner
-  ? useTabActions()
+  ? useTabActions(runtimeContext)
   : {
       setIFramePath: () => undefined,
       openTab: () => Promise.resolve(undefined),

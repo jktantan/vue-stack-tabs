@@ -17,7 +17,10 @@ const setSessionPrefixMock = vi.fn()
 const setIFramePathMock = vi.fn()
 const openTabMock = vi.fn()
 const openInNewWindowMock = vi.fn()
-const stackTabStyles = readFileSync(resolve(process.cwd(), 'src/lib/assets/style/stackTab.scss'), 'utf8')
+const stackTabStyles = readFileSync(
+  resolve(process.cwd(), 'src/lib/assets/style/stackTab.scss'),
+  'utf8'
+)
 
 vi.mock('vue-i18n-lite', () => ({
   useI18n: () => ({
@@ -168,7 +171,8 @@ describe('StackTabs iframe security and states', () => {
 
     expect(panel.attributes('role')).toBeUndefined()
     expect(panel.attributes('aria-hidden')).toBe('true')
-    expect(panel.attributes('hidden')).toBeUndefined()
+    // hidden 是布尔属性，存在即表示 true；与 v-show 一起防止旧内容被辅助技术读取。
+    expect(panel.element.hasAttribute('hidden')).toBe(true)
   })
 
   it('非 iframe tabpanel 全高承载 keep-alive 内容', () => {
@@ -221,7 +225,9 @@ describe('StackTabs iframe security and states', () => {
     await wrapper.vm.$nextTick()
 
     expect(wrapper.get('.stack-tab__iframe-error').attributes('role')).toBe('alert')
-    expect(wrapper.get('.stack-tab__iframe-error-text').text()).toBe('VueStackTab.iframeLoadTimeout')
+    expect(wrapper.get('.stack-tab__iframe-error-text').text()).toBe(
+      'VueStackTab.iframeLoadTimeout'
+    )
 
     await wrapper.get('.stack-tab__iframe-error-retry').trigger('click')
     expect(wrapper.find('.stack-tab__iframe-loading').exists()).toBe(true)
@@ -304,9 +310,7 @@ describe('StackTabs iframe security and states', () => {
     const iframeSrcs = wrapper
       .findAll('iframe.stack-tab__iframe')
       .map((iframe) => iframe.attributes('src') ?? '')
-    expect(iframeSrcs).toContain(
-      'settings/profile?section=billing&__stack_tabs_refresh=1#usage'
-    )
+    expect(iframeSrcs).toContain('settings/profile?section=billing&__stack_tabs_refresh=1#usage')
   })
 
   it('retry 后 DOM 替换前的旧 iframe load 不会结束新 iframe loading', async () => {

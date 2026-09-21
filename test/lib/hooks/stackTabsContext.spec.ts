@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { createApp } from 'vue'
 import {
   STACK_TABS_CONTEXT_UNAVAILABLE_MESSAGE,
   STACK_TABS_DUPLICATE_INSTANCE_MESSAGE,
@@ -6,6 +7,7 @@ import {
   getActiveStackTabsRuntimeContext,
   registerStackTabsRuntimeContext,
   resolveStackTabsRuntimeContext,
+  stackTabsContextKey,
   unregisterStackTabsRuntimeContext
 } from '@/lib/hooks/stackTabsContext'
 
@@ -68,6 +70,31 @@ describe('stackTabsContext', () => {
     expect(warnSpy).toHaveBeenCalledWith(STACK_TABS_DUPLICATE_INSTANCE_MESSAGE)
     expect(resolveStackTabsRuntimeContext()).toBe(first)
     expect(resolveStackTabsRuntimeContext().iframePath.value).toBe('/first')
+  })
+
+  it('不同 Vue App 的注册不会占用模块级回退上下文', () => {
+    const first = createStackTabsRuntimeContext({ iframePath: '/first' })
+    const second = createStackTabsRuntimeContext({ iframePath: '/second' })
+    const firstApp = createApp({})
+    const secondApp = createApp({})
+    firstApp.provide(stackTabsContextKey, first)
+    secondApp.provide(stackTabsContextKey, second)
+
+    expect(registerStackTabsRuntimeContext(first, { app: firstApp, isProduction: false })).toBe(
+      true
+    )
+    expect(registerStackTabsRuntimeContext(second, { app: secondApp, isProduction: false })).toBe(
+      true
+    )
+
+    // App 内会经 inject 获取各自的 context；此处验证不会泄漏第一个 App 的状态。
+    expect(getActiveStackTabsRuntimeContext()).toBeNull()
+    expect(() => resolveStackTabsRuntimeContext()).toThrow(STACK_TABS_CONTEXT_UNAVAILABLE_MESSAGE)
+    expect(firstApp.runWithContext(resolveStackTabsRuntimeContext)).toBe(first)
+    expect(secondApp.runWithContext(resolveStackTabsRuntimeContext)).toBe(second)
+
+    unregisterStackTabsRuntimeContext(first, { app: firstApp })
+    unregisterStackTabsRuntimeContext(second, { app: secondApp })
   })
 
   it('注销当前 context 后 resolver 回到不可用状态', () => {

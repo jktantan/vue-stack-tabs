@@ -11,7 +11,7 @@ import {
 } from '../utils/urlParser'
 import type { ITabData, IframeRefreshMode } from '../model/TabModel'
 import { runNavigationTransaction } from './tabPanel/navigationTransaction'
-import { resolveStackTabsRuntimeContext } from './stackTabsContext'
+import { resolveStackTabsRuntimeContext, type StackTabsRuntimeContext } from './stackTabsContext'
 
 /**
  * useTabActions - 标签操作对外 Hook
@@ -26,9 +26,9 @@ import { resolveStackTabsRuntimeContext } from './stackTabsContext'
  * - activeTab(id, isRoute?) 激活标签
  * - reset() 重置（关闭所有）
  */
-export default function useTabActions() {
+export default function useTabActions(providedRuntimeContext?: StackTabsRuntimeContext) {
   const router = useRouter()
-  const runtimeContext = resolveStackTabsRuntimeContext()
+  const runtimeContext = providedRuntimeContext ?? resolveStackTabsRuntimeContext()
   const {
     active,
     hasTab,
@@ -43,7 +43,7 @@ export default function useTabActions() {
     removeAllTabs,
     refreshTab,
     refreshAllTabs
-  } = useTabPanel()
+  } = useTabPanel(runtimeContext)
 
   /** 合并默认值，生成完整 tabInfo */
   const prepareTabInfo = (tab: ITabData): ITabData => {
@@ -143,9 +143,19 @@ export default function useTabActions() {
     runtimeContext.iframePath.value = path
   }
 
-  /** 获取当前页面的缓存容器 DOM（用于某些需要直接操作 DOM 的场景） */
-  const getWrapper = () => {
-    return document.getElementsByClassName('cache-page-wrapper')[0]
+  /**
+   * 获取缓存页面容器。
+   * 不传参数时保留旧行为并返回第一个容器；多标签场景应传 tabId 或 pageId，
+   * 避免因 DOM 排序而取得错误页面。
+   */
+  const getWrapper = (
+    target: { tabId?: string; pageId?: string } = {}
+  ): HTMLElement | undefined => {
+    if (typeof document === 'undefined') return undefined
+    const pageId =
+      target.pageId ?? (target.tabId ? getTab(target.tabId)?.pages.peek()?.id : undefined)
+    if (pageId) return document.getElementById(`W-${pageId}`) ?? undefined
+    return document.querySelector<HTMLElement>('.cache-page-wrapper') ?? undefined
   }
 
   /** iframe 标签在新窗口打开（无法嵌入时降级） */

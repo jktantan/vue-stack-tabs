@@ -44,7 +44,8 @@ describe('tabPanel session', () => {
   })
 
   it('合并同一微任务内的连续写入，仅持久化最后一个 tab', async () => {
-    const setItem = vi.spyOn(window.sessionStorage, 'setItem')
+    // happy-dom 的 Storage 写入无法被 spy 可靠截获；序列化次数可直接验证写入合并。
+    const stringify = vi.spyOn(JSON, 'stringify')
     const tab = (id: string) => ({
       id,
       title: id,
@@ -59,7 +60,11 @@ describe('tabPanel session', () => {
     session.saveActiveTabToSession(tab('two'))
     await new Promise<void>((resolve) => queueMicrotask(resolve))
 
-    expect(setItem).toHaveBeenCalledTimes(1)
+    const persistedTabs = stringify.mock.calls.filter(
+      ([value]) => typeof value === 'object' && value !== null && 'id' in value
+    )
+    expect(persistedTabs).toHaveLength(1)
+    expect(persistedTabs[0]?.[0]).toMatchObject({ id: 'two' })
     expect(window.sessionStorage.getItem(session.getSessionKey())).toContain('"id":"two"')
   })
 
