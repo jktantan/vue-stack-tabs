@@ -443,7 +443,6 @@
     border-radius: 10px 0;
     box-shadow: $stack-tab-shadow-context-menu;
     transform-origin: left top;
-    transition: all 0.25s ease-in;
 
     &-item {
       display: flex;
@@ -464,7 +463,10 @@
       background: transparent;
       border: 0;
       border-radius: 10px 0;
-      transition: all 0.2s ease-in-out;
+      // 仅过渡悬停态实际会改变的颜色，避免触发菜单布局与合成层的无关动画。
+      transition:
+        color 0.2s ease-in-out,
+        background-color 0.2s ease-in-out;
       user-select: none;
 
       &:hover,
@@ -497,7 +499,7 @@
     &-icon {
       width: $stack-tab-font-size;
       height: $stack-tab-font-size;
-      transition: all 0.2s ease-in-out;
+      transition: background-color 0.2s ease-in-out;
 
       &.svg-mask {
         width: $stack-tab-font-size;

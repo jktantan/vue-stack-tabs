@@ -19,28 +19,59 @@ export default () => {
   /** 菜单是否显示 */
   const shown = ref<boolean>(false)
 
-  /** 点击菜单外部时关闭菜单并移除监听 */
+  /** 关闭菜单并清理全局事件。 */
+  const hideContextMenu = () => {
+    shown.value = false
+    document.removeEventListener('click', handleClickOutside)
+    document.removeEventListener('focusin', handleDocumentFocusIn, true)
+    window.removeEventListener('blur', handleWindowBlur)
+  }
+
+  /** 点击菜单外部时关闭菜单。 */
   const handleClickOutside = (ev: MouseEvent) => {
     const target = ev.target as Element
     if (target.closest?.('.stack-tab__contextmenu')) return
-    shown.value = false
-    document.removeEventListener('click', handleClickOutside)
+    hideContextMenu()
+  }
+
+  /**
+   * iframe 内的点击不会冒泡到父页面，但 iframe 自身会在父文档中获得焦点。
+   * 捕获 focusin 仅处理该元素，避免 window.blur 干扰菜单内部的焦点管理。
+   */
+  const handleDocumentFocusIn = (event: FocusEvent) => {
+    if (event.target instanceof HTMLIFrameElement) hideContextMenu()
+  }
+
+  /**
+   * 部分浏览器不会把 iframe 内部点击的 focusin 派发到父文档；此时父窗口
+   * 会失焦。等待焦点完成切换后，只在 activeElement 确实为 iframe 时收起。
+   */
+  const handleWindowBlur = () => {
+    window.requestAnimationFrame(() => {
+      if (document.activeElement instanceof HTMLIFrameElement) hideContextMenu()
+    })
   }
 
   onUnmounted(() => {
-    document.removeEventListener('click', handleClickOutside)
+    hideContextMenu()
   })
 
   /** 显示右键菜单；nextTick 后设置位置与数据，避免与关闭逻辑冲突 */
   const showContextMenu = async (e: MouseEvent, item: ITabItem, index: number, max: number) => {
     shown.value = false
     document.removeEventListener('click', handleClickOutside)
+    document.removeEventListener('focusin', handleDocumentFocusIn, true)
+    window.removeEventListener('blur', handleWindowBlur)
 
     await nextTick(() => {
       const { clientY: top, clientX: left } = e
       shown.value = true
       Object.assign(contextMenuData, { item, index, top, left, max })
-      nextTick(() => document.addEventListener('click', handleClickOutside))
+      nextTick(() => {
+        document.addEventListener('click', handleClickOutside)
+        document.addEventListener('focusin', handleDocumentFocusIn, true)
+        window.addEventListener('blur', handleWindowBlur)
+      })
     })
   }
 
