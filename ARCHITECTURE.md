@@ -1,6 +1,6 @@
 # vue-stack-tabs 架构设计文档
 
-> 供开发者与 AI 助手理解项目内部设计。最后更新：2026-07-15
+> 供开发者与 AI 助手理解项目内部设计。最后更新：2026-XX-XX（五轮重构与 bug 修复后）
 
 ---
 
@@ -88,10 +88,17 @@ graph TB
         E["evict.ts"]
         SC["scroll.ts"]
         SE["session.ts"]
+        RF["refresh.ts"]
+        NT["navigationTransaction.ts"]
+    end
+    subgraph "组件工厂层"
+        PCF["pageComponentFactory.tsx"]
+        EP["emptyPlaceholder.tsx"]
     end
     subgraph "UI 组件层"
         ST["StackTabs.vue"]
         TH["TabHeader"]
+        IFM["useIframeManager"]
     end
 
     A --> P
@@ -104,6 +111,11 @@ graph TB
     P --> E
     P --> SC
     P --> SE
+    P --> RF
+    P --> NT
+    P --> PCF
+    PCF --> EP
+    ST --> IFM
 ```
 
 ### 3.1 useTabPanel（核心引擎）
@@ -224,7 +236,13 @@ sequenceDiagram
 
 ### 5.3 驱逐时序约束
 
-**必须先导航，再驱逐**。因为 `evictPageCache` 同步修改 `caches`（即 `<keep-alive :include>`），会触发 Vue 重渲染。如果在导航前驱逐，`updatePageState` 会在旧路由上下文中被重入，产生不可预测的行为。
+**核心规则：先标记驱逐，再等异步清理。**
+
+- 路由同步路径（如 `updatePageState` 检测到 native back 需弹出 pages）走 `markCacheForEviction(id)`，**不再调用同步 `evictPageCache`**。理由：路由尚未真正切换，守卫可能拒绝导航；同步驱逐会让缓存不可回滚。
+- `evictMarkedCaches()` 由 `onActivated` 或下一拍统一触发，此时路由已稳定，驱逐不会触发 `updatePageState` 在旧上下文中重入。
+- `backward` 路径用 `runNavigationTransaction` 的 `commit()` 钩子在导航成功后才驱逐被弹出的 pages；若导航失败/过期，回滚时通过 `restorePages` 重建栈或 `cleanupStale` 清理残留 ID。
+
+详细修复记录见 `docs/DIAGNOSTIC_REPORT.md` 第 5、55 项。
 
 ---
 
@@ -283,9 +301,11 @@ src/lib/
 │   └── tabPanel/               # 内部子模块
 │       ├── state.ts            # 共享响应式状态
 │       ├── evict.ts            # 缓存驱逐
-│       ├── scroll.ts           # 滚动位置记忆
-│       ├── session.ts          # Session 持久化
-│       └── navigationTransaction.ts  # 导航事务管理
+│       ├── refresh.ts          # 单页/全量刷新逻辑（active 路径 triggerRef）
+│       ├── scroll.ts           # 滚动位置记忆（含 MutationObserver 缓存）
+│       ├── session.ts          # Session 持久化（SSR 安全）
+│       ├── navigationTransaction.ts  # 导航事务管理（apply/rollback/cleanupStale）
+│       └── pageComponentFactory.tsx  # cacheComponent 工厂（按 pageId 复用）
 ├── model/
 │   └── TabModel.ts             # 类型定义 + Stack 类
 ├── components/
@@ -293,6 +313,9 @@ src/lib/
 │   ├── ContextMenu/            # 右键菜单 UI
 │   ├── PageLoading.vue         # 页面加载指示器
 │   └── StackKeepAlive/         # keep-alive 缓存渲染
+│       ├── StackKeepAlive.vue  # 顶层：router-view slot + keep-alive 包裹
+│       ├── StackCacheRenderer.vue  # 中间层：解析 cacheComponent 并通过 scoped slot 暴露
+│       └── emptyPlaceholder.tsx    # 共享 EmptyPlaceholderComponent（empty / recovered 分支）
 ├── utils/
 │   ├── tabInfoEncoder.ts       # __tab 编解码 + UUID 生成
 │   ├── urlParser.ts            # URL 解析与安全校验
@@ -313,7 +336,25 @@ src/lib/
 | 约束                      | 说明                                                                                                                                 |
 | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
 | **\_\_tab 必带**          | 所有路由跳转（forward / backward / Tab 切换 / openTab）必须在 query 中携带 `__tab` 编码，否则 `parseTabInfoFromRoute` 会创建匿名 Tab |
-| **先导航再驱逐**          | 缓存驱逐必须在路由导航完成后异步执行，否则会触发 `updatePageState` 在旧上下文中重入                                                  |
+| **先标记再延迟驱逐**      | 路由同步路径用 `markCacheForEviction` 标记，统一在 `onActivated` 或下一拍 `evictMarkedCaches`；事务路径在 `commit` 钩子里驱逐             |
 | **path-only 比对**        | `updatePageState` 仅比对 `route.path` 与栈顶的 `page.path`，不比对 query。栈是唯一真相源                                             |
 | **UUID 唯一性**           | 同一路由多次压栈会产生不同的 UUID，确保 keep-alive 缓存隔离                                                                          |
 | **\_backParams 生命周期** | 后退参数存在 `ITabPage._backParams` 内存中，由目标页的 `onMounted` / `onActivated` 消费后清空                                        |
+| **iframePath 必填**       | `<VueStackTabs>` 必传 `iframePath` prop（占位路由路径），开发期会抛 Error 提示                                                      |
+| **POST origin 校验**      | `onRefreshRequest` 默认不校验 origin，等同 `targetOrigin: '*'`。生产环境务必显式传 `allowedOrigins`                                    |
+
+---
+
+## 11. 最近修复（2026-XX 五轮）
+
+详细诊断与修复记录见 `docs/DIAGNOSTIC_REPORT.md`，此处仅列出影响架构理解的关键变更：
+
+| 轮次 | 关键变更 | 涉及文件 |
+|---|---|---|
+| 第一轮 | `updatePageState` 改用 `markCacheForEviction` 延迟路径；`refreshTab` active 路径补 `triggerRef` | `useTabPanel.tsx` / `refresh.ts` |
+| 第二轮 | `encodeBase64` 改用 `btoa(unescape(encodeURIComponent))` 标准跨浏览器方案 | `tabInfoEncoder.ts` |
+| 第三轮 | `getMaxZIndex` 加 100ms TTL 缓存 + `invalidateZIndexCache` 导出；抽出共享 `EmptyPlaceholderComponent`；`scroll saveScroller` 用 MutationObserver 缓存 | `scrollUtils.ts` / `emptyPlaceholder.tsx` / `scroll.ts` |
+| 第四轮 | Nuxt 模块用 `addComponent` 自动注册 `VueStackTabs` 全局组件；Nuxt plugin 显式调用 `applyStackTabsLocale`；session 模块加 SSR `typeof window` 守卫 | `nuxt/module.ts` / `nuxt/runtime/plugin*.ts` / `session.ts` |
+| 第五轮 | `useContextMenu` 加 `BUBBLE_GUARD_MS` 时间戳守卫；defu 全量审计（UUID 求值时机 + backward __tab 顺序） | `useContextMenu.ts` / `useTabPanel.tsx` / `useTabRouter.ts` |
+
+**Breaking change（#10）**：`encodeBase64/decodeBase64` 编码方式变更（详见 `docs/DIAGNOSTIC_REPORT.md` 第二轮）。

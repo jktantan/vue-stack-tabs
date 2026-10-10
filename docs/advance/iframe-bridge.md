@@ -55,6 +55,18 @@ onRefreshRequest(() => {
 })
 ```
 
+::: warning Security
+By default, `onRefreshRequest` does **not** check `MessageEvent.origin` — any parent window that embeds this iframe can trigger the refresh callback. This is equivalent to `targetOrigin: '*'` and is intended only for local development.
+
+In production, **always pass `allowedOrigins`** explicitly:
+
+```typescript
+onRefreshRequest(undefined, {
+  allowedOrigins: ['https://app.example.com']
+})
+```
+:::
+
 ## Cross-Origin: reload Mode
 
 For cross-origin iframes you cannot modify, use `iframeRefreshMode: 'reload'`:

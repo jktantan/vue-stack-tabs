@@ -15,8 +15,9 @@ export default defineNuxtConfig({
 
 The module automatically:
 
-- Registers the global `VueStackTabs` component through the Vue plugin
+- Registers the global `VueStackTabs` component via Nuxt's `addComponent` API (no need to import manually)
 - Auto-imports composables (`useTabActions`, `useTabRouter`, `useTabLoading`)
+- Applies the configured `locale` to vue-stack-tabs' internal i18n instance via `applyStackTabsLocale`
 
 Nuxt apps also support only one `<VueStackTabs>` instance.
 
