@@ -98,7 +98,9 @@ export default function useTabRouter() {
       }
     }
 
-    const query = defu({ __tab: tabInfo }, to.query)
+    // __tab 是 StackTabs 解析路由归属标签的关键，优先沿用目标 query 已有的值，
+    // 避免被 to.query 中非字符串的同名 key 或缺失值覆盖。
+    const query = defu(to.query, { __tab: tabInfo })
     const transactionVersion = ++navigationVersion
     emitter.emit(TabEventType.FORWARD)
 
@@ -183,6 +185,12 @@ export default function useTabRouter() {
     if (steps <= 0) return false
 
     if (stack.size() <= steps) {
+      // 请求退栈步数大于当前可用层数时，仅退到栈底（首页）；开发模式下提示维护者。
+      if (!import.meta.env.PROD) {
+        console.warn(
+          `[vue-stack-tabs] backward requested ${steps} steps but stack only has ${stack.size() - 1} available.`
+        )
+      }
       steps = stack.size() - 1
     }
 
@@ -207,7 +215,8 @@ export default function useTabRouter() {
 
     emitter.emit(TabEventType.BACKWARD)
 
-    const targetQueryWithTab = defu({ __tab: tabInfo }, target.query || {})
+    // 栈顶 query 已带 __tab 时优先沿用，避免被默认 tabInfo 覆盖导致解析时识别错乱。
+    const targetQueryWithTab = defu(target.query || {}, { __tab: tabInfo })
     const transactionVersion = ++navigationVersion
 
     runNavigationTransaction({

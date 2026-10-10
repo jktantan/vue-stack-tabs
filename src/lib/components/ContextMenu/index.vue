@@ -13,7 +13,7 @@
     :style="{
       left: `${menuPosition.left}px`,
       top: `${menuPosition.top}px`,
-      'z-index': getMaxZIndex('.stack-tab,.stack-tab *')
+      'z-index': menuZIndex()
     }"
     @keydown="handleMenuKeydown"
   >
@@ -84,7 +84,7 @@
 import { ref, onMounted, reactive, nextTick } from 'vue'
 import type { ITabItem, IContextMenu } from '../../model/TabModel'
 import { useI18n } from 'vue-i18n-lite'
-import { getMaxZIndex } from '../../utils/scrollUtils'
+import { getMaxZIndex, invalidateZIndexCache } from '../../utils/scrollUtils'
 import useTabActions from '../../hooks/useTabActions'
 import useTabPanel from '../../hooks/useTabPanel'
 import ContextMenuItem from './ContextMenuItem.vue'
@@ -114,6 +114,14 @@ const menuElementRef = ref<HTMLElement>()
 const menuPosition = reactive({ left: props.left, top: props.top })
 const { closeTab, closeAllTabs, refreshTab, refreshAllTabs, openInNewWindow } = useTabActions()
 const { removeLeftTabs, removeRightTabs, removeOtherTabs } = useTabPanel()
+
+/**
+ * 菜单挂载时 z-index 必须重新计算（DOM 层叠已变化），先用 invalidateZIndexCache 失效再读取。
+ */
+const menuZIndex = () => {
+  invalidateZIndexCache('.stack-tab,.stack-tab *')
+  return getMaxZIndex('.stack-tab,.stack-tab *')
+}
 
 const focusActiveTabFallback = () => {
   const activeTab = document.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]')

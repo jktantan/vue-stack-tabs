@@ -11,10 +11,11 @@
   - 不负责 transition、keep-alive、TabHeader、iframe 或 session 初始化
 -->
 <script lang="ts" setup>
-import { defineComponent, shallowRef, watch } from 'vue'
+import { shallowRef, watch } from 'vue'
 import type { DefineComponent, VNode } from 'vue'
 import type { RouteLocationNormalizedLoaded } from 'vue-router'
 import useTabPanel from '../../hooks/useTabPanel'
+import { getEmptyPlaceholderComponent } from './emptyPlaceholder'
 
 interface StackCacheRendererProps {
   route: RouteLocationNormalizedLoaded
@@ -37,14 +38,7 @@ defineSlots<{
 
 const { refreshKey, activeCacheKey, activePageRefreshVersion, addPage } = useTabPanel()
 
-const EmptyRendererComponent = defineComponent({
-  name: 'StackCacheRendererEmpty',
-  setup() {
-    return () => null
-  }
-}) as DefineComponent
-
-const wrappedComponent = shallowRef<DefineComponent>(EmptyRendererComponent)
+const wrappedComponent = shallowRef<DefineComponent>(getEmptyPlaceholderComponent())
 
 const getComponentIdentity = (component?: VNode | null): unknown => {
   return component?.type ?? component

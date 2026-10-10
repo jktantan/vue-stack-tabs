@@ -27,10 +27,23 @@ export default () => {
     window.removeEventListener('blur', handleWindowBlur)
   }
 
+  /**
+   * 记录最近一次 showContextMenu 触发的时间戳。contextmenu 派发后部分浏览器
+   * 会再派发一次 click 事件；如果 click 时间与 contextmenu 太近，则忽略本次 click，
+   * 避免菜单刚显示就被自身点击触发 handleClickOutside 关闭。
+   * 同时也是上一轮 await nextTick() 双跳方案之外的兜底：nextTick 在极端时序下
+   * 仍可能晚于同一帧的 click 派发。
+   */
+  let lastContextMenuAt = 0
+  /** 触发菜单后 BUBBLE_GUARD_MS 毫秒内的 click 视为「同一手势」，不关闭菜单 */
+  const BUBBLE_GUARD_MS = 250
+
   /** 点击菜单外部时关闭菜单。 */
   const handleClickOutside = (ev: MouseEvent) => {
     const target = ev.target as Element
     if (target.closest?.('.stack-tab__contextmenu')) return
+    // 同一手势的 click 仍在守卫窗口内，跳过关闭判断。
+    if (Date.now() - lastContextMenuAt < BUBBLE_GUARD_MS) return
     hideContextMenu()
   }
 
@@ -56,23 +69,25 @@ export default () => {
     hideContextMenu()
   })
 
-  /** 显示右键菜单；nextTick 后设置位置与数据，避免与关闭逻辑冲突 */
+  /** 显示右键菜单；nextTick 后设置位置与数据，再下一拍挂载外部点击监听，避免与关闭逻辑冲突 */
   const showContextMenu = async (e: MouseEvent, item: ITabItem, index: number, max: number) => {
+    // 先更新守卫时间戳，确保紧随其后的 click 事件被 handleClickOutside 忽略。
+    lastContextMenuAt = Date.now()
     shown.value = false
     document.removeEventListener('click', handleClickOutside)
     document.removeEventListener('focusin', handleDocumentFocusIn, true)
     window.removeEventListener('blur', handleWindowBlur)
 
-    await nextTick(() => {
-      const { clientY: top, clientX: left } = e
-      shown.value = true
-      Object.assign(contextMenuData, { item, index, top, left, max })
-      nextTick(() => {
-        document.addEventListener('click', handleClickOutside)
-        document.addEventListener('focusin', handleDocumentFocusIn, true)
-        window.addEventListener('blur', handleWindowBlur)
-      })
-    })
+    await nextTick()
+    const { clientY: top, clientX: left } = e
+    shown.value = true
+    Object.assign(contextMenuData, { item, index, top, left, max })
+
+    // 等下一拍再挂载 click 监听，避免本次触发 showContextMenu 的同一 click 事件被立即关闭。
+    await nextTick()
+    document.addEventListener('click', handleClickOutside)
+    document.addEventListener('focusin', handleDocumentFocusIn, true)
+    window.addEventListener('blur', handleWindowBlur)
   }
 
   return {

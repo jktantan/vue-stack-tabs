@@ -20,9 +20,16 @@ interface EncodedTabInfoV1 {
 const MAX_DECODED_TAB_INFO_LENGTH = 2048
 const MAX_ENCODED_TAB_INFO_LENGTH = 4096
 
-const encodeBase64 = (value: string): string => encodeURIComponent(btoa(encodeURIComponent(value)))
+/**
+ * 把任意 UTF-8 字符串安全地编码为 base64（避免中文/特殊字符直接 btoa 抛错）。
+ * 使用 encodeURIComponent + unescape 是经典跨浏览器方案，比手动管理 TextEncoder 更简洁。
+ */
+const encodeBase64 = (value: string): string =>
+  btoa(unescape(encodeURIComponent(value)))
+
+/** encodeBase64 的逆操作，非合法 base64 时抛错，由调用方 try/catch。 */
 const decodeBase64 = (encoded: string): string =>
-  decodeURIComponent(atob(decodeURIComponent(encoded)))
+  decodeURIComponent(escape(atob(encoded)))
 
 const DEFAULT_TAB_INFO: ITabBase = {
   id: '',
@@ -39,7 +46,7 @@ const toTabInfo = (payload: unknown): ITabBase => {
   if (!isRecord(payload)) return { ...DEFAULT_TAB_INFO }
 
   return {
-    id: typeof payload.id === 'string' ? payload.id : DEFAULT_TAB_INFO.id,
+    id: typeof payload.id === 'string' ? payload.id : undefined,
     title: typeof payload.title === 'string' ? payload.title : DEFAULT_TAB_INFO.title,
     iframe: typeof payload.iframe === 'boolean' ? payload.iframe : DEFAULT_TAB_INFO.iframe,
     closable: typeof payload.closable === 'boolean' ? payload.closable : DEFAULT_TAB_INFO.closable,
@@ -76,13 +83,21 @@ export const encodeTabInfo = (tabData: ITabBase): string => {
 }
 
 export const decodeTabInfo = (encoded: string): ITabBase => {
-  if (encoded.length > MAX_ENCODED_TAB_INFO_LENGTH) return { ...DEFAULT_TAB_INFO }
+  if (typeof encoded !== 'string' || encoded.length > MAX_ENCODED_TAB_INFO_LENGTH) {
+    return { ...DEFAULT_TAB_INFO }
+  }
+
+  let tabString: string
+  try {
+    tabString = decodeBase64(encoded)
+  } catch {
+    return { ...DEFAULT_TAB_INFO }
+  }
+
+  if (tabString.length > MAX_DECODED_TAB_INFO_LENGTH) return { ...DEFAULT_TAB_INFO }
+  if (!tabString.trim().startsWith('{')) return decodeLegacyTabInfo(tabString)
 
   try {
-    const tabString = decodeBase64(encoded)
-    if (tabString.length > MAX_DECODED_TAB_INFO_LENGTH) return { ...DEFAULT_TAB_INFO }
-    if (!tabString.trim().startsWith('{')) return decodeLegacyTabInfo(tabString)
-
     return toTabInfo(JSON.parse(tabString))
   } catch {
     return { ...DEFAULT_TAB_INFO }

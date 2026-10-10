@@ -243,17 +243,18 @@ const handleTabListKeydown = (event: KeyboardEvent) => {
   if (count <= 0) return
 
   const currentIndex = getActiveTabIndex()
-  const safeIndex = currentIndex >= 0 ? currentIndex : 0
 
   if (event.key === 'ArrowRight') {
     event.preventDefault()
-    activateTabByIndex((safeIndex + 1) % count)
+    // 无 active 标签时从 -1 起步，按右方向键跳到第 0 个；正常情况环绕到下一个。
+    activateTabByIndex(currentIndex === -1 ? 0 : (currentIndex + 1) % count)
     return
   }
 
   if (event.key === 'ArrowLeft') {
     event.preventDefault()
-    activateTabByIndex((safeIndex - 1 + count) % count)
+    // 无 active 标签时按左方向键跳到最后一个；正常情况环绕到上一个。
+    activateTabByIndex(currentIndex === -1 ? count - 1 : (currentIndex - 1 + count) % count)
     return
   }
 

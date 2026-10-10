@@ -80,7 +80,7 @@ export default function useTabActions(providedRuntimeContext?: StackTabsRuntimeC
       let refreshKeySnapshot: number | undefined
 
       if (tabInfo.id && renew && isExistingTab) {
-        const currentTab = getTab(tab.id!)
+        const currentTab = getTab(tabInfo.id!)
         rollbackRenew = renewTab(tab)
         if (currentTab?.active) {
           refreshKeySnapshot = refreshKey.value

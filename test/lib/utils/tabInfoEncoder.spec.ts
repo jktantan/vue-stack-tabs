@@ -39,7 +39,8 @@ describe('tabInfoEncoder', () => {
 
   it('兼容旧版分隔符编码的 __tab 参数', () => {
     const legacyInfo = 'legacy-id|旧标题|Y|N|Y|R'
-    const encoded = encodeURIComponent(btoa(encodeURIComponent(legacyInfo)))
+    // 使用与 decodeBase64 对称的编码方式构造：btoa(unescape(encodeURIComponent(...)))。
+    const encoded = btoa(unescape(encodeURIComponent(legacyInfo)))
 
     expect(decodeTabInfo(encoded)).toEqual({
       id: 'legacy-id',
@@ -52,7 +53,7 @@ describe('tabInfoEncoder', () => {
   })
 
   it('非法 JSON 格式的 __tab 不会让解码抛错', () => {
-    const encoded = encodeURIComponent(btoa(encodeURIComponent('{invalid-json')))
+    const encoded = btoa(unescape(encodeURIComponent('{invalid-json')))
 
     expect(() => decodeTabInfo(encoded)).not.toThrow()
     expect(decodeTabInfo(encoded)).toMatchObject({

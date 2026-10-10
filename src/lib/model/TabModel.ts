@@ -126,7 +126,46 @@ export class Stack<T> {
   }
 
   readonlyList(): readonly T[] {
-    return this.items
+    // 返回浅拷贝避免外部修改内部 items 引用，同时类型为 readonly T[] 提示调用方只读。
+    return [...this.items]
+  }
+
+  /**
+   * 查找首个匹配的元素。
+   * @returns 匹配的元素，未找到返回 undefined。
+   */
+  find(predicate: (element: T, index: number) => boolean): T | undefined {
+    return this.items.find(predicate)
+  }
+
+  /**
+   * 查找首个匹配元素的索引，未找到返回 -1。
+   */
+  findIndex(predicate: (element: T, index: number) => boolean): number {
+    return this.items.findIndex(predicate)
+  }
+
+  /**
+   * 返回所有匹配元素组成的浅拷贝数组。
+   */
+  filter(predicate: (element: T, index: number) => boolean): T[] {
+    return this.items.filter(predicate)
+  }
+
+  /**
+   * 是否存在任意匹配元素。
+   */
+  some(predicate: (element: T, index: number) => boolean): boolean {
+    return this.items.some(predicate)
+  }
+
+  /**
+   * 从顶到底反向遍历每个元素，便于实现「从栈顶开始找」等场景。
+   */
+  forEachTopDown(visit: (element: T, index: number) => void): void {
+    for (let i = this.items.length - 1; i >= 0; i--) {
+      visit(this.items[i] as T, i)
+    }
   }
 
   toJSON(): T[] {

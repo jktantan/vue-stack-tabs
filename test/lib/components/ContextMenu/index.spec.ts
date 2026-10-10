@@ -38,7 +38,8 @@ vi.mock('@/lib/hooks/useTabPanel', () => ({
 }))
 
 vi.mock('@/lib/utils/scrollUtils', () => ({
-  getMaxZIndex: () => 100
+  getMaxZIndex: () => 100,
+  invalidateZIndexCache: () => undefined
 }))
 
 function makeTab(overrides: Partial<ITabItem> = {}): ITabItem {

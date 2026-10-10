@@ -33,12 +33,38 @@ export const createTabPanelSession = (context: StackTabsRuntimeContext): TabPane
   let writeVersion = 0
   let writeScheduled = false
 
+  /**
+   * 写入 sessionStorage，捕获隐私模式（QuotaExceededError）等异常，
+   * 避免在受限浏览器环境下抛出未处理错误。SSR 环境无 window 时直接跳过。
+   */
+  const safeSetItem = (key: string, value: string): void => {
+    if (typeof window === 'undefined') return
+    try {
+      window.sessionStorage.setItem(key, value)
+    } catch (error) {
+      if (!import.meta.env.PROD) {
+        console.warn('[vue-stack-tabs] Failed to write sessionStorage:', error)
+      }
+    }
+  }
+
+  const safeRemoveItem = (key: string): void => {
+    if (typeof window === 'undefined') return
+    try {
+      window.sessionStorage.removeItem(key)
+    } catch (error) {
+      if (!import.meta.env.PROD) {
+        console.warn('[vue-stack-tabs] Failed to clear sessionStorage:', error)
+      }
+    }
+  }
+
   const flushPendingWrite = () => {
     writeScheduled = false
     const write = pendingWrite
     pendingWrite = null
     if (!write || write.version !== writeVersion) return
-    window.sessionStorage.setItem(getSessionKey(), JSON.stringify(write.tab))
+    safeSetItem(getSessionKey(), JSON.stringify(write.tab))
   }
 
   const invalidatePendingWrite = () => {
@@ -56,7 +82,7 @@ export const createTabPanelSession = (context: StackTabsRuntimeContext): TabPane
 
   const clearSession = (): void => {
     invalidatePendingWrite()
-    window.sessionStorage.removeItem(getSessionKey())
+    safeRemoveItem(getSessionKey())
   }
 
   const restoreActiveTabSession = (storedJson: string | null): void => {
@@ -65,7 +91,7 @@ export const createTabPanelSession = (context: StackTabsRuntimeContext): TabPane
       return
     }
     invalidatePendingWrite()
-    window.sessionStorage.setItem(getSessionKey(), storedJson)
+    safeSetItem(getSessionKey(), storedJson)
   }
 
   const restoreTabFromSession = (storedJson: string | null): ITabItem | null => {

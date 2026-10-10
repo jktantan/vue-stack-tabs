@@ -2,6 +2,8 @@
  * tabPanel/scroll - 滚动位置保存与恢复
  *
  * 职责：基于当前 StackTabsRuntimeContext 在切出/切入页面时保存和恢复滚动位置。
+ * 优化：用 MutationObserver 缓存 [data-stack-tab-scroll] 元素列表，
+ *       避免每次 deactivate 都全量 querySelectorAll。
  */
 import type { StackTabsRuntimeContext } from '../stackTabsContext'
 
@@ -10,6 +12,8 @@ export interface TabPanelScrollApi {
   saveScroller: (pageCacheId: string) => void
   removeScroller: (pageCacheId: string) => void
   addPageScroller: (pageCacheId: string, ...selectorIds: string[]) => void
+  /** 主动失效某页面的滚动元素缓存，例如外部强制刷新缓存页时 */
+  invalidateAutoScrollCache: (pageCacheId: string) => void
 }
 
 const resolveScrollElement = (selector: string): HTMLElement | null =>
@@ -19,22 +23,71 @@ const resolveScrollElement = (selector: string): HTMLElement | null =>
 
 const AUTO_SCROLLER_PREFIX = '__stack-tab-auto-scroll__:'
 
+interface AutoScrollCache {
+  elements: HTMLElement[]
+  observer: MutationObserver | null
+}
+
 /**
- * 返回当前缓存页面内显式标记的内部滚动容器。
- * 只查询 data-stack-tab-scroll，不扫描全部 DOM，避免标签切换时产生额外开销。
+ * 在 pageRoot 上挂一个 MutationObserver，自动维护 [data-stack-tab-scroll] 元素列表；
+ * 列表变化时无需上层主动失效，下次读到的就是最新值。
  */
-const getAutoScrollElements = (pageCacheId: string): HTMLElement[] => {
+const createAutoScrollCache = (pageRoot: HTMLElement): AutoScrollCache => {
+  const collect = (): HTMLElement[] =>
+    Array.from(pageRoot.querySelectorAll<HTMLElement>('[data-stack-tab-scroll]'))
+
+  const cache: AutoScrollCache = {
+    elements: collect(),
+    observer: null
+  }
+
+  if (typeof MutationObserver !== 'undefined') {
+    cache.observer = new MutationObserver(() => {
+      cache.elements = collect()
+    })
+    // 仅监听子树增删与属性变化，不监听字符数据，减少开销。
+    cache.observer.observe(pageRoot, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['data-stack-tab-scroll']
+    })
+  }
+
+  return cache
+}
+
+const autoScrollCaches = new Map<string, AutoScrollCache>()
+
+const getAutoScrollCache = (pageCacheId: string): AutoScrollCache | null => {
   const pageRoot = document.getElementById(`W-${pageCacheId}`)
-  return pageRoot
-    ? Array.from(pageRoot.querySelectorAll<HTMLElement>('[data-stack-tab-scroll]'))
-    : []
+  if (!pageRoot) {
+    autoScrollCaches.delete(pageCacheId)
+    return null
+  }
+
+  let cache = autoScrollCaches.get(pageCacheId)
+  if (!cache) {
+    cache = createAutoScrollCache(pageRoot)
+    autoScrollCaches.set(pageCacheId, cache)
+  } else {
+    // 防御：检查 pageRoot 是否已被替换（极端情况：同一 pageCacheId 重新挂载）
+    if (cache.elements.length === 0 && cache.observer) {
+      cache.elements = Array.from(
+        pageRoot.querySelectorAll<HTMLElement>('[data-stack-tab-scroll]')
+      )
+    }
+  }
+  return cache
 }
 
 const getAutoScrollerKey = (index: number): string => `${AUTO_SCROLLER_PREFIX}${index}`
 
 const resolveAutoScrollElement = (pageCacheId: string, key: string): HTMLElement | null => {
   const index = Number(key.slice(AUTO_SCROLLER_PREFIX.length))
-  return Number.isInteger(index) ? (getAutoScrollElements(pageCacheId)[index] ?? null) : null
+  if (!Number.isInteger(index)) return null
+  const cache = getAutoScrollCache(pageCacheId)
+  return cache?.elements[index] ?? null
 }
 
 export const createTabPanelScroll = (context: StackTabsRuntimeContext): TabPanelScrollApi => {
@@ -63,7 +116,9 @@ export const createTabPanelScroll = (context: StackTabsRuntimeContext): TabPanel
     for (const key of positions.keys()) {
       if (key.startsWith(AUTO_SCROLLER_PREFIX)) positions.delete(key)
     }
-    getAutoScrollElements(pageCacheId).forEach((element, index) => {
+    const cache = getAutoScrollCache(pageCacheId)
+    const elements = cache?.elements ?? []
+    elements.forEach((element, index) => {
       positions.set(getAutoScrollerKey(index), {
         top: element.scrollTop,
         left: element.scrollLeft
@@ -83,10 +138,16 @@ export const createTabPanelScroll = (context: StackTabsRuntimeContext): TabPanel
 
   const removeScroller = (pageCacheId: string): void => {
     const positions = scrollPositionsByPageId.get(pageCacheId)
-    if (!positions) return
-
-    positions.clear()
-    scrollPositionsByPageId.delete(pageCacheId)
+    if (positions) {
+      positions.clear()
+      scrollPositionsByPageId.delete(pageCacheId)
+    }
+    // 同步卸载 MutationObserver，避免页面被驱逐后 observer 仍持有 DOM 引用。
+    const cache = autoScrollCaches.get(pageCacheId)
+    if (cache) {
+      cache.observer?.disconnect()
+      autoScrollCaches.delete(pageCacheId)
+    }
   }
 
   const addPageScroller = (pageCacheId: string, ...selectorIds: string[]): void => {
@@ -99,10 +160,19 @@ export const createTabPanelScroll = (context: StackTabsRuntimeContext): TabPanel
     }
   }
 
+  const invalidateAutoScrollCache = (pageCacheId: string): void => {
+    const cache = autoScrollCaches.get(pageCacheId)
+    if (!cache) return
+    cache.elements = []
+    cache.observer?.disconnect()
+    autoScrollCaches.delete(pageCacheId)
+  }
+
   return {
     restoreScroller,
     saveScroller,
     removeScroller,
-    addPageScroller
+    addPageScroller,
+    invalidateAutoScrollCache
   }
 }

@@ -22,7 +22,7 @@ import {
   watch
 } from 'vue'
 import type { TransitionProps } from 'vue'
-import { getMaxZIndex } from './utils/scrollUtils'
+import { getMaxZIndex, invalidateZIndexCache } from './utils/scrollUtils'
 import { isAllowedTabUrl } from './utils/urlParser'
 import { applyStackTabsLocale } from './i18n/stackTabsLocale'
 import { type ITabData, TabScrollMode } from './model/TabModel'
@@ -96,6 +96,17 @@ const props = withDefaults(
     iframeLoadTimeout: 15000
   }
 )
+
+// iframePath 必填：用于 iframe 占位页（StackTabs 把 iframe 标签路由到这个 path 渲染）。
+// 这里在开发期给出明确错误，避免空字符串导致 router.push({ path: '' }) 跳到首页的隐式行为。
+if (typeof props.iframePath !== 'string' || props.iframePath.trim() === '') {
+  const message = '[vue-stack-tabs] <VueStackTabs> requires the "iframePath" prop (e.g. "/iframe").'
+  if (!import.meta.env.PROD) {
+    throw new Error(message)
+  }
+  console.error(message)
+}
+
 const { changeLocale, t } = useI18n()
 const runtimeContext =
   inject(stackTabsContextKey, null) ??
@@ -120,6 +131,8 @@ if (isRuntimeContextOwner) {
   provide(maximumKey, maximum)
 }
 watch(maximum, (isMaximum) => {
+  // 最大化切换会显著改变 body 下元素层叠顺序，先失效缓存再读取避免过期结果。
+  invalidateZIndexCache()
   maximumZIndex.value = isMaximum ? getMaxZIndex('body *:not(.stack-tab,.stack-tab *)') : undefined
 })
 const panelApi = isRuntimeContextOwner

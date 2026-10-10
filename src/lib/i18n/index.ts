@@ -49,8 +49,8 @@ export const mergeLocaleMessages = (
 }
 
 export default () => {
-  // 引入lang目录下文件
-  // 此处使用了 VITE 的 import.meta.globEager。非 VITE 的 可以使用 require.context
+  // 引入 lang 目录下文件
+  // 非 Vite 构建环境可改用 require.context 替换；当前使用 Vite 原生 glob 即可。
   const modules = import.meta.glob('./lang/*', { eager: true })
 
   /** 从 glob 导入结果中提取语言文件并合并到 msg 对象 */
@@ -58,7 +58,7 @@ export default () => {
     mList: Record<string, { default?: Record<string, unknown> }>,
     msg: Record<string, Record<string, unknown>>
   ) {
-    for (const path in mList) {
+    for (const path of Object.keys(mList)) {
       const mod = mList[path] as { default?: Record<string, unknown> }
       if (mod?.default) {
         const pathName = path.substring(path.lastIndexOf('/') + 1, path.lastIndexOf('.'))

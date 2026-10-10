@@ -53,8 +53,14 @@ export function postOpenTab(
 }
 
 /**
- * 在 iframe 内调用：注册刷新监听，收到父窗口刷新指令时执行 callback
+ * 在 iframe 内调用：注册刷新监听，收到父窗口刷新指令时执行 callback。
+ *
+ * **安全提示**：`options.allowedOrigins` 为空数组（默认值）时**不校验 origin**，
+ * 等同 `targetOrigin: '*'`，任何嵌入此 iframe 的父页面都能触发回调。
+ * 生产环境务必显式传入可信 origin 列表，例如 `['https://app.example.com']`。
+ *
  * @param callback 默认 location.reload()，可自定义
+ * @param options  可选配置，`allowedOrigins` 强烈建议显式传入
  * @returns 取消监听的函数
  */
 export function onRefreshRequest(
@@ -66,6 +72,8 @@ export function onRefreshRequest(
   const allowedOrigins = options.allowedOrigins ?? []
   const handler = (ev: MessageEvent) => {
     if (ev.source !== window.parent) return
+    // allowedOrigins 为空时跳过 origin 校验：刻意保留以便本地调试，
+    // 但必须在文档中向用户强调风险（见上方 JSDoc）。
     if (allowedOrigins.length > 0 && !allowedOrigins.includes(ev.origin)) return
     if (ev.data?.type === MSG_REFRESH) {
       callback()

@@ -4,6 +4,7 @@
  * 活动普通页面保持 cache id 稳定，只递增页面级刷新版本；非活动页面可直接替换缓存。
  */
 import type { Ref } from 'vue'
+import { triggerRef } from 'vue'
 import type { ITabItem } from '../../model/TabModel'
 
 export interface TabPanelRefreshApi {
@@ -56,6 +57,8 @@ export const createTabPanelRefresh = (
 
     if (tab.active) {
       currentPage.refreshVersion = (currentPage.refreshVersion ?? 0) + 1
+      // 通知 activePageRefreshVersion 这类依赖 tabs.value 的计算属性重新计算
+      triggerRef(tabs)
       return
     }
 

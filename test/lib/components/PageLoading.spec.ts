@@ -6,7 +6,8 @@ import PageLoading from '@/lib/components/PageLoading.vue'
 import { TabEventType, tabEmitterKey } from '@/lib/hooks/useTabEventBus'
 
 vi.mock('@/lib/utils/scrollUtils', () => ({
-  getMaxZIndex: () => 10
+  getMaxZIndex: () => 10,
+  invalidateZIndexCache: () => undefined
 }))
 
 vi.mock('vue-i18n-lite', () => ({

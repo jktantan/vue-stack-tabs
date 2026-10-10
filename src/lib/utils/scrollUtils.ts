@@ -91,13 +91,46 @@ export const getScrollbarWidth = (function () {
 
 const Z_INDEX_CEILING = 89999
 
-/** 获取指定选择器下元素的最大 z-index + 1，用于最大化时置顶 */
+/**
+ * 缓存条目：保存某选择器下最近一次的最大 z-index 结果。
+ * 在 Z_INDEX_CACHE_TTL 毫秒内的重复请求直接复用，避免反复遍历 DOM。
+ */
+interface ZIndexCacheEntry {
+  value: number
+  timestamp: number
+}
+
+const Z_INDEX_CACHE_TTL = 100
+const zIndexCache = new Map<string, ZIndexCacheEntry>()
+
+/** 在用户主动布局变化后调用，使缓存失效 */
+export const invalidateZIndexCache = (selector?: string): void => {
+  if (selector === undefined) {
+    zIndexCache.clear()
+    return
+  }
+  zIndexCache.delete(selector)
+}
+
+/**
+ * 获取指定选择器下元素的最大 z-index + 1，用于最大化时置顶。
+ * 同一选择器在 Z_INDEX_CACHE_TTL 毫秒内的重复请求会复用上次结果，避免重复 querySelectorAll / getComputedStyle。
+ * 当 DOM 结构发生显著变化时，请调用 invalidateZIndexCache 让缓存失效。
+ */
 export const getMaxZIndex = (key = '.stack-tab__container *'): number => {
+  const now = Date.now()
+  const cached = zIndexCache.get(key)
+  if (cached && now - cached.timestamp < Z_INDEX_CACHE_TTL) {
+    return cached.value
+  }
+
   const elements = document.querySelectorAll(key)
   let max = 0
   for (let i = 0; i < elements.length; i++) {
     const z = +window.getComputedStyle(elements[i]!).zIndex || 0
     if (z < Z_INDEX_CEILING && z > max) max = z
   }
-  return max + 1
+  const value = max + 1
+  zIndexCache.set(key, { value, timestamp: now })
+  return value
 }

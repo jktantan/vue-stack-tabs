@@ -38,9 +38,9 @@ import { createTabPanelScroll } from './tabPanel/scroll'
 import { createTabPanelSession } from './tabPanel/session'
 import { createTabPanelRefresh } from './tabPanel/refresh'
 import {
-  createPageComponentFactory,
-  getEmptyPlaceholderComponent
+  createPageComponentFactory
 } from './tabPanel/pageComponentFactory'
+import { getEmptyPlaceholderComponent } from '../components/StackKeepAlive/emptyPlaceholder'
 
 const cloneRouteQuery = (route: RouteLocationNormalizedLoaded, tabInfo: ITabBase) => ({
   ...cloneLocationQuery(route.query),
@@ -102,14 +102,15 @@ export default (providedRuntimeContext?: StackTabsRuntimeContext) => {
     const newTabs: ITabItem[] = []
 
     for (const item of staticTabs) {
+      // 先用默认值填充非空缺字段，避免在循环里提前求值生成用不到的 UUID。
       const fullItem = defu(item, {
-        id: crypto.randomUUID(),
         refreshable: true,
         closable: true,
         iframe: false
       })
-      const tabId = fullItem.id ?? crypto.randomUUID()
-      fullItem.id = tabId
+      // id 单独兜底，避免每次循环都无意义地调用 crypto.randomUUID。
+      fullItem.id = item.id ?? crypto.randomUUID()
+      const tabId = fullItem.id
       const uri = parseUrl(fullItem.path)
       const cacheName = createPageId()
       const page: ITabPage = {
@@ -142,7 +143,9 @@ export default (providedRuntimeContext?: StackTabsRuntimeContext) => {
     defaultTabs.value = [...defaultTabs.value, ...newDefaults]
     tabs.value = [...tabs.value, ...newTabs]
 
-    const storedTabJson = sessionStorage.getItem(getSessionKey())
+    // SSR 环境无 sessionStorage，直接跳过恢复。
+    const storedTabJson =
+      typeof window !== 'undefined' ? sessionStorage.getItem(getSessionKey()) : null
     const restoredTab = restoreTabFromSession(storedTabJson)
     if (restoredTab && !tabs.value.some((t) => t.id === restoredTab.id)) {
       if (restoredTab.url) restoredTab.url = toSafeTabUrl(restoredTab.url)
@@ -337,7 +340,9 @@ export default (providedRuntimeContext?: StackTabsRuntimeContext) => {
           const stepsToPop = pagesList.length - 1 - foundIndex
           for (let i = 0; i < stepsToPop; i++) {
             const popped = targetTab.pages.pop()
-            if (popped) evictPageCache(popped.id)
+            // 仅标记待驱逐，由 onActivated 或下一拍 evictMarkedCaches 统一清理，
+            // 避免 watcher 同步执行与守卫拒绝路由之间产生不一致。
+            if (popped) markCacheForEviction(popped.id)
           }
           const newTop = targetTab.pages.peek()
           cacheName = newTop ? newTop.id : createPageId()
@@ -584,12 +589,15 @@ export default (providedRuntimeContext?: StackTabsRuntimeContext) => {
       refreshable: target.refreshable,
       iframe: target.iframe
     })
-    const query = defu({ __tab }, top.query || {})
+    // __tab 是兜底标识，目标栈顶已带 __tab 时优先沿用，否则用我们刚编码的版本。
+    const query = defu(top.query || {}, { __tab })
 
     return runNavigationTransaction({
       apply: () => {
         const prevActiveId = tabs.value.find((tab) => tab.active)?.id
-        const sessionSnapshot = window.sessionStorage.getItem(getSessionKey())
+        // SSR 环境无 sessionStorage；快照为 null 时 rollback 视为「无变化」。
+        const sessionSnapshot =
+          typeof window !== 'undefined' ? window.sessionStorage.getItem(getSessionKey()) : null
         activateTarget()
         return { prevActiveId, sessionSnapshot }
       },

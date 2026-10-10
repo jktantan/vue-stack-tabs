@@ -4,7 +4,7 @@
  * 统一管理所有 iframe 标签的 src 计算、加载状态追踪、超时检测、
  * 刷新控制、DOM ref 收集，以及 postMessage 通信。
  */
-import { computed, onBeforeUnmount, reactive, watch, type Ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, reactive, watch, type Ref } from 'vue'
 import type { ITabData, ITabItem } from '../model/TabModel'
 import { toSafeTabUrl } from '../utils/urlParser'
 import { getPostMessageTargetOrigin, isStackTabsOpenTabMessage } from '../utils/stackTabsMessage'
@@ -34,6 +34,9 @@ export function useIframeManager(options: UseIframeManagerOptions) {
   const iframeEverActivated = reactive<Record<string, boolean>>({})
 
   const appendIframeRefreshKey = (src: string, refreshKey: number): string => {
+    // 仅当 refreshKey > 0 时附加查询参数：
+    // - 初次激活（key=0）保留干净的 URL，便于用户阅读和书签
+    // - 后续 reload / 重试时附加，用于强制浏览器破坏 iframe 缓存
     if (refreshKey <= 0 || src === 'about:blank') return src
 
     const hashIndex = src.indexOf('#')
@@ -113,7 +116,11 @@ export function useIframeManager(options: UseIframeManagerOptions) {
       ...iframeRefreshKeys.value,
       [frameId]: (iframeRefreshKeys.value[frameId] ?? 0) + 1
     }
-    setIframeLoading(frameId, { force: true })
+    // 等下一拍再设置 loading 状态，让 refreshKey watcher 先把新 src 反映到 DOM 上，
+    // 避免 loading 遮罩先于 src 变化显示，造成视觉抖动。
+    nextTick(() => {
+      setIframeLoading(frameId, { force: true })
+    })
   }
 
   const shouldShowIframeLoading = (frameId: string) =>
@@ -147,6 +154,15 @@ export function useIframeManager(options: UseIframeManagerOptions) {
           delete iframeEverActivated[id]
           delete iframeElRefs[id]
         }
+      }
+      // 同步清理已不再属于任何 iframe tab 的 refreshKey，避免长会话下 Map 持续膨胀。
+      if (activeIds.size < Object.keys(iframeRefreshKeys.value).length) {
+        const next: Record<string, number> = {}
+        for (const id of activeIds) {
+          const key = iframeRefreshKeys.value[id]
+          if (typeof key === 'number') next[id] = key
+        }
+        iframeRefreshKeys.value = next
       }
     },
     { immediate: true }

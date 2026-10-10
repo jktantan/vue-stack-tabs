@@ -4,7 +4,6 @@
  * 将 keep-alive 包装、VNode 注入和页面激活生命周期从 tab 状态编排中隔离，
  * 使 useTabPanel 只负责领域状态与路由协调。
  */
-/* eslint-disable vue/one-component-per-file -- 此工厂需要创建占位组件和按页面缓存的动态组件。 */
 import {
   cloneVNode,
   defineComponent,
@@ -19,15 +18,6 @@ import type { DefineComponent, PropType, VNode } from 'vue'
 import type { ITabBase, ITabItem } from '../../model/TabModel'
 import PageLoading from '../../components/PageLoading.vue'
 import type { StackTabsRuntimeContext } from '../stackTabsContext'
-
-const EmptyPlaceholderComponent = defineComponent({
-  name: 'StackTabEmptyPlaceholder',
-  setup() {
-    return () => null
-  }
-}) as DefineComponent
-
-export const getEmptyPlaceholderComponent = () => EmptyPlaceholderComponent
 
 interface PageComponentFactoryOptions {
   runtimeContext: StackTabsRuntimeContext
