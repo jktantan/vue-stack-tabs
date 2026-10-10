@@ -12,6 +12,7 @@ const items = ref(Array.from({ length: 50 }, (_, i) => `滚动测试数据第 ${
         向下滚动页面，至少滚动到一半。然后切换到其他页签，再切换回来。滚动条的位置应精准保持在原处！
       </p>
       <div
+        data-stack-tab-scroll
         style="
           height: 1500px;
           margin-top: 30px;

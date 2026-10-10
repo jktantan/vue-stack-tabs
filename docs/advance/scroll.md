@@ -14,6 +14,20 @@ By default, global scroll is off. Enable it with `global-scroll`:
 
 ## Page Scroll Targets
 
+### Attribute marker (recommended)
+
+Add `data-stack-tab-scroll` to an inner scroll container. Its position is saved and restored when switching tabs. Only marked elements are queried; the whole page is not scanned.
+
+```vue
+<div class="table-scroll" data-stack-tab-scroll>
+  <!-- Scrollable content -->
+</div>
+```
+
+Nested or multiple internal scroll containers can each use this attribute.
+
+### Manual registration
+
 When the scrollbar is inside a page element, use `addScrollTarget`:
 
 **Single target:**
