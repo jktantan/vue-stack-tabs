@@ -32,8 +32,7 @@ Vue 3 多标签页管理库，基于 Vue Router。设计思想：用 Vue 作用�
 | `src/lib/model/` | 类型定义（`TabModel`、`Stack`） |
 | `src/lib/nuxt/` | Nuxt 模块（`vue-stack-tabs/nuxt`）：`module.ts`（自动注册 `VueStackTabs` 全局组件）+ `runtime/plugin*.ts`（locale 透传） |
 | `src/lib/assets/style/` | SCSS 样式，变量和 mixins 在 `common/` |
-| `playgrounds/` | 验证用：vue（Vue + dist）、nuxt（Nuxt + dist） |
-| `scripts/` | 验证脚本：`verify-prepack.mjs`、`verify-packaged.mjs` |
+| `scripts/` | 验证脚本：`verify-packaged.mjs`（tarball 验证） |
 | `docs/` | VitePress 文档（`docs/zh/`）、分析文档（`DIAGNOSTIC_REPORT.md` / `OPTIMIZATION_TODO.md` / `SUBROUTE_*.md`） |
 
 ---
@@ -91,8 +90,8 @@ pnpm run test:prepack
 # 6. 库构建
 pnpm run lib:build
 
-# 7. 打包后验证（Vue + Nuxt playground 使用 dist 构建）
-pnpm run test:packaged
+# 7. 打包后验证（dist 入口 + tarball ESM 导入）
+pnpm exec node scripts/verify-packaged.mjs
 ```
 
 **本地演示：** `pnpm run dev`  
@@ -103,8 +102,6 @@ pnpm run test:packaged
 ## 测试说明
 
 - **单元测试**：`src/**/*.spec.ts`，Vitest，环境 `node`（部分 spec 使用 `@vitest-environment happy-dom`）
-- **打包前**：`test:prepack` — 单元测试 + 主项目 build（源码）+ Nuxt playground build（USE_SOURCE=1 源码 alias）
-- **打包后**：`test:packaged` — lib:build 后，vue/nuxt playground 使用 `file:../..` 引用 dist 并 build
 
 ---
 

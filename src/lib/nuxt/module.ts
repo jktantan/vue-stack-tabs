@@ -34,7 +34,7 @@ export default defineNuxtModule<ModuleOptions>({
     addComponent({
       name: 'VueStackTabs',
       export: 'VueStackTabs',
-      filePath: resolve('../../index.ts')
+      filePath: resolve('../index.ts')
     })
 
     addImports([

@@ -50,13 +50,5 @@ export default tseslint.config(
       }
     }
   },
-  {
-    files: ['playgrounds/nuxt/**/*.vue', 'playgrounds/nuxt4/**/*.vue'],
-    languageOptions: {
-      globals: {
-        useRoute: 'readonly'
-      }
-    }
-  },
   eslintConfigPrettier
 )

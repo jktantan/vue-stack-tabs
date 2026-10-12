@@ -40,9 +40,6 @@ vite.config.ts.timestamp-*.mjs
 docs/.vitepress/cache/
 docs/.vitepress/dist/
 
-# Playgrounds
-playgrounds/*/node_modules
-playgrounds/*/dist
-playgrounds/*/.nuxt
-playgrounds/*/.output
+# pnpm
 /pnpm-workspace.yaml
+/.pnpm-store/

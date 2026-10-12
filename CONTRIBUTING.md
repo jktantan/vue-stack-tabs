@@ -82,9 +82,6 @@ export default defineNuxtConfig({
 │   ├── router/              # 示例路由
 │   ├── views/               # 示例页面
 │   └── components/          # 示例布局
-├── playgrounds/             # 验证用
-│   ├── vue/                 # Vue + dist 构建验证
-│   └── nuxt/                # Nuxt + dist 构建验证
 ├── scripts/                 # 验证脚本
 ├── docs/                    # VitePress 文档
 └── dist/                    # 构建输出（lib:build）

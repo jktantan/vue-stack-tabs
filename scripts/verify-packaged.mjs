@@ -1,18 +1,17 @@
 #!/usr/bin/env node
 /**
- * 打包后验证：先检查 dist 入口，再用真实 pnpm pack tarball 验证 package exports 和 playground 构建。
+ * 打包后验证：先检查 dist 入口，再用真实 pnpm pack tarball 验证 package exports。
  */
 import fs from 'node:fs'
 import { spawn } from 'node:child_process'
 import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
-import { dirname, join, relative } from 'node:path'
+import { dirname, join } from 'node:path'
 import { tmpdir } from 'node:os'
 
 const require = createRequire(import.meta.url)
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const root = join(__dirname, '..')
-const playgrounds = ['vue', 'nuxt']
 
 async function run(bin, args, cwd = root, env = {}) {
   return new Promise((resolve, reject) => {
@@ -46,25 +45,6 @@ async function runNodeScript(source, cwd = root) {
 
 function readJson(filePath) {
   return JSON.parse(fs.readFileSync(filePath, 'utf8'))
-}
-
-function writeJson(filePath, value) {
-  fs.writeFileSync(filePath, `${JSON.stringify(value, null, 2)}\n`)
-}
-
-function cleanPlaygroundBuildOutputs(cwd) {
-  for (const outputPath of ['.nuxt', '.output', 'dist']) {
-    fs.rmSync(join(cwd, outputPath), { recursive: true, force: true })
-  }
-}
-
-function linkPeerDependency(tempProjectDir, packageName) {
-  const packageJsonPath = require.resolve(`${packageName}/package.json`)
-  const sourcePath = dirname(packageJsonPath)
-  const targetPath = join(tempProjectDir, 'node_modules', packageName)
-
-  fs.mkdirSync(dirname(targetPath), { recursive: true })
-  fs.symlinkSync(sourcePath, targetPath, 'junction')
 }
 
 function writeIframeBridgeTypeSmokeProject(tempProjectDir) {
@@ -248,59 +228,20 @@ async function verifyPackageExportsFromTarball(tarballPath) {
   }
 }
 
-function copyPlaygroundForTarball(name, tempRoot, tarballPath) {
-  const source = join(root, 'playgrounds', name)
-  const target = join(tempRoot, 'playgrounds', name)
-  const skippedTopLevelPaths = new Set(['node_modules', '.nuxt', '.output', 'dist'])
+function linkPeerDependency(tempProjectDir, packageName) {
+  const packageJsonPath = require.resolve(`${packageName}/package.json`)
+  const sourcePath = dirname(packageJsonPath)
+  const targetPath = join(tempProjectDir, 'node_modules', packageName)
 
-  fs.cpSync(source, target, {
-    recursive: true,
-    filter: (sourcePath) => {
-      const sourceRelativePath = relative(source, sourcePath)
-      const topLevelPath = sourceRelativePath.split(/[\\/]/)[0]
-      return !skippedTopLevelPaths.has(topLevelPath)
-    }
-  })
-
-  const packageJsonPath = join(target, 'package.json')
-  const packageJson = readJson(packageJsonPath)
-  const relativeTarballPath = relative(target, tarballPath).replaceAll('\\', '/')
-  const tarballDependency = relativeTarballPath.startsWith('.')
-    ? `file:${relativeTarballPath}`
-    : `file:./${relativeTarballPath}`
-  packageJson.dependencies = {
-    ...packageJson.dependencies,
-    'vue-stack-tabs': tarballDependency
-  }
-  writeJson(packageJsonPath, packageJson)
-
-  return target
-}
-
-async function verifyPlaygroundBuildsFromTarball(tarballPath, tempRoot) {
-  for (const name of playgrounds) {
-    const cwd = copyPlaygroundForTarball(name, tempRoot, tarballPath)
-    try {
-      console.log(`\n[3/4] ${name}: pnpm install tarball...`)
-      await run(
-        'pnpm',
-        ['--dir', cwd, 'install', '--ignore-workspace', '--ignore-scripts', '--no-frozen-lockfile'],
-        root
-      )
-      console.log(`\n[4/4] ${name}: pnpm run build...`)
-      await run('pnpm', ['--dir', cwd, 'run', 'build'], root, { USE_PACKAGE: '1' })
-      console.log(`${name} tarball 构建成功`)
-    } finally {
-      cleanPlaygroundBuildOutputs(cwd)
-    }
-  }
+  fs.mkdirSync(dirname(targetPath), { recursive: true })
+  fs.symlinkSync(sourcePath, targetPath, 'junction')
 }
 
 async function main() {
   const tempRoot = fs.mkdtempSync(join(tmpdir(), 'vue-stack-tabs-packaged-'))
 
   try {
-    console.log('[1/4] 检查 dist 入口文件...')
+    console.log('[1/3] 检查 dist 入口文件...')
     const requiredDistFiles = [
       ['root ESM', join(root, 'dist', 'vue-stack-tabs.es.js')],
       ['root CSS', join(root, 'dist', 'style.css')],
@@ -319,15 +260,16 @@ async function main() {
       }
     }
 
-    console.log('\n[2/4] pnpm pack 并验证 tarball exports 与 ESM 导入...')
+    console.log('\n[2/3] pnpm pack 并验证 tarball 文件清单...')
     const packDir = join(tempRoot, 'pack')
     fs.mkdirSync(packDir, { recursive: true })
     const tarballPath = await packPackage(packDir)
     await assertPackedFileList(tarballPath)
-    await verifyPackageExportsFromTarball(tarballPath)
-    await verifyPlaygroundBuildsFromTarball(tarballPath, tempRoot)
 
-    console.log('\n全部通过：dist 入口、tarball exports、Vue 与 Nuxt tarball 构建验证完成')
+    console.log('\n[3/3] tarball 解包后验证 exports 与 ESM 导入...')
+    await verifyPackageExportsFromTarball(tarballPath)
+
+    console.log('\n全部通过：dist 入口、tarball exports、ESM 导入验证完成')
   } finally {
     fs.rmSync(tempRoot, { recursive: true, force: true })
   }

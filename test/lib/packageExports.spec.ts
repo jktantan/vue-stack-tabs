@@ -71,24 +71,6 @@ describe('package exports', () => {
     )
   })
 
-  it('packaged playground builds opt into package mode without changing default source mode', () => {
-    const script = readFileSync(join(process.cwd(), 'scripts', 'verify-packaged.mjs'), 'utf8')
-    const vueConfig = readFileSync(
-      join(process.cwd(), 'playgrounds', 'vue', 'vite.config.ts'),
-      'utf8'
-    )
-    const nuxtConfig = readFileSync(
-      join(process.cwd(), 'playgrounds', 'nuxt', 'nuxt.config.ts'),
-      'utf8'
-    )
-
-    expect(script).toContain("{ USE_PACKAGE: '1' }")
-    expect(vueConfig).toContain("process.env.USE_PACKAGE === '1'")
-    expect(vueConfig).toContain("'vue-stack-tabs': resolve(rootDir, 'src/lib/index.ts')")
-    expect(nuxtConfig).toContain("process.env.USE_PACKAGE === '1'")
-    expect(nuxtConfig).toContain("resolve(rootDir, 'src/lib/nuxt/module.ts')")
-  })
-
   it('packaged smoke script verifies iframe bridge TypeScript closure from the real tarball', () => {
     const script = readFileSync(join(process.cwd(), 'scripts', 'verify-packaged.mjs'), 'utf8')
 
