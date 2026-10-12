@@ -12,13 +12,14 @@ const items = ref(Array.from({ length: 50 }, (_, i) => `滚动测试数据第 ${
         向下滚动页面，至少滚动到一半。然后切换到其他页签，再切换回来。滚动条的位置应精准保持在原处！
       </p>
       <div
-        data-stack-tab-scroll
         style="
-          height: 1500px;
+          height: 1000px;
           margin-top: 30px;
           background: linear-gradient(to bottom, #f0f9eb, #c6e2ff);
           padding: 40px;
+          overflow: auto;
         "
+        data-stack-tab-scroll
       >
         <ul>
           <li
