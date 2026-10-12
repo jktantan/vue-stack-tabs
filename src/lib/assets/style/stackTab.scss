@@ -534,4 +534,16 @@
     @include mixins.insetShadow();
     box-shadow: $stack-tab-shadow-left-inset, $stack-tab-shadow-right-inset;
   }
+  &-top::after {
+    @include mixins.insetShadow();
+    box-shadow: $stack-tab-shadow-top-inset;
+  }
+  &-bottom::after {
+    @include mixins.insetShadow();
+    box-shadow: $stack-tab-shadow-bottom-inset;
+  }
+  &-vertical::after {
+    @include mixins.insetShadow();
+    box-shadow: $stack-tab-shadow-top-inset, $stack-tab-shadow-bottom-inset;
+  }
 }

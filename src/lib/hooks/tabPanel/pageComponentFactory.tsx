@@ -18,6 +18,7 @@ import type { DefineComponent, PropType, VNode } from 'vue'
 import type { ITabBase, ITabItem } from '../../model/TabModel'
 import PageLoading from '../../components/PageLoading.vue'
 import type { StackTabsRuntimeContext } from '../stackTabsContext'
+import { useScrollShadow } from '../useScrollShadow'
 
 interface PageComponentFactoryOptions {
   runtimeContext: StackTabsRuntimeContext
@@ -66,6 +67,7 @@ export const createPageComponentFactory = (options: PageComponentFactoryOptions)
         const lastVnode = shallowRef<VNode | null | undefined>(null)
         const lastCloned = shallowRef<VNode | null>(null)
         const lastBackParams = shallowRef<Record<string, unknown> | null>(null)
+        const pageRoot = ref<HTMLElement | null>(null)
 
         const checkAndConsumeBackParams = () => {
           try {
@@ -97,6 +99,9 @@ export const createPageComponentFactory = (options: PageComponentFactoryOptions)
         })
         onUnmounted(() => removeScroller(cacheName))
 
+        // 给 .cache-page-wrapper 挂滚动阴影，确保 keep-alive 的 suspended/deactivated 生命周期下表现一致
+        useScrollShadow({ target: pageRoot })
+
         return () => {
           const vnode = props.vnode
           const backParams = localBackParams.value
@@ -113,6 +118,7 @@ export const createPageComponentFactory = (options: PageComponentFactoryOptions)
           }
           return (
             <div
+              ref={pageRoot}
               class="cache-page-wrapper"
               id={`W-${cacheName}`}
               style={[

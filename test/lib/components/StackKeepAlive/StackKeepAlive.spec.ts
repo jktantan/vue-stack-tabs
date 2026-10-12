@@ -53,7 +53,7 @@ const PageComponent = defineComponent({
 let wrappedInstanceId = 0
 
 const WrappedPage = defineComponent({
-  name: 'wrapped-cache-page',
+  name: 'WrappedCachePage',
   props: {
     vnode: {
       type: Object,
