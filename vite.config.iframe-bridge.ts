@@ -3,9 +3,10 @@ import { defineConfig } from 'vite'
 
 export default defineConfig({
   build: {
+    copyPublicDir: false,
     emptyOutDir: false,
     lib: {
-      entry: resolve(__dirname, 'src/lib/iframe-bridge.ts'),
+      entry: resolve(import.meta.dirname, 'src/lib/iframe-bridge.ts'),
       formats: ['es'],
       fileName: () => 'iframe-bridge.mjs'
     },

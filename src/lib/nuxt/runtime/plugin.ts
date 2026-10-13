@@ -1,6 +1,5 @@
 /**
  * Nuxt 客户端插件：自动注册 VueStackTabs 并应用 runtimeConfig 中的 locale 配置。
- * 注：内容与 plugin.client.ts 相同，保留两份以兼容已有构建产物。
  */
 import { defineNuxtPlugin, useRuntimeConfig } from 'nuxt/app'
 import VueStackTabs from 'vue-stack-tabs'

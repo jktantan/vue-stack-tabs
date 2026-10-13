@@ -79,16 +79,19 @@ describe('package exports', () => {
     expect(script).toContain("'--noEmit', '--pretty', 'false'")
   })
 
-  it('lib build copies iframe bridge declaration dependencies next to the subpath declaration', () => {
+  it('lib build generates iframe bridge declaration dependencies next to the subpath declaration via tsconfig rootDir', () => {
     const pkg = readPackageJson()
+    const tsconfig = JSON.parse(
+      readFileSync(join(process.cwd(), 'tsconfig.lib.json'), 'utf8')
+    )
     const buildScript = readFileSync(join(process.cwd(), 'package.json'), 'utf8')
 
     expect(pkg.exports?.['./iframe-bridge']).toEqual({
       types: './dist/iframe-bridge.d.ts',
       import: './dist/iframe-bridge.mjs'
     })
-    expect(buildScript).toContain('dist/utils')
-    expect(buildScript).toContain('dist/src/lib/utils/iframeBridge.d.ts')
+    expect(tsconfig.compilerOptions?.rootDir).toBe('src/lib')
+    expect(buildScript).not.toContain('dist/src/lib/')
   })
 
   it('README documents compatible sandbox and cross-origin targetOrigin requirements', () => {

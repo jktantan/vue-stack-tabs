@@ -8,6 +8,7 @@
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "ignoreDeprecations": "6.0",
+    "rootDir": "src/lib",
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],

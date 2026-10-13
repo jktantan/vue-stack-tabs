@@ -19,6 +19,7 @@ export default defineConfig(({ mode }) => ({
     }
   },
   build: {
+    copyPublicDir: false,
     ...(mode === 'production' && {
       minify: 'terser',
       terserOptions: {
@@ -29,7 +30,7 @@ export default defineConfig(({ mode }) => ({
       }
     }),
     lib: {
-      entry: resolve(__dirname, 'src/lib/index.ts'),
+      entry: resolve(import.meta.dirname, 'src/lib/index.ts'),
       name: 'vue-stack-tabs',
       formats: ['es'],
       fileName: () => 'vue-stack-tabs.es.js'

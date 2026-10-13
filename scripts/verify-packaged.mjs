@@ -5,13 +5,11 @@
 import fs from 'node:fs'
 import { spawn } from 'node:child_process'
 import { createRequire } from 'node:module'
-import { fileURLToPath } from 'node:url'
-import { dirname, join } from 'node:path'
+import { dirname as pathDirname, join } from 'node:path'
 import { tmpdir } from 'node:os'
 
 const require = createRequire(import.meta.url)
-const __dirname = dirname(fileURLToPath(import.meta.url))
-const root = join(__dirname, '..')
+const root = join(import.meta.dirname, '..')
 
 async function run(bin, args, cwd = root, env = {}) {
   return new Promise((resolve, reject) => {
@@ -96,7 +94,8 @@ function writeNuxtSmokeStubs(tempProjectDir) {
   )
   fs.writeFileSync(
     join(nuxtDir, 'kit', 'index.js'),
-    `export const addImports = () => {}
+    `export const addComponent = () => {}
+export const addImports = () => {}
 export const addPlugin = () => {}
 export const createResolver = () => ({ resolve: (path) => path })
 export const defineNuxtModule = (moduleDefinition) => () => moduleDefinition
@@ -230,10 +229,10 @@ async function verifyPackageExportsFromTarball(tarballPath) {
 
 function linkPeerDependency(tempProjectDir, packageName) {
   const packageJsonPath = require.resolve(`${packageName}/package.json`)
-  const sourcePath = dirname(packageJsonPath)
+  const sourcePath = pathDirname(packageJsonPath)
   const targetPath = join(tempProjectDir, 'node_modules', packageName)
 
-  fs.mkdirSync(dirname(targetPath), { recursive: true })
+  fs.mkdirSync(pathDirname(targetPath), { recursive: true })
   fs.symlinkSync(sourcePath, targetPath, 'junction')
 }
 

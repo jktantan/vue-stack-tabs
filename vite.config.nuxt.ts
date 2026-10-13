@@ -4,17 +4,23 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   build: {
     outDir: 'dist/nuxt',
+    copyPublicDir: false,
     emptyOutDir: false,
     lib: {
       entry: {
-        module: resolve(__dirname, 'src/lib/nuxt/module.ts'),
-        plugin: resolve(__dirname, 'src/lib/nuxt/runtime/plugin.ts')
+        module: resolve(import.meta.dirname, 'src/lib/nuxt/module.ts'),
+        plugin: resolve(import.meta.dirname, 'src/lib/nuxt/runtime/plugin.ts')
       },
-      formats: ['es'],
-      fileName: (_format, entryName) => `${entryName}.mjs`
+      formats: ['es']
     },
     rollupOptions: {
-      external: ['nuxt/kit', 'vue-stack-tabs', '#app', 'nuxt/app']
+      external: ['nuxt/kit', 'vue-stack-tabs', '#app', 'nuxt/app'],
+      output: {
+        entryFileNames: (chunkInfo) => {
+          const name = chunkInfo.name
+          return name === 'plugin' ? 'runtime/[name].mjs' : '[name].mjs'
+        }
+      }
     }
   }
 })
