@@ -21,11 +21,11 @@ export default {
       history: createMemoryHistory(),
       routes: demoRoutes
     })
-    
+
     // 注册插件
     app.use(demoRouter)
     app.use(VueStackTabs, [...config])
-    
+
     // 注册组件
     app.component('FullDemo', FullDemo)
   }
@@ -62,21 +62,25 @@ docs/.vitepress/theme/
 ## 优势
 
 ### ✅ 简化部署
+
 - 只需要一个 VitePress 服务
 - 无需管理多个端口
 - 无需 iframe 跨域处理
 
 ### ✅ 更好的性能
+
 - 无 iframe 开销
 - 直接 Vue 组件渲染
 - 共享应用状态
 
 ### ✅ 开发体验
+
 - 热模块替换（HMR）
 - 统一的开发服务器
 - 更简单的调试
 
 ### ✅ 用户体验
+
 - 无需等待多个服务启动
 - 更快的加载速度
 - 更流畅的交互
@@ -84,17 +88,20 @@ docs/.vitepress/theme/
 ## Demo 功能
 
 ### 基础功能
+
 - 🏠 不可关闭的默认标签
 - 📄 可关闭的普通标签
 - 📑 批量打开多个标签
 
 ### 高级功能
+
 - 📜 **滚动位置记忆**: 50 个区块演示自动保存滚动位置
 - 📝 **表单状态保持**: 完整表单演示状态持久化
 - 🔗 **嵌套路由**: 标签内的路由导航
 - 🎲 **动态标签**: 运行时创建唯一标签
 
 ### 交互操作
+
 - 按钮式控制面板
 - 右键菜单（关闭左侧/右侧/其他/全部）
 - 刷新标签功能
@@ -126,7 +133,9 @@ Demo 页面的状态通过 Vue 的响应式系统自然保持：
 
 ```vue
 <style scoped>
-.demo-page { /* 样式 */ }
+.demo-page {
+  /* 样式 */
+}
 </style>
 ```
 

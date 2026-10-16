@@ -9,7 +9,7 @@ You can customize tab and page transitions via `tab-transition`, `page-transitio
 
 - For scoped CSS, use `>>>`, `/deep/`, or `::v-deep` for selectors to take effect.
 - The tab item `.stack-tab-item` has default `transition` and `transform-origin`. You may need to override them for custom transitions.
-:::
+  :::
 
 **Example:**
 

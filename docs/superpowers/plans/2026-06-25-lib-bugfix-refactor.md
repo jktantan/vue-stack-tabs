@@ -65,11 +65,13 @@
 ### Task 1: 修复 `contextmenu` 配置链路
 
 **Files:**
+
 - Create: `src/lib/components/TabHeader/index.spec.ts`
 - Modify: `src/lib/components/TabHeader/index.vue`
 - Modify: `src/lib/StackTabs.vue`
 
 **Interfaces:**
+
 - Consumes:
   - `ITabItem` from `src/lib/model/TabModel.ts`
   - `IContextMenu` from `src/lib/model/TabModel.ts`
@@ -168,7 +170,11 @@ const ContextMenuStub = defineComponent({
   setup(props) {
     return () =>
       h('div', { class: 'stack-tab__contextmenu', 'data-test': 'context-menu' }, [
-        h('span', { 'data-test': 'custom-menu-count' }, String((props.contextMenu as unknown[]).length)),
+        h(
+          'span',
+          { 'data-test': 'custom-menu-count' },
+          String((props.contextMenu as unknown[]).length)
+        ),
         ...(props.contextMenu as IContextMenu[]).map((item) =>
           h(
             'button',
@@ -443,10 +449,12 @@ git commit -m "fix: align tab context menu behavior"
 ### Task 2: 修复 `TabScrollMode` 行为
 
 **Files:**
+
 - Create: `src/lib/components/TabHeader/TabHeaderScroll.spec.ts`
 - Modify: `src/lib/components/TabHeader/TabHeaderScroll.vue`
 
 **Interfaces:**
+
 - Consumes:
   - Props from `TabHeaderScroll.vue`:
     - `space?: number`
@@ -504,7 +512,11 @@ const TabHeaderButtonStub = defineComponent({
   }
 })
 
-function setReadonlyNumberProperty(element: Element, key: 'clientWidth' | 'scrollWidth', value: number) {
+function setReadonlyNumberProperty(
+  element: Element,
+  key: 'clientWidth' | 'scrollWidth',
+  value: number
+) {
   Object.defineProperty(element, key, {
     configurable: true,
     value
@@ -633,8 +645,7 @@ const updateScrollButtonState = (data: ScrollData) => {
   const hasHorizontalOverflow = data.scrollWidth > data.clientWidth
 
   isDisabledLeftButton.value = data.scrollLeft <= 10
-  isDisabledRightButton.value =
-    data.clientWidth + data.scrollLeft - data.scrollWidth >= -10
+  isDisabledRightButton.value = data.clientWidth + data.scrollLeft - data.scrollWidth >= -10
   isScrollButtonVisible.value = props.isScrollButton && hasHorizontalOverflow
 }
 ```
@@ -709,12 +720,14 @@ git commit -m "fix: respect tab scroll mode"
 ### Task 3: 轻量收敛事件名类型
 
 **Files:**
+
 - Create: `src/lib/hooks/useTabEventBus.spec.ts`
 - Modify: `src/lib/hooks/useTabEventBus.ts`
 - Modify: `src/lib/hooks/useTabRouter.ts`
 - Modify: `src/lib/StackTabs.vue`
 
 **Interfaces:**
+
 - Consumes:
   - Existing `TabEventType.PAGE_LOADING`
   - Existing `TabEventType.TAB_ACTIVE`
@@ -788,7 +801,9 @@ export interface TabEventPayloadMap extends Record<EventType, unknown> {
 }
 
 /** 获取标签事件总线，用于组件间通信 */
-export const useTabEmitter = <T extends Record<EventType, unknown> = TabEventPayloadMap>(): Emitter<T> => {
+export const useTabEmitter = <
+  T extends Record<EventType, unknown> = TabEventPayloadMap
+>(): Emitter<T> => {
   return inject('tabEmitter') as Emitter<T>
 }
 ```
@@ -980,10 +995,12 @@ git commit -m "refactor: centralize tab event names"
 ### Task 4: 最终验证与覆盖率记录
 
 **Files:**
+
 - Modify: none unless verification reveals failures.
 - Read/record only: command output from test, type-check, build, coverage.
 
 **Interfaces:**
+
 - Consumes:
   - Behavior fixed in Task 1, Task 2, Task 3.
 - Produces:
@@ -1092,21 +1109,25 @@ Report to the user in this format:
 
 ```markdown
 完成状态：
+
 - contextmenu 行为：已修复 / 未完成
 - TabScrollMode 行为：已修复 / 未完成
 - 事件名收敛：已完成 / 未完成
 
 验证：
+
 - pnpm test: PASS/FAIL
 - pnpm type-check: PASS/FAIL
 - pnpm build: PASS/FAIL
 - pnpm test:coverage: PASS/FAIL，覆盖率：<粘贴摘要>
 
 变更文件：
+
 - <文件 1>
 - <文件 2>
 
 注意事项：
+
 - <如有覆盖率基线不足或非阻塞风险，写清楚>
 ```
 

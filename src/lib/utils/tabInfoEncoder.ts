@@ -24,12 +24,10 @@ const MAX_ENCODED_TAB_INFO_LENGTH = 4096
  * 把任意 UTF-8 字符串安全地编码为 base64（避免中文/特殊字符直接 btoa 抛错）。
  * 使用 encodeURIComponent + unescape 是经典跨浏览器方案，比手动管理 TextEncoder 更简洁。
  */
-const encodeBase64 = (value: string): string =>
-  btoa(unescape(encodeURIComponent(value)))
+const encodeBase64 = (value: string): string => btoa(unescape(encodeURIComponent(value)))
 
 /** encodeBase64 的逆操作，非合法 base64 时抛错，由调用方 try/catch。 */
-const decodeBase64 = (encoded: string): string =>
-  decodeURIComponent(escape(atob(encoded)))
+const decodeBase64 = (encoded: string): string => decodeURIComponent(escape(atob(encoded)))
 
 const DEFAULT_TAB_INFO: ITabBase = {
   id: '',

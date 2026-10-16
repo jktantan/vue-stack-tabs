@@ -144,10 +144,10 @@ const contextmenu = [
   {
     key: 'pin',
     title: 'Pin tab',
-    handler: tab => {
+    handler: (tab) => {
       // 用户逻辑
-    },
-  },
+    }
+  }
 ]
 ```
 
@@ -203,10 +203,10 @@ TabHeaderScroll
 ### 目标行为
 
 | scrollMode | 滚轮滚动 | 左右按钮 |
-| --- | --- | --- |
-| `WHEEL` | 启用 | 禁用 |
-| `BUTTON` | 禁用 | 启用 |
-| `BOTH` | 启用 | 启用 |
+| ---------- | -------- | -------- |
+| `WHEEL`    | 启用     | 禁用     |
+| `BUTTON`   | 禁用     | 启用     |
+| `BOTH`     | 启用     | 启用     |
 
 默认 `scrollMode` 的值不改变，只让默认模式对应的行为正确执行。
 

@@ -9,27 +9,29 @@
           <p>报告问题、贡献代码</p>
           <a href="https://github.com/jktantan/vue-stack-tabs" target="_blank">访问仓库 →</a>
         </div>
-        
+
         <div class="card">
           <div class="icon">📚</div>
           <h3>文档</h3>
           <p>完整的使用指南和 API 参考</p>
           <a href="/vue-stack-tabs/" target="_blank">查看文档 →</a>
         </div>
-        
+
         <div class="card">
           <div class="icon">💬</div>
           <h3>讨论区</h3>
           <p>提问和分享经验</p>
-          <a href="https://github.com/jktantan/vue-stack-tabs/discussions" target="_blank">加入讨论 →</a>
+          <a href="https://github.com/jktantan/vue-stack-tabs/discussions" target="_blank"
+            >加入讨论 →</a
+          >
         </div>
       </div>
-      
+
       <div class="info">
         <h2>关于作者</h2>
         <p>Vue Stack Tabs 由 <strong>tantan</strong> 维护，欢迎社区贡献！</p>
       </div>
-      
+
       <div class="info">
         <h2>许可协议</h2>
         <p>本项目采用 <strong>Apache License 2.0</strong> 许可，可用于个人和商业项目。</p>
@@ -62,7 +64,7 @@ h1 {
   background: white;
   padding: 32px;
   border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   text-align: center;
   transition: transform 0.3s;
 }

@@ -13,9 +13,7 @@ const { forward } = useTabRouter()
   <div class="test2-layout">
     <div class="test2-layout__nav">
       <span class="test2-layout__label">[子路由]</span>
-      <button class="test2-layout__link" @click="forward({ path: '/demo/subroute' })">
-        概览
-      </button>
+      <button class="test2-layout__link" @click="forward({ path: '/demo/subroute' })">概览</button>
       <button class="test2-layout__link" @click="forward({ path: '/demo/subroute/detail' })">
         详情
       </button>

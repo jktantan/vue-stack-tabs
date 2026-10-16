@@ -69,10 +69,7 @@ export const useScrollShadow = (options: UseScrollShadowOptions): UseScrollShado
     // 注意：-top / -bottom 是两个独立 CSS 规则、作用在同一个 ::after 上，
     // 同时加会互相覆盖（后定义的 -bottom 胜出）。因此这里互斥地只加一个类：
     // 两侧都有内容用 -vertical，只有一侧用 -top / -bottom，贴边时都不加。
-    target.classList.toggle(
-      SHADOW_VERTICAL_CLASS,
-      showTopShadow && showBottomShadow
-    )
+    target.classList.toggle(SHADOW_VERTICAL_CLASS, showTopShadow && showBottomShadow)
     target.classList.toggle(SHADOW_TOP_CLASS, showTopShadow && !showBottomShadow)
     target.classList.toggle(SHADOW_BOTTOM_CLASS, !showTopShadow && showBottomShadow)
   }
@@ -105,11 +102,7 @@ export const useScrollShadow = (options: UseScrollShadowOptions): UseScrollShado
   const detach = (): void => {
     if (attached) {
       attached.removeEventListener('scroll', schedule)
-      attached.classList.remove(
-        SHADOW_TOP_CLASS,
-        SHADOW_BOTTOM_CLASS,
-        SHADOW_VERTICAL_CLASS
-      )
+      attached.classList.remove(SHADOW_TOP_CLASS, SHADOW_BOTTOM_CLASS, SHADOW_VERTICAL_CLASS)
       attached = null
     }
     resizeObserver?.disconnect()

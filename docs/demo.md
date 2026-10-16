@@ -9,17 +9,20 @@ Below is a live, interactive demo of vue-stack-tabs showcasing all features. The
 Use the buttons above the demo to explore:
 
 ### Basic Usage
+
 - 🏠 **Home**: Non-closable default tab
 - 📄 **About/Contact**: Closable tabs
 - 📑 **Multiple Tabs**: Open several tabs at once
 
 ### Advanced Features
+
 - 📜 **Scroll Position**: Automatically saved and restored
 - 📝 **Form State**: Input values preserved when switching tabs
 - 🔗 **Nested Routes**: Navigate within a tab (forward/backward)
 - 🎲 **Dynamic Tabs**: Create tabs on-the-fly with unique IDs
 
 ### Tab Operations
+
 - Right-click tabs for context menu
 - Close left/right/others/all
 - Refresh current or all tabs

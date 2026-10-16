@@ -1,8 +1,10 @@
 <template>
   <div class="demo-page">
     <h1>🎲 动态标签 {{ num }}</h1>
-    <p>这是一个动态创建的标签，随机数是: <strong>{{ num }}</strong></p>
-    
+    <p>
+      这是一个动态创建的标签，随机数是: <strong>{{ num }}</strong>
+    </p>
+
     <div class="dynamic-content">
       <div class="random-display">{{ num }}</div>
       <p>每次点击"动态标签"按钮都会创建一个新的标签，具有唯一的 ID 和随机数。</p>
@@ -40,7 +42,7 @@ h1 {
   background: white;
   padding: 32px;
   border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   margin-top: 32px;
 }
 

@@ -2,7 +2,9 @@
   <div class="demo-page">
     <h1>📄 页面 {{ id }}</h1>
     <p>这是一个动态生成的页面，用于演示标签管理功能。</p>
-    <div class="info">当前标签 ID: <code>page-{{ id }}</code></div>
+    <div class="info">
+      当前标签 ID: <code>page-{{ id }}</code>
+    </div>
     <div class="demo-content">
       <p>您可以：</p>
       <ul>
@@ -44,7 +46,7 @@ code {
   background: white;
   padding: 24px;
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   margin-top: 24px;
 }
 

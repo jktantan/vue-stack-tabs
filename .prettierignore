@@ -5,3 +5,5 @@ coverage
 *.min.js
 pnpm-lock.yaml
 docs/.vitepress/cache
+.reasonix
+.superpowers

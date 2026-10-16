@@ -6,9 +6,11 @@ import VueStackTabs from '@/lib'
 const app = createApp(App)
 
 app.use(router)
-app.use(VueStackTabs,[{
-  locale: 'zh-CN'
-}])
+app.use(VueStackTabs, [
+  {
+    locale: 'zh-CN'
+  }
+])
 // app.use(VueStackTabs, [
 //   {
 //     locale: 'zh-TW',

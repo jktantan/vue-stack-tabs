@@ -201,7 +201,8 @@ const handleMenuKeydown = (event: KeyboardEvent) => {
   }
 }
 
-const getCustomMenuKey = (item: IContextMenu): string => item.key ?? `${item.title}-${item.icon ?? ''}`
+const getCustomMenuKey = (item: IContextMenu): string =>
+  item.key ?? `${item.title}-${item.icon ?? ''}`
 
 /** 挂载后修正菜单位置，避免超出右边界 */
 onMounted(() => {

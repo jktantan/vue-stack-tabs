@@ -70,7 +70,7 @@ import {
   postOpenTab,
   onRefreshRequest,
   MSG_REFRESH,
-  MSG_OPEN_TAB,
+  MSG_OPEN_TAB
 } from 'vue-stack-tabs'
 ```
 
@@ -81,9 +81,7 @@ import {
 为了减少 default import 被误认为组件的歧义，本阶段明确提供组件 named alias：
 
 ```ts
-import VueStackTabsPlugin, {
-  VueStackTabs as VueStackTabsComponent,
-} from 'vue-stack-tabs'
+import VueStackTabsPlugin, { VueStackTabs as VueStackTabsComponent } from 'vue-stack-tabs'
 
 app.use(VueStackTabsPlugin)
 ```
@@ -295,7 +293,7 @@ route.query.__tab = encodeTabInfo(tabInfo)
 ```ts
 const nextQuery = {
   ...route.query,
-  __tab: encodeTabInfo(tabInfo),
+  __tab: encodeTabInfo(tabInfo)
 }
 ```
 

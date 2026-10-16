@@ -19,14 +19,16 @@
 ### Task 1: Remove Redundant `<transition-group>`
 
 **Files:**
+
 - Modify: `src/lib/StackTabs.vue`
 
 **Interfaces:**
+
 - Consumes: `pageTransition` class, `iframeTabs` ref
 - Produces: Correct DOM wrapper for iframes avoiding virtual DOM re-reordering overhead
 
 - [ ] **Step 1: Write the failing DOM test (or inspect baseline)**
-Since we are refactoring template code without affecting logic natively tested, we ensure the build passes and inspect visually. For agentic testing in Vue, we verify the template tag changes.
+      Since we are refactoring template code without affecting logic natively tested, we ensure the build passes and inspect visually. For agentic testing in Vue, we verify the template tag changes.
 
 - [ ] **Step 2: Modify template `<transition-group>` to `<div>`**
 
@@ -36,6 +38,7 @@ Since we are refactoring template code without affecting logic natively tested, 
 <!-- AFTER -->
 <div class="stack-tab__iframes">
 ```
+
 And replace the closing tag from `</transition-group>` to `</div>`.
 
 - [ ] **Step 3: Run linter/build to confirm valid template**
@@ -55,14 +58,16 @@ git commit -m "perf: strip redundant transition-group for v-show iframe list"
 ### Task 2: Merge and Optimize `activeIframesWithUrl` Watchers
 
 **Files:**
+
 - Modify: `src/lib/StackTabs.vue`
 
 **Interfaces:**
+
 - Consumes: `activeIframesWithUrl`, `iframeEverActivated`, `setIframeLoading`
 - Produces: A single watcher without `deep: true`
 
 - [ ] **Step 1: Locate existing separate watchers**
-Locate the two watchers for `activeIframesWithUrl`.
+      Locate the two watchers for `activeIframesWithUrl`.
 
 - [ ] **Step 2: Apply optimization to script tag**
 
@@ -97,9 +102,11 @@ git commit -m "perf: consolidate iframe active state watchers and drop deep trav
 ### Task 3: Cache `iframeSrc` Output to Avoid Template Execution
 
 **Files:**
+
 - Modify: `src/lib/StackTabs.vue`
 
 **Interfaces:**
+
 - Consumes: `getIframeSrc()`, `getIframeRefreshKey()`, `iframeTabs`
 - Produces: A computed map `iframeSrcMap` retaining computed strings
 
@@ -143,14 +150,16 @@ git commit -m "perf: cache iframe src evaluation in computed map"
 ### Task 4: Optimize Closed Iframe Memory Cleanup
 
 **Files:**
+
 - Modify: `src/lib/StackTabs.vue`
 
 **Interfaces:**
+
 - Consumes: `iframeTabs`, `iframeLoadStates`, `iframeEverActivated`, `iframeElRefs`
 - Produces: More efficient garbage collection skipping untouched keys
 
 - [ ] **Step 1: Simplify logic in the `iframeTabs` watcher**
-Avoid constantly calling `Object.keys(iframeLoadStates)` unless the length changed or using manual triggers.
+      Avoid constantly calling `Object.keys(iframeLoadStates)` unless the length changed or using manual triggers.
 
 ```typescript
 // Modify the old watch block:
@@ -161,7 +170,7 @@ watch(
     if (oldFrames && frames.length < oldFrames.length) {
       const activeIds = new Set(frames.map((frame) => frame.id))
       // It's cheaper to look at what was removed instead of all existing states
-      const removedFrames = oldFrames.filter(f => !activeIds.has(f.id))
+      const removedFrames = oldFrames.filter((f) => !activeIds.has(f.id))
       for (const removed of removedFrames) {
         const id = removed.id
         clearIframeLoadTimeout(id)
@@ -169,15 +178,16 @@ watch(
         delete iframeEverActivated[id]
         delete iframeElRefs[id]
       }
-    } else if (!oldFrames) { // immediate initial run cleanup just in case
+    } else if (!oldFrames) {
+      // immediate initial run cleanup just in case
       const activeIds = new Set(frames.map((frame) => frame.id))
       for (const id of Object.keys(iframeLoadStates)) {
-         if (!activeIds.has(id)) {
-            clearIframeLoadTimeout(id)
-            delete iframeLoadStates[id]
-            delete iframeEverActivated[id]
-            delete iframeElRefs[id]
-         }
+        if (!activeIds.has(id)) {
+          clearIframeLoadTimeout(id)
+          delete iframeLoadStates[id]
+          delete iframeEverActivated[id]
+          delete iframeElRefs[id]
+        }
       }
     }
   },

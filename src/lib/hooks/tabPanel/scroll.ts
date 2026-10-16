@@ -73,9 +73,7 @@ const getAutoScrollCache = (pageCacheId: string): AutoScrollCache | null => {
   } else {
     // 防御：检查 pageRoot 是否已被替换（极端情况：同一 pageCacheId 重新挂载）
     if (cache.elements.length === 0 && cache.observer) {
-      cache.elements = Array.from(
-        pageRoot.querySelectorAll<HTMLElement>('[data-stack-tab-scroll]')
-      )
+      cache.elements = Array.from(pageRoot.querySelectorAll<HTMLElement>('[data-stack-tab-scroll]'))
     }
   }
   return cache

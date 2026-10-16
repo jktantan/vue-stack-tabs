@@ -75,15 +75,15 @@ describe('package exports', () => {
     const script = readFileSync(join(process.cwd(), 'scripts', 'verify-packaged.mjs'), 'utf8')
 
     expect(script).toContain('writeIframeBridgeTypeSmokeProject')
-    expect(script).toContain("import { postOpenTab, onRefreshRequest } from 'vue-stack-tabs/iframe-bridge'")
+    expect(script).toContain(
+      "import { postOpenTab, onRefreshRequest } from 'vue-stack-tabs/iframe-bridge'"
+    )
     expect(script).toContain("'--noEmit', '--pretty', 'false'")
   })
 
   it('lib build generates iframe bridge declaration dependencies next to the subpath declaration via tsconfig rootDir', () => {
     const pkg = readPackageJson()
-    const tsconfig = JSON.parse(
-      readFileSync(join(process.cwd(), 'tsconfig.lib.json'), 'utf8')
-    )
+    const tsconfig = JSON.parse(readFileSync(join(process.cwd(), 'tsconfig.lib.json'), 'utf8'))
     const buildScript = readFileSync(join(process.cwd(), 'package.json'), 'utf8')
 
     expect(pkg.exports?.['./iframe-bridge']).toEqual({
@@ -99,7 +99,9 @@ describe('package exports', () => {
 
     expect(readme).toContain('兼容优先，不是强隔离')
     expect(readme).toContain('强隔离请移除 `allow-same-origin`')
-    expect(readme).toContain('默认未传 `targetOrigin` 时使用 iframe 页面自身的 `window.location.origin`')
+    expect(readme).toContain(
+      '默认未传 `targetOrigin` 时使用 iframe 页面自身的 `window.location.origin`'
+    )
     expect(readme).toContain('跨域父页面必须显式传 `targetOrigin`')
   })
 

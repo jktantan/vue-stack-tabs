@@ -22,18 +22,18 @@ Vue 3 多标签页管理库，基于 Vue Router。设计思想：用 Vue 作用�
 
 ## 目录与职责
 
-| 目录 | 职责 |
-|------|------|
-| `src/lib/` | 核心库，构建到 `dist/` |
-| `src/lib/hooks/` | 状态与业务逻辑：`useTabPanel`（核心）、`useTabActions`（对外 API）、`useTabRouter`（栈内导航）、`useTabLoading`、`useContextMenu`、`useIframeManager`、`useTabEventBus`、`stackTabsContext`（运行时上下文） |
-| `src/lib/hooks/tabPanel/` | 内部子模块：`state`（共享响应式）、`evict`（缓存驱逐）、`refresh`（单页/全量刷新）、`scroll`（滚动位置）、`session`（SSR 安全持久化）、`navigationTransaction`（apply/rollback/cleanupStale）、`pageComponentFactory`（cacheComponent 工厂） |
-| `src/lib/components/` | UI 组件：`TabHeader`（标签栏）、`ContextMenu`（右键菜单）、`PageLoading`、`StackKeepAlive/`（含共享 `emptyPlaceholder.tsx`） |
-| `src/lib/utils/` | 工具函数：`tabInfoEncoder`（`__tab` 编解码 + UUID）、`urlParser`（URL 解析与安全校验）、`scrollUtils`（DOM 滚动 + z-index 缓存）、`iframeBridge`（iframe postMessage 桥）、`stackTabsMessage`（消息校验）、`stackTabsA11y`（ARIA id）、`typeGuards` |
-| `src/lib/model/` | 类型定义（`TabModel`、`Stack`） |
-| `src/lib/nuxt/` | Nuxt 模块（`vue-stack-tabs/nuxt`）：`module.ts`（自动注册 `VueStackTabs` 全局组件）+ `runtime/plugin*.ts`（locale 透传） |
-| `src/lib/assets/style/` | SCSS 样式，变量和 mixins 在 `common/` |
-| `scripts/` | 验证脚本：`verify-packaged.mjs`（tarball 验证） |
-| `docs/` | VitePress 文档（`docs/zh/`）、分析文档（`DIAGNOSTIC_REPORT.md` / `OPTIMIZATION_TODO.md` / `SUBROUTE_*.md`） |
+| 目录                      | 职责                                                                                                                                                                                                                                                |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/lib/`                | 核心库，构建到 `dist/`                                                                                                                                                                                                                              |
+| `src/lib/hooks/`          | 状态与业务逻辑：`useTabPanel`（核心）、`useTabActions`（对外 API）、`useTabRouter`（栈内导航）、`useTabLoading`、`useContextMenu`、`useIframeManager`、`useTabEventBus`、`stackTabsContext`（运行时上下文）                                         |
+| `src/lib/hooks/tabPanel/` | 内部子模块：`state`（共享响应式）、`evict`（缓存驱逐）、`refresh`（单页/全量刷新）、`scroll`（滚动位置）、`session`（SSR 安全持久化）、`navigationTransaction`（apply/rollback/cleanupStale）、`pageComponentFactory`（cacheComponent 工厂）        |
+| `src/lib/components/`     | UI 组件：`TabHeader`（标签栏）、`ContextMenu`（右键菜单）、`PageLoading`、`StackKeepAlive/`（含共享 `emptyPlaceholder.tsx`）                                                                                                                        |
+| `src/lib/utils/`          | 工具函数：`tabInfoEncoder`（`__tab` 编解码 + UUID）、`urlParser`（URL 解析与安全校验）、`scrollUtils`（DOM 滚动 + z-index 缓存）、`iframeBridge`（iframe postMessage 桥）、`stackTabsMessage`（消息校验）、`stackTabsA11y`（ARIA id）、`typeGuards` |
+| `src/lib/model/`          | 类型定义（`TabModel`、`Stack`）                                                                                                                                                                                                                     |
+| `src/lib/nuxt/`           | Nuxt 模块（`vue-stack-tabs/nuxt`）：`module.ts`（自动注册 `VueStackTabs` 全局组件）+ `runtime/plugin*.ts`（locale 透传）                                                                                                                            |
+| `src/lib/assets/style/`   | SCSS 样式，变量和 mixins 在 `common/`                                                                                                                                                                                                               |
+| `scripts/`                | 验证脚本：`verify-packaged.mjs`（tarball 验证）                                                                                                                                                                                                     |
+| `docs/`                   | VitePress 文档（`docs/zh/`）、分析文档（`DIAGNOSTIC_REPORT.md` / `OPTIMIZATION_TODO.md` / `SUBROUTE_*.md`）                                                                                                                                         |
 
 ---
 
@@ -85,7 +85,7 @@ pnpm run lint
 pnpm run format:check
 
 # 5. 打包前全覆盖（单元 + Vue 主项目 + Nuxt 源码构建）
-pnpm run test:prepack
+pnpm exec node scripts/verify-prepack.mjs
 
 # 6. 库构建
 pnpm run lib:build

@@ -6,7 +6,7 @@
         <h2>什么是 Vue Stack Tabs?</h2>
         <p>Vue Stack Tabs 是一个强大的 Vue 3 标签页管理库，为应用提供类似浏览器的多标签页界面。</p>
       </section>
-      
+
       <section>
         <h2>核心特性</h2>
         <ul>
@@ -18,7 +18,7 @@
           <li>✅ <strong>TypeScript</strong>：完整的类型支持</li>
         </ul>
       </section>
-      
+
       <section>
         <h2>使用场景</h2>
         <div class="use-cases">
@@ -92,7 +92,7 @@ section ul li {
   background: white;
   padding: 20px;
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   text-align: center;
 }
 

@@ -6,10 +6,10 @@
 
 **「子路由」** 在本文中指以下两种常见诉求之一或兼有：
 
-| 类型 | 描述 | 示例 |
-|------|------|------|
-| A. 页面内嵌子路由 | 某页面有 `children`，自身含 `<router-view>`，子路径在同一标签内切换 | `/demo/test2` → `/demo/test2/detail` → `/demo/test2/settings` |
-| B. 标签内多级路径栈 | 同标签内通过 `forward`/`backward` 在多个路径间前进/后退，形成页面栈 | 首页 → 列表 → 详情 → 返回列表 → 返回首页 |
+| 类型                | 描述                                                                | 示例                                                          |
+| ------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------- |
+| A. 页面内嵌子路由   | 某页面有 `children`，自身含 `<router-view>`，子路径在同一标签内切换 | `/demo/test2` → `/demo/test2/detail` → `/demo/test2/settings` |
+| B. 标签内多级路径栈 | 同标签内通过 `forward`/`backward` 在多个路径间前进/后退，形成页面栈 | 首页 → 列表 → 详情 → 返回列表 → 返回首页                      |
 
 ---
 
@@ -59,13 +59,13 @@ route 变化 → router-view 渲染 (Component, route)
 
 **与当前实现的关系：**
 
-| 环节 | 结论 | 说明 |
-|------|------|------|
-| `route.path` | ✅ 已支持 | 子路由如 `/demo/test2/detail`，`route.path` 为完整路径 |
+| 环节                    | 结论      | 说明                                                   |
+| ----------------------- | --------- | ------------------------------------------------------ |
+| `route.path`            | ✅ 已支持 | 子路由如 `/demo/test2/detail`，`route.path` 为完整路径 |
 | `normalizePathForCache` | ✅ 已支持 | 当 `matchPath !== path` 时返回 `route.path`（见 spec） |
-| `createPageId` | ✅ 已支持 | 生成 UUID 作为唯一 cacheName |
-| `pages` 栈 | ✅ 已支持 | 每种子路径对应一个 page，可分别缓存 |
-| `forward`/`backward` | ✅ 已支持 | 基于 path 匹配回退，可处理多级路径 |
+| `createPageId`          | ✅ 已支持 | 生成 UUID 作为唯一 cacheName                           |
+| `pages` 栈              | ✅ 已支持 | 每种子路径对应一个 page，可分别缓存                    |
+| `forward`/`backward`    | ✅ 已支持 | 基于 path 匹配回退，可处理多级路径                     |
 
 **结论**：类型 A 在现有逻辑下即可工作，无需修改库代码。使用者只需：
 
@@ -104,7 +104,10 @@ route 变化 → router-view 渲染 (Component, route)
 
 ```ts
 // useTabRouter backward 逻辑
-if (pages[i]?.path === parsed.path) { found = true; break }
+if (pages[i]?.path === parsed.path) {
+  found = true
+  break
+}
 ```
 
 `parsed.path` 来自 `parseUrl(to)`。若传入完整 path（如 `/demo/test2`），需保证 `parseUrl` 能正确解析；当前 `route.path` 在 `ITabPage` 中存的是完整路径，匹配逻辑应能覆盖子路由场景。建议在实现后用子路由路径做一次回归测试。
@@ -159,22 +162,22 @@ if (pages[i]?.path === parsed.path) { found = true; break }
 
 ### 5.2 可选增强
 
-| 项目 | 内容 |
-|------|------|
-| 浏览器 history 同步 | 监听 `popstate`，在用户点击前进/后退时对 pages 栈做 push/pop，保持栈与 URL 一致 |
-| 文档 | 在 README 或文档中明确说明子路由的配置方式与使用示例 |
-| 单元测试 | 为 `normalizePathForCache`、`createPageId` 增加子路由 path 用例，覆盖 `/demo/test2/detail` 等 |
+| 项目                | 内容                                                                                          |
+| ------------------- | --------------------------------------------------------------------------------------------- |
+| 浏览器 history 同步 | 监听 `popstate`，在用户点击前进/后退时对 pages 栈做 push/pop，保持栈与 URL 一致               |
+| 文档                | 在 README 或文档中明确说明子路由的配置方式与使用示例                                          |
+| 单元测试            | 为 `normalizePathForCache`、`createPageId` 增加子路由 path 用例，覆盖 `/demo/test2/detail` 等 |
 
 ---
 
 ## 6. 总结
 
-| 维度 | 结论 |
-|------|------|
-| **能否实现** | ✅ 能实现 |
-| **是否需要改库** | ❌ 基本不需要，现有设计已支持 |
+| 维度               | 结论                                                                         |
+| ------------------ | ---------------------------------------------------------------------------- |
+| **能否实现**       | ✅ 能实现                                                                    |
+| **是否需要改库**   | ❌ 基本不需要，现有设计已支持                                                |
 | **使用者需要做的** | 配置 `children`、在父组件中加 `<router-view>`、按需使用 `forward`/`backward` |
-| **建议** | 补充示例、文档和测试；可选实现浏览器 history 与 pages 栈的同步 |
+| **建议**           | 补充示例、文档和测试；可选实现浏览器 history 与 pages 栈的同步               |
 
 **结论**：子路由功能在现有架构下即可实现，主要工作集中在配置、示例和文档上，无需对 vue-stack-tabs 做大改。
 
@@ -188,12 +191,12 @@ if (pages[i]?.path === parsed.path) { found = true; break }
 
 ### 7.2 缓存机制简述
 
-| 环节 | 逻辑 |
-|------|------|
-| **缓存标识** | `cacheName = createPageId()` 生成 UUID，每个页面实例唯一，不同 path 互不共享 |
-| **keep-alive** | `include=caches`，每个 cacheName 对应一个组件实例 |
-| **组件命名** | 包装组件 `name: cacheName`，用于 keep-alive 匹配 |
-| **驱逐** | `backward` 时 pop 并 `markCacheForEviction`；关 tab 时 `markTabPagesForEviction` 遍历栈内所有 page |
+| 环节           | 逻辑                                                                                               |
+| -------------- | -------------------------------------------------------------------------------------------------- |
+| **缓存标识**   | `cacheName = createPageId()` 生成 UUID，每个页面实例唯一，不同 path 互不共享                       |
+| **keep-alive** | `include=caches`，每个 cacheName 对应一个组件实例                                                  |
+| **组件命名**   | 包装组件 `name: cacheName`，用于 keep-alive 匹配                                                   |
+| **驱逐**       | `backward` 时 pop 并 `markCacheForEviction`；关 tab 时 `markTabPagesForEviction` 遍历栈内所有 page |
 
 ### 7.3 多级子路由下的组件形态
 
@@ -207,13 +210,13 @@ if (pages[i]?.path === parsed.path) { found = true; break }
 
 ### 7.4 潜在问题
 
-| 问题 | 风险 | 说明 |
-|------|------|------|
-| **1. 缓存数量膨胀** | 中 | 同 tab 内深度导航（如 10+ 级）会产生 10+ 个 keep-alive 实例，无 `max` 限制。关闭 tab 会一次性驱逐，`backward` 会逐个驱逐，可接受，但需关注内存。 |
-| **2. 刷新粒度** | 低 | `refreshTab` 只 exclude 栈顶 page，栈内其余 page 仍缓存。符合「只刷新当前页」的预期。 |
-| **3. 同一 path 不同 tab** | 无 | 不同 tabId → 不同 cacheName，不会串缓存。 |
-| **4. 浏览器前进/后退** | 中 | 与 4.4 节一致：不经过 `backward`，pages 栈可能与 history 不同步，属通用问题，非多级子路由特有。 |
-| **5. `caches` 与 `components` 一致性** | 低 | 驱逐时同时 `removeCache`、`components.delete`，逻辑一致。若未来有异步或边界分支，需保证两处同步。 |
+| 问题                                   | 风险 | 说明                                                                                                                                             |
+| -------------------------------------- | ---- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **1. 缓存数量膨胀**                    | 中   | 同 tab 内深度导航（如 10+ 级）会产生 10+ 个 keep-alive 实例，无 `max` 限制。关闭 tab 会一次性驱逐，`backward` 会逐个驱逐，可接受，但需关注内存。 |
+| **2. 刷新粒度**                        | 低   | `refreshTab` 只 exclude 栈顶 page，栈内其余 page 仍缓存。符合「只刷新当前页」的预期。                                                            |
+| **3. 同一 path 不同 tab**              | 无   | 不同 tabId → 不同 cacheName，不会串缓存。                                                                                                        |
+| **4. 浏览器前进/后退**                 | 中   | 与 4.4 节一致：不经过 `backward`，pages 栈可能与 history 不同步，属通用问题，非多级子路由特有。                                                  |
+| **5. `caches` 与 `components` 一致性** | 低   | 驱逐时同时 `removeCache`、`components.delete`，逻辑一致。若未来有异步或边界分支，需保证两处同步。                                                |
 
 ### 7.5 结论
 

@@ -2,23 +2,23 @@
   <div class="demo-page">
     <h1>📝 表单状态演示</h1>
     <p>填写下面的表单，然后切换到其他标签再回来。你的输入内容会被保持！</p>
-    
+
     <form class="demo-form" @submit.prevent="handleSubmit">
       <div class="form-group">
         <label>姓名 / Name:</label>
         <input v-model="form.name" type="text" placeholder="请输入姓名" />
       </div>
-      
+
       <div class="form-group">
         <label>邮箱 / Email:</label>
         <input v-model="form.email" type="email" placeholder="请输入邮箱" />
       </div>
-      
+
       <div class="form-group">
         <label>留言 / Message:</label>
         <textarea v-model="form.message" rows="5" placeholder="请输入留言内容"></textarea>
       </div>
-      
+
       <div class="form-group">
         <label>类别 / Category:</label>
         <select v-model="form.category">
@@ -28,10 +28,10 @@
           <option value="question">问题咨询</option>
         </select>
       </div>
-      
+
       <button type="submit" class="btn-submit">提交 / Submit</button>
     </form>
-    
+
     <div v-if="submitted" class="success-message">
       ✅ 表单数据已保存！姓名: {{ form.name }}, 邮箱: {{ form.email }}
     </div>
@@ -52,7 +52,7 @@ const submitted = ref(false)
 
 const handleSubmit = () => {
   submitted.value = true
-  setTimeout(() => submitted.value = false, 3000)
+  setTimeout(() => (submitted.value = false), 3000)
 }
 </script>
 
@@ -71,7 +71,7 @@ h1 {
   background: white;
   padding: 32px;
   border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   margin-top: 24px;
 }
 

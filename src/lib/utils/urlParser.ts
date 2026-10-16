@@ -137,7 +137,9 @@ export function isSameQueryIgnoringReserved(
     const result: Record<string, string | string[]> = {}
     for (const [key, value] of Object.entries(q)) {
       if (STACK_TABS_RESERVED_QUERY_KEYS.has(key) || key === '_back') continue
-      result[key] = Array.isArray(value) ? value.map((item) => String(item ?? '')) : String(value ?? '')
+      result[key] = Array.isArray(value)
+        ? value.map((item) => String(item ?? ''))
+        : String(value ?? '')
     }
     return result
   }

@@ -60,10 +60,7 @@ src/lib/
 `StackKeepAlive` 是内部组件，使用方式：
 
 ```vue
-<StackKeepAlive
-  :transition-name="pageSwitch"
-  @loaded="onComponentLoaded"
-/>
+<StackKeepAlive :transition-name="pageSwitch" @loaded="onComponentLoaded" />
 ```
 
 ### Props
@@ -87,12 +84,7 @@ interface StackKeepAliveEmits {
 `StackKeepAlive` 内部直接调用 `useTabPanel()`：
 
 ```ts
-const {
-  caches,
-  refreshKey,
-  activeCacheKey,
-  addPage
-} = useTabPanel()
+const { caches, refreshKey, activeCacheKey, addPage } = useTabPanel()
 ```
 
 不从 `StackTabs.vue` 传入 `caches`、`refreshKey`、`activeCacheKey` 或 `addPage`，避免把内部状态拆成一串 props。
@@ -132,14 +124,13 @@ const {
 2. `transition` 参数保持：
 
 ```vue
-appear
-mode="out-in"
+appear mode="out-in"
 ```
 
 3. 动态组件 key 保持：
 
 ```ts
-`${activeCacheKey}-${refreshKey}`
+;`${activeCacheKey}-${refreshKey}`
 ```
 
 4. 动态组件继续接收：

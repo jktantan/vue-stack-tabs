@@ -68,9 +68,11 @@
 ### Task 1: 新增 `StackKeepAlive` 组件测试
 
 **Files:**
+
 - Create: `src/lib/components/StackKeepAlive/StackKeepAlive.spec.ts`
 
 **Interfaces:**
+
 - Consumes:
   - Future component default export from `src/lib/components/StackKeepAlive/StackKeepAlive.vue`.
   - Mocked `useTabPanel()` shape:
@@ -278,10 +280,12 @@ Do not commit unless the user explicitly requests commits. This task intentional
 ### Task 2: 实现内部 `StackKeepAlive` 渲染层
 
 **Files:**
+
 - Create: `src/lib/components/StackKeepAlive/StackKeepAlive.vue`
 - Test: `src/lib/components/StackKeepAlive/StackKeepAlive.spec.ts`
 
 **Interfaces:**
+
 - Consumes:
   - `useTabPanel()` from `src/lib/hooks/useTabPanel.tsx`.
   - `RouteLocationNormalizedLoaded` and `VNode` from router-view slot.
@@ -298,7 +302,8 @@ Do not commit unless the user explicitly requests commits. This task intentional
     ```
   - Local function:
     ```ts
-    const tabWrapper = (route: RouteLocationNormalizedLoaded, component: VNode): DefineComponent => addPage(route, component)
+    const tabWrapper = (route: RouteLocationNormalizedLoaded, component: VNode): DefineComponent =>
+      addPage(route, component)
     ```
 
 - [ ] **Step 1: 创建组件目录和文件**
@@ -429,10 +434,12 @@ Do not commit unless the user explicitly requests commits.
 ### Task 3: 让 `StackTabs.vue` 使用 `StackKeepAlive`
 
 **Files:**
+
 - Modify: `src/lib/StackTabs.vue`
 - Test: `src/lib/components/StackKeepAlive/StackKeepAlive.spec.ts`
 
 **Interfaces:**
+
 - Consumes:
   - `StackKeepAlive` default export from `src/lib/components/StackKeepAlive/StackKeepAlive.vue`.
   - Prop `transitionName?: string`.
@@ -597,12 +604,14 @@ Do not commit unless the user explicitly requests commits.
 ### Task 4: 全量验证与代码审查
 
 **Files:**
+
 - Read/verify: `src/lib/components/StackKeepAlive/StackKeepAlive.vue`
 - Read/verify: `src/lib/components/StackKeepAlive/StackKeepAlive.spec.ts`
 - Read/verify: `src/lib/StackTabs.vue`
 - Modify: none unless verification reveals failures.
 
 **Interfaces:**
+
 - Consumes:
   - Internal `StackKeepAlive` component from Task 2.
   - `StackTabs.vue` integration from Task 3.
@@ -743,17 +752,20 @@ Report to the user in this format:
 
 ```markdown
 完成状态：
+
 - StackKeepAlive 内部组件：已完成 / 未完成
 - StackTabs 集成：已完成 / 未完成
 - 对外导出保持不变：已确认 / 未确认
 
 验证：
+
 - pnpm vitest run src/lib/components/StackKeepAlive/StackKeepAlive.spec.ts: PASS/FAIL
 - pnpm test: PASS/FAIL
 - pnpm type-check: PASS/FAIL
 - pnpm run lib:build: PASS/FAIL
 
 变更文件：
+
 - src/lib/components/StackKeepAlive/StackKeepAlive.vue
 - src/lib/components/StackKeepAlive/StackKeepAlive.spec.ts
 - src/lib/StackTabs.vue
@@ -761,6 +773,7 @@ Report to the user in this format:
 - docs/superpowers/plans/2026-06-26-stack-keep-alive.md
 
 注意事项：
+
 - <如有失败、跳过项或非阻塞风险，写清楚>
 ```
 

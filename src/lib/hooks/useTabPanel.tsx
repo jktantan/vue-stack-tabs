@@ -37,9 +37,7 @@ import { createTabPanelEviction } from './tabPanel/evict'
 import { createTabPanelScroll } from './tabPanel/scroll'
 import { createTabPanelSession } from './tabPanel/session'
 import { createTabPanelRefresh } from './tabPanel/refresh'
-import {
-  createPageComponentFactory
-} from './tabPanel/pageComponentFactory'
+import { createPageComponentFactory } from './tabPanel/pageComponentFactory'
 import { getEmptyPlaceholderComponent } from '../components/StackKeepAlive/emptyPlaceholder'
 
 const cloneRouteQuery = (route: RouteLocationNormalizedLoaded, tabInfo: ITabBase) => ({

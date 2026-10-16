@@ -2,7 +2,7 @@
   <div class="demo-page home">
     <h1>🎉 欢迎使用 Vue Stack Tabs</h1>
     <p class="subtitle">一个强大的 Vue 3 多标签页管理库</p>
-    
+
     <div class="features">
       <div class="feature">
         <div class="icon">📑</div>
@@ -25,7 +25,7 @@
         <p>可以嵌入外部网站</p>
       </div>
     </div>
-    
+
     <div class="cta">
       <p>👆 使用上方按钮体验各种功能</p>
     </div>
@@ -65,7 +65,7 @@ h1 {
   background: white;
   padding: 24px;
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .feature .icon {
@@ -89,7 +89,7 @@ h1 {
   padding: 20px;
   background: white;
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .cta p {

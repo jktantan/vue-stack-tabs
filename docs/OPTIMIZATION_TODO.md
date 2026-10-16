@@ -77,32 +77,32 @@
 
 ### 第三轮（性能 / 可维护性）
 
-| 项目 | 文件 | 状态 |
-|---|---|---|
-| `getMaxZIndex` 加 100ms TTL 缓存 + `invalidateZIndexCache` 导出 | `src/lib/utils/scrollUtils.ts` | ✅ |
-| 抽出共享 `EmptyPlaceholderComponent`（消除两份等价副本） | `src/lib/components/StackKeepAlive/emptyPlaceholder.tsx`（新增） | ✅ |
-| `saveScroller` 用 MutationObserver 缓存 `[data-stack-tab-scroll]` 列表 | `src/lib/hooks/tabPanel/scroll.ts` | ✅ |
-| `Stack.readonlyList` 改为返回浅拷贝 | `src/lib/model/TabModel.ts` | ✅ |
-| `Stack` 新增 `find/findIndex/filter/some/forEachTopDown` 便捷方法 | `src/lib/model/TabModel.ts` | ✅ |
-| `versionLogger` 在 Vitest 等环境无版本号时显示 `vdev` 兜底 | `src/lib/versionLogger.ts` | ✅ |
+| 项目                                                                   | 文件                                                             | 状态 |
+| ---------------------------------------------------------------------- | ---------------------------------------------------------------- | ---- |
+| `getMaxZIndex` 加 100ms TTL 缓存 + `invalidateZIndexCache` 导出        | `src/lib/utils/scrollUtils.ts`                                   | ✅   |
+| 抽出共享 `EmptyPlaceholderComponent`（消除两份等价副本）               | `src/lib/components/StackKeepAlive/emptyPlaceholder.tsx`（新增） | ✅   |
+| `saveScroller` 用 MutationObserver 缓存 `[data-stack-tab-scroll]` 列表 | `src/lib/hooks/tabPanel/scroll.ts`                               | ✅   |
+| `Stack.readonlyList` 改为返回浅拷贝                                    | `src/lib/model/TabModel.ts`                                      | ✅   |
+| `Stack` 新增 `find/findIndex/filter/some/forEachTopDown` 便捷方法      | `src/lib/model/TabModel.ts`                                      | ✅   |
+| `versionLogger` 在 Vitest 等环境无版本号时显示 `vdev` 兜底             | `src/lib/versionLogger.ts`                                       | ✅   |
 
 ### 第四轮（Nuxt 集成 / SSR / 缓存失效）
 
-| 项目 | 文件 | 状态 |
-|---|---|---|
-| `session` 模块 SSR 环境 `typeof window` 守卫（隐私模式 + Nuxt SSR） | `src/lib/hooks/tabPanel/session.ts` + `useTabPanel.tsx` | ✅ |
-| Nuxt 模块用 `addComponent` 自动注册 `VueStackTabs` 全局组件 | `src/lib/nuxt/module.ts` | ✅ |
-| Nuxt plugin 显式调用 `applyStackTabsLocale(changeLocale, locale)` | `src/lib/nuxt/runtime/plugin*.ts` | ✅ |
-| `iframePath` prop 必填校验（开发期抛 Error） | `src/lib/StackTabs.vue` | ✅ |
-| 三个调用点主动 `invalidateZIndexCache` 让 z-index 重算 | `StackTabs.vue` / `ContextMenu/index.vue` / `PageLoading.vue` | ✅ |
-| `iframeBridge.onRefreshRequest` 加 origin 校验安全文档 | `src/lib/utils/iframeBridge.ts` | ✅ |
+| 项目                                                                | 文件                                                          | 状态 |
+| ------------------------------------------------------------------- | ------------------------------------------------------------- | ---- |
+| `session` 模块 SSR 环境 `typeof window` 守卫（隐私模式 + Nuxt SSR） | `src/lib/hooks/tabPanel/session.ts` + `useTabPanel.tsx`       | ✅   |
+| Nuxt 模块用 `addComponent` 自动注册 `VueStackTabs` 全局组件         | `src/lib/nuxt/module.ts`                                      | ✅   |
+| Nuxt plugin 显式调用 `applyStackTabsLocale(changeLocale, locale)`   | `src/lib/nuxt/runtime/plugin*.ts`                             | ✅   |
+| `iframePath` prop 必填校验（开发期抛 Error）                        | `src/lib/StackTabs.vue`                                       | ✅   |
+| 三个调用点主动 `invalidateZIndexCache` 让 z-index 重算              | `StackTabs.vue` / `ContextMenu/index.vue` / `PageLoading.vue` | ✅   |
+| `iframeBridge.onRefreshRequest` 加 origin 校验安全文档              | `src/lib/utils/iframeBridge.ts`                               | ✅   |
 
 ### 第五轮（收尾）
 
-| 项目 | 文件 | 状态 |
-|---|---|---|
-| `useContextMenu` 加 `BUBBLE_GUARD_MS=250ms` 时间戳守卫 | `src/lib/hooks/useContextMenu.ts` | ✅ |
-| defu 全量审计：UUID 求值时机 + backward `__tab` 顺序 | `src/lib/hooks/useTabPanel.tsx` + `useTabRouter.ts` | ✅ |
+| 项目                                                   | 文件                                                | 状态 |
+| ------------------------------------------------------ | --------------------------------------------------- | ---- |
+| `useContextMenu` 加 `BUBBLE_GUARD_MS=250ms` 时间戳守卫 | `src/lib/hooks/useContextMenu.ts`                   | ✅   |
+| defu 全量审计：UUID 求值时机 + backward `__tab` 顺序   | `src/lib/hooks/useTabPanel.tsx` + `useTabRouter.ts` | ✅   |
 
 ---
 
@@ -111,4 +111,3 @@
 - **`Stack.toJSON` / `toString` 行为**：与 JSON.stringify 配合正常，是有意行为。
 - **`i18n.mergeLocaleMessages` `__proto__` 黑名单**：`Object.entries` 已天然不枚举 `__proto__`，黑名单是冗余防御但可保留作注释。
 - **`Stack.find/findIndex` 等只读方法重复声明**：库内部仍允许调用方根据习惯选择 `readonlyList().find(...)`，不强制迁移。
-

@@ -135,11 +135,13 @@
 ### Task 1: 新增 runtime context foundation
 
 **Files:**
+
 - Create: `src/lib/hooks/stackTabsContext.ts`
 - Create: `src/lib/hooks/stackTabsContext.spec.ts`
 - Modify: `src/lib/hooks/tabPanel/state.ts`
 
 **Interfaces:**
+
 - Consumes:
   - `ITabItem` from `src/lib/model/TabModel.ts`
   - `Emitter<TabEventPayloadMap>` from `mitt` and `src/lib/hooks/useTabEventBus.ts`
@@ -381,7 +383,8 @@ export const createStackTabsRuntimeContext = (
   }
 }
 
-export const getActiveStackTabsRuntimeContext = (): StackTabsRuntimeContext | null => activeRuntimeContext
+export const getActiveStackTabsRuntimeContext = (): StackTabsRuntimeContext | null =>
+  activeRuntimeContext
 
 export const registerStackTabsRuntimeContext = (
   context: StackTabsRuntimeContext,
@@ -451,10 +454,12 @@ git commit -m "refactor: add stack tabs runtime context"
 ### Task 2: typed event bus resolver
 
 **Files:**
+
 - Modify: `src/lib/hooks/useTabEventBus.ts`
 - Modify: `src/lib/hooks/useTabEventBus.spec.ts`
 
 **Interfaces:**
+
 - Consumes:
   - `resolveStackTabsRuntimeContext(): StackTabsRuntimeContext` from `src/lib/hooks/stackTabsContext.ts`
 - Produces:
@@ -603,11 +608,13 @@ git commit -m "refactor: resolve tab event bus from runtime context"
 ### Task 3: context 化 tabPanel helper
 
 **Files:**
+
 - Modify: `src/lib/hooks/tabPanel/evict.ts`
 - Modify: `src/lib/hooks/tabPanel/scroll.ts`
 - Modify: `src/lib/hooks/tabPanel/session.ts`
 
 **Interfaces:**
+
 - Consumes:
   - `StackTabsRuntimeContext` from `src/lib/hooks/stackTabsContext.ts`
   - `SESSION_TAB_NAME` from `src/lib/hooks/tabPanel/state.ts`
@@ -862,10 +869,12 @@ git commit -m "refactor: bind tab panel helpers to runtime context"
 ### Task 4: 迁移 `useTabPanel` 到 runtime context 并修复 `route.query` 不可变
 
 **Files:**
+
 - Modify: `src/lib/hooks/useTabPanel.tsx`
 - Modify: `src/lib/hooks/useTabPanel.spec.ts`
 
 **Interfaces:**
+
 - Consumes:
   - `resolveStackTabsRuntimeContext(): StackTabsRuntimeContext`
   - `createTabPanelEviction(context): TabPanelEvictionApi`
@@ -1003,36 +1012,36 @@ import { createTabPanelSession } from './tabPanel/session'
 Inside `export default () => {`, immediately after `const { t } = useI18n()` add:
 
 ```ts
-  const context = resolveStackTabsRuntimeContext()
-  const {
-    tabs,
-    defaultTabs,
-    caches,
-    components,
-    tabIdsToEvict,
-    refreshKey,
-    iframeRefreshKeys,
-    isInitialized,
-    cacheIdsToEvict
-  } = context
-  const {
-    markCacheForEviction,
-    markTabPagesForEviction,
-    markTabPagesForEvictionOnly,
-    addCache,
-    removeCache,
-    evictMarkedCaches,
-    evictPageCache
-  } = createTabPanelEviction(context)
-  const { restoreScroller, saveScroller, removeScroller, addPageScroller } =
-    createTabPanelScroll(context)
-  const {
-    saveActiveTabToSession,
-    clearSession,
-    restoreTabFromSession,
-    restoreActiveTabSession,
-    getSessionKey
-  } = createTabPanelSession(context)
+const context = resolveStackTabsRuntimeContext()
+const {
+  tabs,
+  defaultTabs,
+  caches,
+  components,
+  tabIdsToEvict,
+  refreshKey,
+  iframeRefreshKeys,
+  isInitialized,
+  cacheIdsToEvict
+} = context
+const {
+  markCacheForEviction,
+  markTabPagesForEviction,
+  markTabPagesForEvictionOnly,
+  addCache,
+  removeCache,
+  evictMarkedCaches,
+  evictPageCache
+} = createTabPanelEviction(context)
+const { restoreScroller, saveScroller, removeScroller, addPageScroller } =
+  createTabPanelScroll(context)
+const {
+  saveActiveTabToSession,
+  clearSession,
+  restoreTabFromSession,
+  restoreActiveTabSession,
+  getSessionKey
+} = createTabPanelSession(context)
 ```
 
 - [ ] **Step 5: 更新 max/global/session setter 与 defaultTabs 写入**
@@ -1112,17 +1121,17 @@ setSessionPrefix: (value: string) => {
 Replace `parseTabInfoFromRoute` with:
 
 ```ts
-  const parseTabInfoFromRoute = (route: RouteLocationNormalizedLoaded): ITabBase => {
-    if (route.query.__tab) return decodeTabInfo(route.query.__tab as string)
+const parseTabInfoFromRoute = (route: RouteLocationNormalizedLoaded): ITabBase => {
+  if (route.query.__tab) return decodeTabInfo(route.query.__tab as string)
 
-    return {
-      id: crypto.randomUUID(),
-      title: t('VueStackTab.undefined'),
-      closable: true,
-      refreshable: true,
-      iframe: false
-    }
+  return {
+    id: crypto.randomUUID(),
+    title: t('VueStackTab.undefined'),
+    closable: true,
+    refreshable: true,
+    iframe: false
   }
+}
 ```
 
 - [ ] **Step 7: 增加 query 拷贝 helper 并替换三处 page.query**
@@ -1169,19 +1178,19 @@ style={[context.useGlobalScroll.value ? 'overflow:auto' : 'overflow:hidden', 'he
 Replace `destroy` with:
 
 ```ts
-  const destroy = () => {
-    tabs.value = []
-    defaultTabs.value = []
-    cacheIdsToEvict.clear()
-    tabIdsToEvict.clear()
-    iframeRefreshKeys.value = {}
-    caches.value = []
-    components.clear()
-    context.scrollPositionsByPageId.clear()
-    context.isInitialized.value = false
-    context.refreshKey.value = 0
-    clearSession()
-  }
+const destroy = () => {
+  tabs.value = []
+  defaultTabs.value = []
+  cacheIdsToEvict.clear()
+  tabIdsToEvict.clear()
+  iframeRefreshKeys.value = {}
+  caches.value = []
+  components.clear()
+  context.scrollPositionsByPageId.clear()
+  context.isInitialized.value = false
+  context.refreshKey.value = 0
+  clearSession()
+}
 ```
 
 - [ ] **Step 10: 运行 useTabPanel 测试**
@@ -1218,6 +1227,7 @@ git commit -m "refactor: migrate tab panel to runtime context"
 ### Task 5: 迁移 actions/router/loading 的 context 依赖与 immutable query
 
 **Files:**
+
 - Modify: `src/lib/hooks/useTabActions.ts`
 - Modify: `src/lib/hooks/useTabActions.spec.ts`
 - Modify: `src/lib/hooks/useTabRouter.ts`
@@ -1225,6 +1235,7 @@ git commit -m "refactor: migrate tab panel to runtime context"
 - Modify: `src/lib/hooks/useTabLoading.ts`
 
 **Interfaces:**
+
 - Consumes:
   - `resolveStackTabsRuntimeContext(): StackTabsRuntimeContext`
   - context 化后的 `useTabPanel()`
@@ -1294,7 +1305,12 @@ it('openTab 不原地修改传入的 tab.query', async () => {
   const { openTab } = useTabActions()
 
   await expect(
-    openTab({ id: 'immutable-tab', title: 'Immutable', path: '/immutable?foo=1', query: originalQuery })
+    openTab({
+      id: 'immutable-tab',
+      title: 'Immutable',
+      path: '/immutable?foo=1',
+      query: originalQuery
+    })
   ).resolves.toBe('immutable-tab')
 
   expect(originalQuery).toEqual({ bar: '2' })
@@ -1334,7 +1350,7 @@ import { resolveStackTabsRuntimeContext } from './stackTabsContext'
 Inside `export default function useTabActions() {`, after `const router = useRouter()` add:
 
 ```ts
-  const context = resolveStackTabsRuntimeContext()
+const context = resolveStackTabsRuntimeContext()
 ```
 
 - [ ] **Step 6: 修改 `navigateToTab()` 为 immutable query**
@@ -1342,50 +1358,50 @@ Inside `export default function useTabActions() {`, after `const router = useRou
 Replace `navigateToTab` with:
 
 ```ts
-  const navigateToTab = (tab: ITabData, tabInfo: ITabData) => {
-    const __tab = encodeTabInfo(tabInfo)
-    const tabQuery = omitStackTabsReservedQuery(tab.query)
-    let query = defu(tabQuery, { __tab }) as LocationQueryRaw
-    let path: string
+const navigateToTab = (tab: ITabData, tabInfo: ITabData) => {
+  const __tab = encodeTabInfo(tabInfo)
+  const tabQuery = omitStackTabsReservedQuery(tab.query)
+  let query = defu(tabQuery, { __tab }) as LocationQueryRaw
+  let path: string
 
-    if (!tab.iframe) {
-      const url = parseUrl(tab.path)
-      path = url.path
-      query = defu(omitStackTabsReservedQuery(url.query), query, { __tab }) as LocationQueryRaw
-    } else {
-      query = {
-        ...query,
-        __src: encodeURIComponent(tab.path as string),
-        __tab
-      }
-      path = context.iframePath.value
+  if (!tab.iframe) {
+    const url = parseUrl(tab.path)
+    path = url.path
+    query = defu(omitStackTabsReservedQuery(url.query), query, { __tab }) as LocationQueryRaw
+  } else {
+    query = {
+      ...query,
+      __src: encodeURIComponent(tab.path as string),
+      __tab
     }
-
-    if (!tab.iframe) {
-      query = {
-        ...query,
-        __tab
-      }
-    }
-
-    if (!isAllowedTabUrl(tab.path)) return Promise.reject(new Error('Invalid tab URL'))
-
-    return runNavigationTransaction({
-      apply: () => undefined,
-      navigate: () => router.push({ path, query }),
-      rollback: () => undefined,
-      isFailureResult: isNavigationFailure,
-      rejectFailureResult: true
-    })
+    path = context.iframePath.value
   }
+
+  if (!tab.iframe) {
+    query = {
+      ...query,
+      __tab
+    }
+  }
+
+  if (!isAllowedTabUrl(tab.path)) return Promise.reject(new Error('Invalid tab URL'))
+
+  return runNavigationTransaction({
+    apply: () => undefined,
+    navigate: () => router.push({ path, query }),
+    rollback: () => undefined,
+    isFailureResult: isNavigationFailure,
+    rejectFailureResult: true
+  })
+}
 ```
 
 Replace `setIFramePath` with:
 
 ```ts
-  const setIFramePath = (path: string) => {
-    context.iframePath.value = path
-  }
+const setIFramePath = (path: string) => {
+  context.iframePath.value = path
+}
 ```
 
 - [ ] **Step 7: 更新 useTabRouter optimistic page query 拷贝测试**
@@ -1463,11 +1479,13 @@ git commit -m "refactor: route tab actions through runtime context"
 ### Task 6: 集成 StackTabs 单实例注册和 typed provide
 
 **Files:**
+
 - Modify: `src/lib/StackTabs.vue`
 - Modify: `src/lib/components/TabHeader/index.vue`
 - Modify: `src/lib/components/TabHeader/index.spec.ts`
 
 **Interfaces:**
+
 - Consumes:
   - `createStackTabsRuntimeContext(options): StackTabsRuntimeContext`
   - `registerStackTabsRuntimeContext(context): boolean`
@@ -1633,9 +1651,9 @@ This makes production duplicate instances render nothing after warning and preve
 In `onBeforeUnmount`, after `destroy()` add:
 
 ```ts
-  if (isRuntimeContextOwner) {
-    unregisterStackTabsRuntimeContext(runtimeContext)
-  }
+if (isRuntimeContextOwner) {
+  unregisterStackTabsRuntimeContext(runtimeContext)
+}
 ```
 
 The final block should be:
@@ -1687,12 +1705,14 @@ git commit -m "refactor: provide stack tabs runtime context"
 ### Task 7: 明确 public API 和文档契约
 
 **Files:**
+
 - Modify: `src/lib/index.ts`
 - Modify: `README.md`
 - Modify: `docs/base/nuxt.md`
 - Test: existing type-check and build scripts
 
 **Interfaces:**
+
 - Produces:
   - default export remains plugin object with `install(Vue: App, options?: VueStackTabsPluginOptions): void`
   - `export type VueStackTabsPluginOptions = LocaleMessageOption[]`
@@ -1824,10 +1844,12 @@ git commit -m "docs: clarify stack tabs plugin contract"
 ### Task 8: 全量验证和代码审查准备
 
 **Files:**
+
 - No production source changes unless verification exposes failures.
 - May modify touched tests/source files from earlier tasks if a verification failure points to a concrete defect.
 
 **Interfaces:**
+
 - Consumes all tasks above.
 - Produces verified working tree ready for code review.
 

@@ -24,7 +24,10 @@ describe('iframeBridge', () => {
     it('postOpenTab 使用显式 targetOrigin 发送消息', () => {
       const spy = vi.spyOn(window.parent, 'postMessage').mockImplementation(() => undefined)
 
-      postOpenTab({ title: 'secure', path: '/secure' }, { targetOrigin: 'https://parent.example.com' })
+      postOpenTab(
+        { title: 'secure', path: '/secure' },
+        { targetOrigin: 'https://parent.example.com' }
+      )
 
       expect(spy).toHaveBeenCalledWith(
         { type: MSG_OPEN_TAB, payload: { title: 'secure', path: '/secure' } },

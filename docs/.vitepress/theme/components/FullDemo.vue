@@ -1,13 +1,9 @@
 <template>
   <div class="full-demo">
     <div class="demo-container">
-      <vue-stack-tabs
-        :default-tabs="defaultTabs"
-        iframe-path="/iframe"
-        i18n="zh-CN"
-      />
+      <vue-stack-tabs :default-tabs="defaultTabs" iframe-path="/iframe" i18n="zh-CN" />
     </div>
-    
+
     <div class="demo-controls">
       <h3>快速操作 / Quick Actions</h3>
       <div class="control-group">
@@ -78,11 +74,13 @@ const openMultipleTabs = () => {
     { id: 'page-2', title: '📄 页面 Page 2', path: '/demo-page/2' },
     { id: 'page-3', title: '📄 页面 Page 3', path: '/demo-page/3' }
   ]
-  pages.forEach(page => openTab(page))
+  pages.forEach((page) => openTab(page))
 }
 
 const refreshCurrentTab = () => {
-  const activeTab = tabs.value.find(tab => document.querySelector(`[data-tab-id="${tab.id}"].active`))
+  const activeTab = tabs.value.find((tab) =>
+    document.querySelector(`[data-tab-id="${tab.id}"].active`)
+  )
   if (activeTab) {
     refreshTab(activeTab.id)
   }

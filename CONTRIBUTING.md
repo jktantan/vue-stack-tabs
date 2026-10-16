@@ -91,13 +91,13 @@ export default defineNuxtConfig({
 
 ## 核心概念
 
-| 概念 | 说明 |
-|------|------|
-| `useTabPanel` | 内部核心 hook，管理 tabs、caches、components、驱逐、滚动等 |
-| `useTabActions` | 对外 hook，提供 openTab、closeTab、refreshTab、activeTab 等 |
-| `useTabRouter` | 对外 hook，在标签内页面使用，提供 forward、backward、addScrollTarget |
-| `createPageId` | 生成 UUID 作为 keep-alive 缓存 ID |
-| iframe 路由 | 渲染 iframe 标签页的占位路由，需与 `iframe-path` 一致 |
+| 概念            | 说明                                                                 |
+| --------------- | -------------------------------------------------------------------- |
+| `useTabPanel`   | 内部核心 hook，管理 tabs、caches、components、驱逐、滚动等           |
+| `useTabActions` | 对外 hook，提供 openTab、closeTab、refreshTab、activeTab 等          |
+| `useTabRouter`  | 对外 hook，在标签内页面使用，提供 forward、backward、addScrollTarget |
+| `createPageId`  | 生成 UUID 作为 keep-alive 缓存 ID                                    |
+| iframe 路由     | 渲染 iframe 标签页的占位路由，需与 `iframe-path` 一致                |
 
 ---
 
@@ -145,18 +145,18 @@ pnpm run test:packaged
 
 ## 脚本说明
 
-| 脚本 | 说明 |
-|------|------|
-| `dev` | 启动示例应用（Vite） |
-| `build` | 构建示例应用（含 type-check） |
-| `lib:build` | 构建库到 dist/ |
-| `test` | 单元测试 |
-| `test:coverage` | 单元测试 + 覆盖率 |
-| `test:prepack` | 打包前验证（单元 + Vue + Nuxt 源码） |
-| `test:packaged` | 打包后验证（Vue + Nuxt 使用 dist） |
-| `lint` | ESLint 检查并修复 |
-| `format` | Prettier 格式化 |
-| `docs:dev` | 文档本地预览 |
+| 脚本            | 说明                                 |
+| --------------- | ------------------------------------ |
+| `dev`           | 启动示例应用（Vite）                 |
+| `build`         | 构建示例应用（含 type-check）        |
+| `lib:build`     | 构建库到 dist/                       |
+| `test`          | 单元测试                             |
+| `test:coverage` | 单元测试 + 覆盖率                    |
+| `test:prepack`  | 打包前验证（单元 + Vue + Nuxt 源码） |
+| `test:packaged` | 打包后验证（Vue + Nuxt 使用 dist）   |
+| `lint`          | ESLint 检查并修复                    |
+| `format`        | Prettier 格式化                      |
+| `docs:dev`      | 文档本地预览                         |
 
 ---
 

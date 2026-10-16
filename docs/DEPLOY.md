@@ -11,6 +11,7 @@ pnpm run docs:build
 ```
 
 构建产物位于 `docs/.vitepress/dist/`，包含：
+
 - 文档站点（根目录和 `/zh/`）
 - Demo 应用（`/demo/` 目录）
 
@@ -67,22 +68,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      
+
       - uses: pnpm/action-setup@v2
         with:
           version: 10
-      
+
       - uses: actions/setup-node@v3
         with:
           node-version: 18
           cache: 'pnpm'
-      
+
       - name: Install dependencies
         run: pnpm install
-      
+
       - name: Build docs
         run: pnpm run docs:build
-      
+
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
@@ -98,6 +99,7 @@ jobs:
 ### 验证部署
 
 部署后访问：
+
 - 文档首页：`https://username.github.io/vue-stack-tabs/`
 - 中文文档：`https://username.github.io/vue-stack-tabs/zh/`
 - Demo 页面：`https://username.github.io/vue-stack-tabs/demo.html`

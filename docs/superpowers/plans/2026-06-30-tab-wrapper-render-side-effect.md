@@ -52,11 +52,13 @@
 ### Task 1: Add StackCacheRenderer with focused tests
 
 **Files:**
+
 - Create: `test/lib/components/StackKeepAlive/StackCacheRenderer.spec.ts`
 - Create: `src/lib/components/StackKeepAlive/StackCacheRenderer.vue`
 - Modify: `src/lib/hooks/useTabPanel.tsx:550`
 
 **Interfaces:**
+
 - Consumes:
   - `useTabPanel().addPage(route, component)` from `src/lib/hooks/useTabPanel.tsx`
   - `useTabPanel().activeCacheKey`
@@ -335,7 +337,8 @@ const getComponentIdentity = (component?: VNode | null): unknown => {
 }
 
 watch(
-  () => [props.route.fullPath, props.route.query.__tab, getComponentIdentity(props.component)] as const,
+  () =>
+    [props.route.fullPath, props.route.query.__tab, getComponentIdentity(props.component)] as const,
   () => {
     wrappedComponent.value = addPage(props.route, props.component)
   },
@@ -389,10 +392,12 @@ If `vue-tsc` prints build metadata but exits with code `0`, treat that as passin
 ### Task 2: Integrate StackCacheRenderer into StackKeepAlive
 
 **Files:**
+
 - Modify: `src/lib/components/StackKeepAlive/StackKeepAlive.vue`
 - Modify: `test/lib/components/StackKeepAlive/StackKeepAlive.spec.ts`
 
 **Interfaces:**
+
 - Consumes:
   - `StackCacheRenderer.vue` props from Task 1:
     - `route: RouteLocationNormalizedLoaded`
@@ -415,17 +420,13 @@ In `test/lib/components/StackKeepAlive/StackKeepAlive.spec.ts`, replace this tes
 it('activeCacheKey 和 refreshKey 变化时重建缓存页实例', async () => {
   const wrapper = mountKeepAlive()
 
-  const firstInstanceId = wrapper
-    .find('[data-test="wrapped-page"]')
-    .attributes('data-instance-id')
+  const firstInstanceId = wrapper.find('[data-test="wrapped-page"]').attributes('data-instance-id')
 
   activeCacheKey.value = 'cache-b'
   refreshKey.value = 8
   await nextTick()
 
-  const secondInstanceId = wrapper
-    .find('[data-test="wrapped-page"]')
-    .attributes('data-instance-id')
+  const secondInstanceId = wrapper.find('[data-test="wrapped-page"]').attributes('data-instance-id')
 
   expect(secondInstanceId).not.toBe(firstInstanceId)
 })
@@ -440,17 +441,13 @@ it('activeCacheKey 和 refreshKey 变化时重建缓存页实例但不重复调�
 
   expect(addPageMock).toHaveBeenCalledTimes(1)
 
-  const firstInstanceId = wrapper
-    .find('[data-test="wrapped-page"]')
-    .attributes('data-instance-id')
+  const firstInstanceId = wrapper.find('[data-test="wrapped-page"]').attributes('data-instance-id')
 
   activeCacheKey.value = 'cache-b'
   refreshKey.value = 8
   await nextTick()
 
-  const secondInstanceId = wrapper
-    .find('[data-test="wrapped-page"]')
-    .attributes('data-instance-id')
+  const secondInstanceId = wrapper.find('[data-test="wrapped-page"]').attributes('data-instance-id')
 
   expect(secondInstanceId).not.toBe(firstInstanceId)
   expect(addPageMock).toHaveBeenCalledTimes(1)
@@ -573,10 +570,12 @@ Tests  9 passed
 ### Task 3: Run regression checks for the minimal-risk change
 
 **Files:**
+
 - No new files.
 - Verify all files changed by Tasks 1 and 2.
 
 **Interfaces:**
+
 - Consumes:
   - `StackCacheRenderer.vue` from Task 1.
   - Updated `StackKeepAlive.vue` from Task 2.

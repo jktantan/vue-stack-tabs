@@ -3,8 +3,7 @@
 
   对应路径：/demo/subroute
 -->
-<script setup lang="ts">
-</script>
+<script setup lang="ts"></script>
 
 <template>
   <div class="test2-sub-home">

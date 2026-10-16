@@ -126,16 +126,16 @@ graph TB
 | `addPage(route, component)` | 调用 `updatePageState` 后，返回包装好的 `cacheComponent` 供 `<component :is>` 使用                        |
 | `resolvePageComponent(ctx)` | 创建或复用 `defineComponent`（name = cacheName），注册到 `components` Map                                 |
 | `active(id)`                | Tab 切换：将栈顶 URL + `__tab` 编码走路由                                                                 |
-| `refreshTab(id)`            | 替换栈顶的缓存 ID，驱逐旧缓存，触发组件重建                                                                 |
+| `refreshTab(id)`            | 替换栈顶的缓存 ID，驱逐旧缓存，触发组件重建                                                               |
 | `removeTab(id)`             | 关闭标签，驱逐所有 pages 缓存                                                                             |
 
 ### 3.2 useTabRouter（栈内导航）
 
-| 函数                        | 职责                                                      |
-| --------------------------- | --------------------------------------------------------- |
-| `forward(to)`               | 数据前置压栈（创建新缓存 ID）→ 带 `__tab` 走 `router.push`  |
-| `backward(to, backQuery?)`  | 出栈 → 用栈顶 URL + `__tab` 走路由 → 异步驱逐被弹出的缓存 |
-| `addScrollTarget(selector)` | 注册需要记忆滚动位置的 DOM 选择器                         |
+| 函数                        | 职责                                                       |
+| --------------------------- | ---------------------------------------------------------- |
+| `forward(to)`               | 数据前置压栈（创建新缓存 ID）→ 带 `__tab` 走 `router.push` |
+| `backward(to, backQuery?)`  | 出栈 → 用栈顶 URL + `__tab` 走路由 → 异步驱逐被弹出的缓存  |
+| `addScrollTarget(selector)` | 注册需要记忆滚动位置的 DOM 选择器                          |
 
 ### 3.3 useTabActions（对外 API）
 
@@ -336,12 +336,12 @@ src/lib/
 | 约束                      | 说明                                                                                                                                 |
 | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
 | **\_\_tab 必带**          | 所有路由跳转（forward / backward / Tab 切换 / openTab）必须在 query 中携带 `__tab` 编码，否则 `parseTabInfoFromRoute` 会创建匿名 Tab |
-| **先标记再延迟驱逐**      | 路由同步路径用 `markCacheForEviction` 标记，统一在 `onActivated` 或下一拍 `evictMarkedCaches`；事务路径在 `commit` 钩子里驱逐             |
+| **先标记再延迟驱逐**      | 路由同步路径用 `markCacheForEviction` 标记，统一在 `onActivated` 或下一拍 `evictMarkedCaches`；事务路径在 `commit` 钩子里驱逐        |
 | **path-only 比对**        | `updatePageState` 仅比对 `route.path` 与栈顶的 `page.path`，不比对 query。栈是唯一真相源                                             |
 | **UUID 唯一性**           | 同一路由多次压栈会产生不同的 UUID，确保 keep-alive 缓存隔离                                                                          |
 | **\_backParams 生命周期** | 后退参数存在 `ITabPage._backParams` 内存中，由目标页的 `onMounted` / `onActivated` 消费后清空                                        |
-| **iframePath 必填**       | `<VueStackTabs>` 必传 `iframePath` prop（占位路由路径），开发期会抛 Error 提示                                                      |
-| **POST origin 校验**      | `onRefreshRequest` 默认不校验 origin，等同 `targetOrigin: '*'`。生产环境务必显式传 `allowedOrigins`                                    |
+| **iframePath 必填**       | `<VueStackTabs>` 必传 `iframePath` prop（占位路由路径），开发期会抛 Error 提示                                                       |
+| **POST origin 校验**      | `onRefreshRequest` 默认不校验 origin，等同 `targetOrigin: '*'`。生产环境务必显式传 `allowedOrigins`                                  |
 
 ---
 
@@ -349,12 +349,12 @@ src/lib/
 
 详细诊断与修复记录见 `docs/DIAGNOSTIC_REPORT.md`，此处仅列出影响架构理解的关键变更：
 
-| 轮次 | 关键变更 | 涉及文件 |
-|---|---|---|
-| 第一轮 | `updatePageState` 改用 `markCacheForEviction` 延迟路径；`refreshTab` active 路径补 `triggerRef` | `useTabPanel.tsx` / `refresh.ts` |
-| 第二轮 | `encodeBase64` 改用 `btoa(unescape(encodeURIComponent))` 标准跨浏览器方案 | `tabInfoEncoder.ts` |
-| 第三轮 | `getMaxZIndex` 加 100ms TTL 缓存 + `invalidateZIndexCache` 导出；抽出共享 `EmptyPlaceholderComponent`；`scroll saveScroller` 用 MutationObserver 缓存 | `scrollUtils.ts` / `emptyPlaceholder.tsx` / `scroll.ts` |
-| 第四轮 | Nuxt 模块用 `addComponent` 自动注册 `VueStackTabs` 全局组件；Nuxt plugin 显式调用 `applyStackTabsLocale`；session 模块加 SSR `typeof window` 守卫 | `nuxt/module.ts` / `nuxt/runtime/plugin*.ts` / `session.ts` |
-| 第五轮 | `useContextMenu` 加 `BUBBLE_GUARD_MS` 时间戳守卫；defu 全量审计（UUID 求值时机 + backward __tab 顺序） | `useContextMenu.ts` / `useTabPanel.tsx` / `useTabRouter.ts` |
+| 轮次   | 关键变更                                                                                                                                              | 涉及文件                                                    |
+| ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| 第一轮 | `updatePageState` 改用 `markCacheForEviction` 延迟路径；`refreshTab` active 路径补 `triggerRef`                                                       | `useTabPanel.tsx` / `refresh.ts`                            |
+| 第二轮 | `encodeBase64` 改用 `btoa(unescape(encodeURIComponent))` 标准跨浏览器方案                                                                             | `tabInfoEncoder.ts`                                         |
+| 第三轮 | `getMaxZIndex` 加 100ms TTL 缓存 + `invalidateZIndexCache` 导出；抽出共享 `EmptyPlaceholderComponent`；`scroll saveScroller` 用 MutationObserver 缓存 | `scrollUtils.ts` / `emptyPlaceholder.tsx` / `scroll.ts`     |
+| 第四轮 | Nuxt 模块用 `addComponent` 自动注册 `VueStackTabs` 全局组件；Nuxt plugin 显式调用 `applyStackTabsLocale`；session 模块加 SSR `typeof window` 守卫     | `nuxt/module.ts` / `nuxt/runtime/plugin*.ts` / `session.ts` |
+| 第五轮 | `useContextMenu` 加 `BUBBLE_GUARD_MS` 时间戳守卫；defu 全量审计（UUID 求值时机 + backward __tab 顺序）                                                | `useContextMenu.ts` / `useTabPanel.tsx` / `useTabRouter.ts` |
 
 **Breaking change（#10）**：`encodeBase64/decodeBase64` 编码方式变更（详见 `docs/DIAGNOSTIC_REPORT.md` 第二轮）。
