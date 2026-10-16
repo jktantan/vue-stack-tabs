@@ -4,8 +4,11 @@
 [![npm downloads](https://img.shields.io/npm/dm/vue-stack-tabs.svg)](https://www.npmjs.com/package/vue-stack-tabs)
 [![license](https://img.shields.io/npm/l/vue-stack-tabs.svg)](./LICENSE)
 [![minzipped size](https://img.shields.io/bundlephobia/minzip/vue-stack-tabs)](https://bundlephobia.com/package/vue-stack-tabs)
+[![docs](https://img.shields.io/badge/docs-GitHub%20Pages-377dff)](https://jktantan.github.io/vue-stack-tabs/)
 
 [中文](./README.md) | [English](./README.en.md) | **Русский**
+
+**📖 [Документация](https://jktantan.github.io/vue-stack-tabs/) · 🎮 [Демо](https://jktantan.github.io/vue-stack-tabs/demo.html)**
 
 > Библиотека управления вкладками для Vue 3 на основе Vue Router. Она обеспечивает изоляцию вкладок, подобную iframe, через независимые области видимости Vue: каждая вкладка сохраняет собственный экземпляр страницы, кэш и стек навигации.
 

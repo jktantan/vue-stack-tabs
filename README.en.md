@@ -4,8 +4,11 @@
 [![npm downloads](https://img.shields.io/npm/dm/vue-stack-tabs.svg)](https://www.npmjs.com/package/vue-stack-tabs)
 [![license](https://img.shields.io/npm/l/vue-stack-tabs.svg)](./LICENSE)
 [![minzipped size](https://img.shields.io/bundlephobia/minzip/vue-stack-tabs)](https://bundlephobia.com/package/vue-stack-tabs)
+[![docs](https://img.shields.io/badge/docs-GitHub%20Pages-377dff)](https://jktantan.github.io/vue-stack-tabs/)
 
 [中文](./README.md) | **English** | [Русский](./README.ru.md)
+
+**📖 [Docs](https://jktantan.github.io/vue-stack-tabs/) · 🎮 [Live demo](https://jktantan.github.io/vue-stack-tabs/demo.html)**
 
 > A Vue 3 multi-tab manager built on Vue Router. It delivers iframe-like tab isolation through independent Vue scopes: every tab keeps its own page instance, cache, and navigation stack.
 

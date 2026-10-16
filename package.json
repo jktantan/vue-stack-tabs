@@ -71,7 +71,7 @@
   "bugs": {
     "url": "https://github.com/jktantan/vue-stack-tabs/issues"
   },
-  "homepage": "https://github.com/jktantan/vue-stack-tabs#readme",
+  "homepage": "https://jktantan.github.io/vue-stack-tabs/",
   "publishConfig": {
     "access": "public"
   },
