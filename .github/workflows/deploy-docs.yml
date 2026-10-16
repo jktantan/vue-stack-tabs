@@ -39,18 +39,11 @@ jobs:
         with:
           # 与本地开发保持一致（@tsconfig/node26 / @types/node 26）
           node-version: 26
-
-      # 仓库未提交 pnpm-lock.yaml（见 .gitignore），因此用 package.json 计算缓存 key
-      - name: Cache pnpm store
-        uses: actions/cache@v4
-        with:
-          path: ~/.local/share/pnpm/store
-          key: ${{ runner.os }}-pnpm-${{ hashFiles('package.json') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-
+          # 以 pnpm-lock.yaml 作为缓存 key（lockfile 已纳入版本控制）
+          cache: pnpm
 
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       # 质量门禁：类型与单测不通过则不部署
       - name: Type check

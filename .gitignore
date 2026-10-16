@@ -31,7 +31,6 @@ coverage
 .claude/
 .reasonix/
 .superpowers/
-/pnpm-lock.yaml
 /components.d.ts
 /auto-imports.d.ts
 
@@ -42,6 +41,5 @@ vite.config.ts.timestamp-*.mjs
 docs/.vitepress/cache/
 docs/.vitepress/dist/
 
-# pnpm
-/pnpm-workspace.yaml
+# pnpm store（本地缓存，不入库；pnpm-lock.yaml 与 pnpm-workspace.yaml 需要提交以保证 CI 可重现）
 /.pnpm-store/

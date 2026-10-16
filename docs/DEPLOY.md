@@ -4,7 +4,7 @@
 
 仓库内置了 workflow：`.github/workflows/deploy-docs.yml`。推送到 `main`（或在 Actions 页面手动触发 `workflow_dispatch`）后，它会：
 
-1. 安装依赖（`pnpm install --no-frozen-lockfile`）
+1. 安装依赖（`pnpm install --frozen-lockfile`，基于已提交的 `pnpm-lock.yaml`）
 2. 跑质量门禁：`pnpm run type-check`、`pnpm run test`（不通过则不部署）
 3. 构建文档与演示应用：`pnpm run docs:build`
 4. 上传 `docs/.vitepress/dist`，并用官方 Pages Actions 发布
@@ -78,5 +78,5 @@ pnpm exec vitepress preview docs
 
 1. **Base 路径必须匹配**：VitePress 的 `base`、演示应用的 `DEMO_BASE` 与部署地址三者要一致
 2. **演示应用使用 hash 路由**：静态托管没有 history fallback，hash 能保证在 iframe 内刷新任意路径都可用（详见 `docs/.vitepress/EMBEDDED_DEMO.md`）
-3. **依赖可重现性**：仓库未提交 `pnpm-lock.yaml`（见 `.gitignore`），因此 CI 用 `pnpm install --no-frozen-lockfile`，缓存 key 基于 `package.json`。若希望构建完全可重现并让缓存更精确，建议把 `pnpm-lock.yaml` 纳入版本控制
+3. **依赖可重现性**：`pnpm-lock.yaml` 与 `pnpm-workspace.yaml`（其中 `allowBuilds` 是构建脚本白名单，CI 必需）都已纳入版本控制；CI 用 `pnpm install --frozen-lockfile` 并启用 setup-node 的 pnpm 缓存。改动依赖后请在本地 `pnpm install`，并把更新后的 lockfile 一并提交，否则 CI 会因 frozen 校验失败
 4. **子路由功能**：演示中的子路由为试验性功能，已在文档中说明
