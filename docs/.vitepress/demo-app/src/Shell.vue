@@ -4,18 +4,25 @@
   结构：<VueStackTabs> 占满上方，下方是「演示控制台」。
   控制台按钮全部来自公开 API `useTabActions`，与标签内的页面操作（useTabRouter / useTabLoading）
   一起覆盖库的主要能力。
+
+  文案统一走库的 i18n 实例（key 前缀 Demo.），语言由文档站经 iframe 的 ?lang= 传入，
+  见 src/i18n.ts。
 -->
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n-lite'
 import { useTabActions, type ITabData } from 'vue-stack-tabs'
 
+const { t } = useI18n()
 const { openTab, closeAllTabs, refreshTab, refreshAllTabs, tabs } = useTabActions()
 
 const base = import.meta.env.BASE_URL || '/'
 /** 同源的 iframe 演示页（构建时随 demo 应用一起复制到 public） */
 const iframeChildUrl = `${base}iframe-child.html`
 
-const defaultTabs: ITabData[] = [{ id: 'home', title: '首页', path: '/', closable: false }]
+const defaultTabs: ITabData[] = [
+  { id: 'home', title: t('Demo.tabs.home'), path: '/', closable: false }
+]
 
 const open = (tab: ITabData) => {
   void openTab(tab).catch((error: unknown) => {
@@ -23,15 +30,19 @@ const open = (tab: ITabData) => {
   })
 }
 
-const openReportList = () => open({ id: 'report', title: '报表列表', path: '/report' })
-const openForm = () => open({ id: 'form', title: '表单', path: '/form' })
-const openScroll = () => open({ id: 'scroll', title: '长列表', path: '/scroll' })
-const openNotice = () => open({ id: 'notice', title: '公告', path: '/notice' })
+const openReportList = () => open({ id: 'report', title: t('Demo.tabs.report'), path: '/report' })
+const openForm = () => open({ id: 'form', title: t('Demo.tabs.form'), path: '/form' })
+const openScroll = () => open({ id: 'scroll', title: t('Demo.tabs.scroll'), path: '/scroll' })
+const openNotice = () => open({ id: 'notice', title: t('Demo.tabs.notice'), path: '/notice' })
 
 /** 三个独立标签指向同一路由的不同参数，各自持有独立缓存 */
 const openReports = () => {
   for (const id of [1, 2, 3]) {
-    open({ id: `report-${id}`, title: `报表 #${id}`, path: `/report/${id}` })
+    open({
+      id: `report-${id}`,
+      title: `${t('Demo.tabs.reportShort')} #${id}`,
+      path: `/report/${id}`
+    })
   }
 }
 
@@ -39,7 +50,7 @@ const openIframeTab = () => {
   const index = tabs.value.filter((tab) => tab.iframe).length + 1
   open({
     id: `iframe-${index}`,
-    title: `iframe #${index}`,
+    title: `${t('Demo.tabs.iframe')} #${index}`,
     path: iframeChildUrl,
     iframe: true
   })
@@ -65,31 +76,49 @@ const refreshActive = () => {
 
     <section class="demo-console">
       <div class="demo-console__head">
-        <h2>演示控制台</h2>
-        <p>标签栏支持拖拽排序与右键菜单；所有按钮都调用公开 API <code>useTabActions</code>。</p>
+        <h2>{{ t('Demo.console.title') }}</h2>
+        <p v-html="t('Demo.console.desc')" />
       </div>
 
       <div class="demo-console__groups">
         <div class="demo-console__group">
-          <span class="demo-console__label">打开标签</span>
-          <button class="demo-btn" type="button" @click="openReportList">报表列表</button>
-          <button class="demo-btn" type="button" @click="openForm">表单</button>
-          <button class="demo-btn" type="button" @click="openScroll">长列表</button>
-          <button class="demo-btn" type="button" @click="openNotice">公告</button>
+          <span class="demo-console__label">{{ t('Demo.console.openGroup') }}</span>
+          <button class="demo-btn" type="button" @click="openReportList">
+            {{ t('Demo.tabs.report') }}
+          </button>
+          <button class="demo-btn" type="button" @click="openForm">
+            {{ t('Demo.tabs.form') }}
+          </button>
+          <button class="demo-btn" type="button" @click="openScroll">
+            {{ t('Demo.tabs.scroll') }}
+          </button>
+          <button class="demo-btn" type="button" @click="openNotice">
+            {{ t('Demo.tabs.notice') }}
+          </button>
         </div>
 
         <div class="demo-console__group">
-          <span class="demo-console__label">缓存隔离</span>
-          <button class="demo-btn" type="button" @click="openReports">打开 3 个报表标签</button>
-          <button class="demo-btn" type="button" @click="openIframeTab">打开 iframe 标签</button>
+          <span class="demo-console__label">{{ t('Demo.console.cacheGroup') }}</span>
+          <button class="demo-btn" type="button" @click="openReports">
+            {{ t('Demo.console.openReports') }}
+          </button>
+          <button class="demo-btn" type="button" @click="openIframeTab">
+            {{ t('Demo.console.openIframe') }}
+          </button>
         </div>
 
         <div class="demo-console__group">
-          <span class="demo-console__label">当前：{{ activeTab?.title ?? '无' }}</span>
-          <button class="demo-btn" type="button" @click="refreshActive">刷新当前</button>
-          <button class="demo-btn" type="button" @click="refreshAllTabs">刷新全部</button>
+          <span class="demo-console__label">
+            {{ t('Demo.console.current') }}: {{ activeTab?.title ?? t('Demo.console.none') }}
+          </span>
+          <button class="demo-btn" type="button" @click="refreshActive">
+            {{ t('Demo.console.refreshCurrent') }}
+          </button>
+          <button class="demo-btn" type="button" @click="refreshAllTabs">
+            {{ t('Demo.console.refreshAll') }}
+          </button>
           <button class="demo-btn demo-btn--danger" type="button" @click="closeAllTabs">
-            关闭全部
+            {{ t('Demo.console.closeAll') }}
           </button>
         </div>
       </div>

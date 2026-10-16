@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { reactive } from 'vue'
+import { useI18n } from 'vue-i18n-lite'
+
+const { t } = useI18n()
 
 const form = reactive({
   name: '',
   role: 'viewer',
-  scope: '本部门',
+  scope: t('Demo.form.scopeDept'),
   remark: ''
 })
 </script>
@@ -12,62 +15,77 @@ const form = reactive({
 <template>
   <section class="page">
     <header class="page-head">
-      <p class="eyebrow">表单 · Form</p>
-      <h1>状态保持</h1>
-      <p class="lead">
-        输入一些内容，然后切到别的标签（或点关闭其它标签）再切回来——这些值不会丢，因为标签的页面实例被
-        keep-alive 缓存着。
-      </p>
+      <p class="eyebrow">{{ t('Demo.form.eyebrow') }}</p>
+      <h1>{{ t('Demo.form.title') }}</h1>
+      <p class="lead">{{ t('Demo.form.lead') }}</p>
     </header>
 
     <form class="card" @submit.prevent>
       <div class="field">
-        <label for="name">姓名</label>
-        <input id="name" v-model="form.name" type="text" placeholder="试试输入你的名字" />
+        <label for="name">{{ t('Demo.form.name') }}</label>
+        <input
+          id="name"
+          v-model="form.name"
+          type="text"
+          :placeholder="t('Demo.form.namePlaceholder')"
+        />
       </div>
 
       <div class="field">
-        <label for="role">角色</label>
+        <label for="role">{{ t('Demo.form.role') }}</label>
         <select id="role" v-model="form.role">
-          <option value="viewer">只读</option>
-          <option value="editor">编辑</option>
-          <option value="admin">管理员</option>
+          <option value="viewer">{{ t('Demo.form.roleViewer') }}</option>
+          <option value="editor">{{ t('Demo.form.roleEditor') }}</option>
+          <option value="admin">{{ t('Demo.form.roleAdmin') }}</option>
         </select>
       </div>
 
       <div class="field">
-        <label for="scope">可见范围</label>
+        <label for="scope">{{ t('Demo.form.scope') }}</label>
         <select id="scope" v-model="form.scope">
-          <option>本部门</option>
-          <option>本公司</option>
-          <option>全部</option>
+          <option>{{ t('Demo.form.scopeDept') }}</option>
+          <option>{{ t('Demo.form.scopeCompany') }}</option>
+          <option>{{ t('Demo.form.scopeAll') }}</option>
         </select>
       </div>
 
       <div class="field">
-        <label for="remark">备注</label>
-        <textarea id="remark" v-model="form.remark" rows="3" placeholder="多行内容同样会被保留" />
+        <label for="remark">{{ t('Demo.form.remark') }}</label>
+        <textarea
+          id="remark"
+          v-model="form.remark"
+          rows="3"
+          :placeholder="t('Demo.form.remarkPlaceholder')"
+        />
       </div>
     </form>
 
-    <h2>当前表单值</h2>
+    <h2>{{ t('Demo.form.valuesTitle') }}</h2>
     <table class="table">
       <tbody>
         <tr>
-          <th>姓名</th>
-          <td>{{ form.name || '（空）' }}</td>
+          <th>{{ t('Demo.form.name') }}</th>
+          <td>{{ form.name || t('Demo.form.empty') }}</td>
         </tr>
         <tr>
-          <th>角色</th>
-          <td>{{ form.role }}</td>
+          <th>{{ t('Demo.form.role') }}</th>
+          <td>
+            {{
+              form.role === 'viewer'
+                ? t('Demo.form.roleViewer')
+                : form.role === 'editor'
+                  ? t('Demo.form.roleEditor')
+                  : t('Demo.form.roleAdmin')
+            }}
+          </td>
         </tr>
         <tr>
-          <th>可见范围</th>
+          <th>{{ t('Demo.form.scope') }}</th>
           <td>{{ form.scope }}</td>
         </tr>
         <tr>
-          <th>备注</th>
-          <td>{{ form.remark || '（空）' }}</td>
+          <th>{{ t('Demo.form.remark') }}</th>
+          <td>{{ form.remark || t('Demo.form.empty') }}</td>
         </tr>
       </tbody>
     </table>

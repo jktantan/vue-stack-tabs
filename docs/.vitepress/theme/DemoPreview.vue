@@ -10,6 +10,7 @@
 -->
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { useData } from 'vitepress'
 
 const props = withDefaults(
   defineProps<{
@@ -31,6 +32,12 @@ const DEV_DEMO_ORIGIN = 'http://localhost:5174'
 
 const isDev = import.meta.env.DEV
 const siteBase = import.meta.env.BASE_URL || '/'
+/**
+ * 文档站当前语言（VitePress 的 locale.lang：'zh-CN' | 'en'）。
+ * 通过 iframe 的 `?lang=` 传给演示应用，demo 侧在 src/i18n.ts 读取；
+ * 文档站切换语言会整页跳转、iframe 随之重建，因此无需额外通信。
+ */
+const { lang } = useData()
 
 const demoBase = computed(() => {
   if (isDev) return DEV_DEMO_ORIGIN + DEMO_BASE
@@ -39,9 +46,10 @@ const demoBase = computed(() => {
 })
 
 const src = computed(() => {
-  if (!props.path) return demoBase.value
+  const query = `?lang=${encodeURIComponent(lang.value || 'zh-CN')}`
+  if (!props.path) return `${demoBase.value}${query}`
   const path = props.path.startsWith('/') ? props.path : `/${props.path}`
-  return `${demoBase.value}#${path}`
+  return `${demoBase.value}${query}#${path}`
 })
 
 const loaded = ref(false)

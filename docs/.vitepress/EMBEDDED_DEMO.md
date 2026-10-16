@@ -64,6 +64,20 @@ docs/.vitepress/
 
 改端口或 base 时，`vite.config.docs-demo.ts` 与 `DemoPreview.vue` 必须同步修改。
 
+## 语言（i18n）
+
+演示应用是双语的，并且**跟随文档站的语言**：
+
+1. `DemoPreview.vue` 读取 VitePress 的 `locale.lang`（`zh-CN` / `en`），拼进 iframe 地址：`{base}demo-app/?lang=en#/`
+2. 演示应用启动时由 `src/i18n.ts` 的 `resolveDemoLocale()` 读取这个参数
+3. `main.ts` 把它交给库的 i18n 实例：`app.use(VueStackTabs, [{ locale, messages: demoMessages[locale] }])`
+
+于是同一个 locale 同时驱动**库自身的文案**（标签栏右键菜单、最大化 / 还原等）与**演示界面文案**（`Demo.…` 命名空间，组件里用 `useI18n().t('Demo.…')` 读取）。
+
+文档站切换语言是整页跳转（`/demo.html` ↔ `/zh/demo.html`），iframe 会随之重建，因此不需要额外的运行时通信。
+
+新增文案时，在 `src/i18n.ts` 的 `zh` / `en` 两份表里同时添加：`const en: typeof zh` 会在类型层面强制两边结构一致（漏掉 key 会直接类型报错）。文案里可以内联 `<code>` / `<b>`，渲染时用 `v-html`。
+
 ## 新增一个演示页面
 
 1. 在 `docs/.vitepress/demo-app/src/pages/` 新建页面组件
