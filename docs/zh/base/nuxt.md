@@ -8,7 +8,7 @@
 export default defineNuxtConfig({
   modules: ['vue-stack-tabs/nuxt'],
   vueStackTabs: {
-    locale: 'zh-CN'
+    locale: 'zh-CN' // 内置可选 'zh-CN' | 'en'
   }
 })
 ```

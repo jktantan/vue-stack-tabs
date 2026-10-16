@@ -47,7 +47,7 @@ import { useTabRouter } from 'vue-stack-tabs'
 
 const { backward } = useTabRouter()
 
-//使用步数，即回退3步
+//使用步数，即回退3步，第二个参数为随回退传给目标页的一次性参数（目标页通过 props._back 接收）
 backward(3,{
   refresh: true,
 })

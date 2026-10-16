@@ -1,8 +1,17 @@
 # vue-stack-tabs
 
+[![npm version](https://img.shields.io/npm/v/vue-stack-tabs.svg)](https://www.npmjs.com/package/vue-stack-tabs)
+[![npm downloads](https://img.shields.io/npm/dm/vue-stack-tabs.svg)](https://www.npmjs.com/package/vue-stack-tabs)
+[![license](https://img.shields.io/npm/l/vue-stack-tabs.svg)](./LICENSE)
+[![minzipped size](https://img.shields.io/bundlephobia/minzip/vue-stack-tabs)](https://bundlephobia.com/package/vue-stack-tabs)
+
 **中文** | [English](./README.en.md) | [Русский](./README.ru.md)
 
+> A Vue 3 multi-tab manager built on Vue Router. It delivers iframe-like tab isolation through independent Vue scopes: every tab keeps its own page instance, cache, and navigation stack.
+>
 > 基于 Vue Router 的 Vue 3 多标签页管理库。以独立 Vue 作用域实现类似 iframe 的标签隔离体验：每个标签都有自己的页面实例、缓存和导航栈，彼此互不干扰。
+
+**Features** — route-level tabs with isolated component scope · stack-based forward/backward navigation · per-tab page refresh · iframe tabs with postMessage bridge · session restore · scroll position memory · context menu · i18n · Nuxt 3/4 module.
 
 ## ✨ 特性
 
@@ -13,6 +22,7 @@
 - 💾 **Session 持久化** — 浏览器刷新后恢复上次激活的标签
 - 📜 **滚动位置记忆** — 切换标签后自动恢复上次滚动位置
 - 🎨 **右键菜单** — 内置关闭/刷新操作
+- 🧩 **自定义插槽** — 标签栏左右按钮位、iframe 加载/失败占位
 - 🌍 **国际化** — 内置中英文，可扩展
 - 📦 **Nuxt 3/4 模块** — 开箱即用
 
@@ -141,7 +151,7 @@ refreshTab('about')
 export default defineNuxtConfig({
   modules: ['vue-stack-tabs/nuxt'],
   vueStackTabs: {
-    locale: 'zh-CN'
+    locale: 'zh-CN' // 内置可选 'zh-CN' | 'en'
   },
   css: ['vue-stack-tabs/dist/style.css']
 })
@@ -241,7 +251,7 @@ const off = onRefreshRequest(() => window.location.reload(), {
 import { useTabActions } from 'vue-stack-tabs'
 
 const {
-  openTab, // (tab: ITabData, renew?: boolean) => Promise<string>
+  openTab, // (tab: ITabData, renew?: boolean) => Promise<string | undefined>
   closeTab, // (id: string) => string
   closeAllTabs, // () => void
   refreshTab, // (id: string) => void
@@ -249,20 +259,28 @@ const {
   activeTab, // (id: string, isRoute?: boolean) => void
   moveTab, // (id: string, targetIndex: number) => boolean
   reset, // () => void
-  tabs // Ref<ITabItem[]>
+  tabs, // Ref<ITabItem[]>
+  setIFramePath, // (path: string) => void
+  getWrapper, // ({ tabId?, pageId? }) => HTMLElement | undefined
+  openInNewWindow // (id: string) => void
 } = useTabActions()
 ```
 
-| 方法                   | 说明                                                      |
-| ---------------------- | --------------------------------------------------------- |
-| `openTab(tab, renew?)` | 打开新标签。`renew=true` 时若已存在则清空页面栈后重新打开 |
-| `closeTab(id)`         | 关闭指定标签，返回新激活的标签 ID                         |
-| `closeAllTabs()`       | 关闭所有可关闭标签                                        |
-| `refreshTab(id)`       | 刷新指定标签（替换缓存 ID，重建组件实例）                   |
-| `refreshAllTabs()`     | 刷新所有标签                                              |
-| `activeTab(id)`        | 激活指定标签（切换 Tab）                                  |
-| `moveTab(id, targetIndex)` | 将标签移动到指定索引；标签栏也支持鼠标拖放排序            |
-| `reset()`              | 关闭所有标签并重置状态                                    |
+| 方法                              | 说明                                                                                             |
+| --------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `openTab(tab, renew?)`            | 打开新标签。`renew=true` 时若已存在则清空页面栈后重新打开                                        |
+| `closeTab(id)`                    | 关闭指定标签，返回新激活的标签 ID                                                                |
+| `closeAllTabs()`                  | 关闭所有可关闭标签                                                                               |
+| `refreshTab(id)`                  | 刷新指定标签（替换缓存 ID，重建组件实例）                                                        |
+| `refreshAllTabs()`                | 刷新所有标签                                                                                     |
+| `activeTab(id)`                   | 激活指定标签（切换 Tab）                                                                         |
+| `moveTab(id, targetIndex)`        | 将标签移动到指定索引；标签栏也支持鼠标拖放排序                                                   |
+| `reset()`                         | 关闭所有标签并重置状态                                                                           |
+| `setIFramePath(path)`             | 设置 iframe 占位路由路径（`<VueStackTabs>` 挂载时内部调用）                                      |
+| `getWrapper({ tabId?, pageId? })` | 获取页面内容容器 DOM；不传参数返回首个容器，多标签场景应传 `tabId` 或 `pageId`，避免取到错误页面 |
+| `openInNewWindow(id)`             | iframe 标签无法内嵌时在新窗口打开                                                                |
+
+> 关闭左侧 / 右侧 / 其他是标签栏右键菜单专属操作，在 `TabHeader`/`ContextMenu` 内部通过 `useTabPanel` 完成。
 
 ---
 
@@ -343,26 +361,27 @@ fetchData().finally(() => closeTabLoading())
 
 `<VueStackTabs>` 组件属性：
 
-| Prop                   | 类型                        | 默认值                                                                     | 说明                                                    |
-| ---------------------- | --------------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------- |
-| `iframePath`           | `string`                    | **必填**                                                                   | iframe 占位路由的路径                                   |
+| Prop                   | 类型                        | 默认值                                                                     | 说明                                                                                                              |
+| ---------------------- | --------------------------- | -------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `iframePath`           | `string`                    | **必填**                                                                   | iframe 占位路由的路径                                                                                             |
 | `iframeSandbox`        | `string`                    | `allow-scripts allow-forms allow-popups allow-downloads allow-same-origin` | iframe sandbox 策略；默认兼容优先不是强隔离，强隔离请移除 `allow-same-origin`；传空字符串可关闭 sandbox（不推荐） |
-| `iframeReferrerPolicy` | `ReferrerPolicy`            | `strict-origin-when-cross-origin`                                          | iframe referrerpolicy 属性                              |
-| `iframeAllow`          | `string`                    | `''`                                                                       | iframe allow 属性，例如 `fullscreen`                    |
-| `iframeLoadTimeout`    | `number`                    | `15000`                                                                    | iframe 加载超时时间，单位 ms                            |
-| `defaultTabs`          | `ITabData[]`                | `[]`                                                                       | 初始标签列表                                            |
-| `max`                  | `number`                    | `20`                                                                       | 最大标签数量                                            |
-| `contextmenu`          | `boolean \| object`         | `true`                                                                     | 是否启用右键菜单                                        |
-| `pageTransition`       | `string`                    | `'stack-tab-swap'`                                                         | 前进时的页面转场动画名                                  |
-| `pageTransitionBack`   | `string`                    | `'stack-tab-swap-back'`                                                    | 后退时的页面转场动画名                                  |
-| `tabTransition`        | `string \| TransitionProps` | `'stack-tab-zoom'`                                                         | 标签增删时的过渡效果                                    |
-| `tabScrollMode`        | `TabScrollMode`             | `'both'`                                                                   | 标签栏滚动方式：`'wheel'` / `'button'` / `'both'`       |
-| `width`                | `string`                    | `'100%'`                                                                   | 容器宽度                                                |
-| `height`               | `string`                    | `'100%'`                                                                   | 容器高度                                                |
-| `i18n`                 | `string`                    | `'zh-CN'`                                                                  | 国际化语言                                              |
-| `globalScroll`         | `boolean`                   | `false`                                                                    | 是否使用页面级滚动记忆                                  |
-| `sessionPrefix`        | `string`                    | `''`                                                                       | sessionStorage 键前缀                                   |
-| `iframeAllowedOrigins` | `string[]`                  | 同源                                                                       | 允许 iframe postMessage 的来源列表                      |
+| `iframeReferrerPolicy` | `ReferrerPolicy`            | `strict-origin-when-cross-origin`                                          | iframe referrerpolicy 属性                                                                                        |
+| `iframeAllow`          | `string`                    | `''`                                                                       | iframe allow 属性，例如 `fullscreen`                                                                              |
+| `iframeLoadTimeout`    | `number`                    | `15000`                                                                    | iframe 加载超时时间，单位 ms                                                                                      |
+| `defaultTabs`          | `ITabData[]`                | `[]`                                                                       | 初始标签列表                                                                                                      |
+| `max`                  | `number`                    | `20`                                                                       | 最大标签数量                                                                                                      |
+| `contextmenu`          | `boolean \| object`         | `true`                                                                     | 是否启用右键菜单                                                                                                  |
+| `pageTransition`       | `string`                    | `'stack-tab-swap'`                                                         | 前进时的页面转场动画名                                                                                            |
+| `pageTransitionBack`   | `string`                    | `'stack-tab-swap-back'`                                                    | 后退时的页面转场动画名                                                                                            |
+| `tabTransition`        | `string \| TransitionProps` | `'stack-tab-zoom'`                                                         | 标签增删时的过渡效果                                                                                              |
+| `tabScrollMode`        | `TabScrollMode`             | `'both'`                                                                   | 标签栏滚动方式：`'wheel'` / `'button'` / `'both'`                                                                 |
+| `space`                | `number`                    | `300`                                                                      | 标签栏滚动一步的像素距离                                                                                          |
+| `width`                | `string`                    | `'100%'`                                                                   | 容器宽度                                                                                                          |
+| `height`               | `string`                    | `'100%'`                                                                   | 容器高度                                                                                                          |
+| `i18n`                 | `string`                    | `'zh-CN'`                                                                  | 国际化语言，内置 `'zh-CN'` / `'en'`                                                                               |
+| `globalScroll`         | `boolean`                   | `false`                                                                    | 是否使用页面级滚动记忆                                                                                            |
+| `sessionPrefix`        | `string`                    | `''`                                                                       | sessionStorage 键前缀；同一 origin 多实例时用于隔离                                                               |
+| `iframeAllowedOrigins` | `string[]`                  | `[]`（叠加当前 origin）                                                    | 允许 iframe postMessage 调用 openTab 的来源列表                                                                   |
 
 ---
 
@@ -372,6 +391,37 @@ fetchData().finally(() => closeTabLoading())
 | -------------- | -------------- | ---------------------- |
 | `onActive`     | `(id: string)` | 标签被激活时触发       |
 | `onPageLoaded` | —              | 页面组件加载完成时触发 |
+
+```vue
+<VueStackTabs
+  iframe-path="/iframe"
+  @on-active="(id) => console.log('active:', id)"
+  @on-page-loaded="() => console.log('page loaded')"
+/>
+```
+
+---
+
+## 🧩 自定义插槽
+
+| 插槽            | 作用域参数       | 说明                                                  |
+| --------------- | ---------------- | ----------------------------------------------------- |
+| `leftButton`    | —                | 标签栏左侧按钮区，配合 `TabHeaderButton` 使用         |
+| `rightButton`   | —                | 标签栏右侧按钮区                                      |
+| `iframeLoading` | `{ tab }`        | 自定义 iframe 加载中占位                              |
+| `iframeError`   | `{ tab, retry }` | 自定义 iframe 加载失败占位，调用 `retry()` 可重新加载 |
+
+```vue
+<VueStackTabs iframe-path="/iframe">
+  <template #leftButton>
+    <TabHeaderButton title="展开" @click="collapse = !collapse" />
+  </template>
+  <template #iframeError="{ tab, retry }">
+    <span>{{ tab.title }} 加载失败</span>
+    <button @click="retry">重试</button>
+  </template>
+</VueStackTabs>
+```
 
 ---
 
@@ -461,23 +511,29 @@ window.addEventListener('message', (ev) => {
 
 ## 🌍 国际化
 
-内置语言：`zh-CN`（中文）、`en-US`（英文）。
+内置语言：`zh-CN`（中文）、`en`（英文）。
 
 ```ts
-// 切换语言
-app.use(VueStackTabs, [{ locale: 'en-US' }])
+// 通过组件 prop 切换
+// <VueStackTabs iframe-path="/iframe" i18n="en" />
+
+// 或在安装插件时指定
+app.use(VueStackTabs, [{ locale: 'en' }])
 ```
 
-自定义语言包：
+自定义语言包（`messages` 为嵌套对象，会与内置语言深度合并）：
 
 ```ts
 app.use(VueStackTabs, [
   {
     locale: 'ja-JP',
     messages: {
-      'VueStackTab.close': '閉じる',
-      'VueStackTab.refresh': '更新'
-      // ...
+      VueStackTab: {
+        close: '閉じる',
+        reload: '更新',
+        loading: '読み込み中'
+        // ...
+      }
     }
   }
 ])
@@ -488,12 +544,14 @@ app.use(VueStackTabs, [
 ## 📄 类型定义
 
 ```ts
+import type { LocationQueryRaw } from 'vue-router'
+
 /** 打开标签时传入的数据 */
 interface ITabData {
   id?: string // 标签 ID（不传则自动生成 UUID）
   title: string // 标签标题
   path: string // 路由路径或 iframe URL
-  query?: Record<string, string> // 路由参数
+  query?: LocationQueryRaw // 路由参数
   closable?: boolean // 是否可关闭（默认 true）
   refreshable?: boolean // 是否可刷新（默认 true）
   iframe?: boolean // 是否为 iframe 标签（默认 false）
@@ -533,4 +591,4 @@ src/lib/
 
 ## 📝 License
 
-[LGPL-2.1](./LICENSE)
+[Apache-2.0](./LICENSE)

@@ -13,7 +13,7 @@ hero:
       link: ./demo
     - theme: alt
       text: GitHub
-      link: https://github.com/jktantan/vue-stack-tabs.git
+      link: https://github.com/jktantan/vue-stack-tabs
     - theme: alt
       text: Gitee
       link: https://gitee.com/jktantan/vue-stack-tabs

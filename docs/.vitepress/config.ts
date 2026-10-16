@@ -78,6 +78,8 @@ export default defineConfig({
     zh: {
       label: '简体中文',
       lang: 'zh-CN',
+      description:
+        '基于 Vue Router 的 Vue 3 多标签页管理库：iframe 级标签隔离、栈式导航、keep-alive 缓存与 Nuxt 3/4 模块。',
       themeConfig: {
         nav: [
           { text: '教程', link: '/zh/guide/' },
@@ -130,7 +132,8 @@ export default defineConfig({
     }
   },
   title: 'Vue Stack Tabs',
-  description: 'A multi-tab management library for Vue 3 and Vue Router',
+  description:
+    'Vue 3 multi-tab manager built on Vue Router: iframe-like tab isolation, stack-based navigation, keep-alive caching and a Nuxt 3/4 module.',
   head: [['link', { rel: 'icon', href: '/img/logo.svg' }]],
   themeConfig: {
     logo: '/img/logo.svg',

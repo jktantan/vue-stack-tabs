@@ -18,14 +18,14 @@ const { forward, backward, addScrollTarget } = useTabRouter()
 
 页签内回退
 
-**调用：** backward(to:number|string, query:Record<string,string>)
+**调用：** backward(to: number|string, backQuery?: Record<string, unknown>)
 
 **参数定义：**
 
-| 参数  |         类型          | 必填 | 说明                                                                                                    |
-| :---: | :-------------------: | :--: | :------------------------------------------------------------------------------------------------------ |
-|  to   |   string 或 number    |  否  | 数字情况：如果为0，不做任何操作，非零情况为向前跳abs(x)步。<br/>URL情况：向前跳转到第一个符合条件的页面 |
-| query | Record<string,string> |  否  | 一次性参数，用于向上一页面传递参数。上一页面需要在onActived中使用props来接收。                          |
+| 参数      |          类型           | 必填 | 说明                                                                                    |
+| :-------- | :---------------------: | :--: | :-------------------------------------------------------------------------------------- |
+| to        |    string 或 number     |  是  | 数字：回退 abs(x) 步（0 不做任何操作，返回 false）；URL：回退到栈中第一个路径匹配的页面 |
+| backQuery | Record<string, unknown> |  否  | 一次性参数，随回退传给目标页面，目标页通过 `props._back` 接收                           |
 
 to:
 

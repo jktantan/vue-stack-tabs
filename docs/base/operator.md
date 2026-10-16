@@ -39,7 +39,7 @@ import { useTabRouter } from 'vue-stack-tabs'
 
 const { backward } = useTabRouter()
 
-// By steps — go back 3 steps
+// By steps — go back 3 steps, passing extra params to the target page (received via props._back)
 backward(3, { refresh: true })
 
 // By path — jump to first matching path

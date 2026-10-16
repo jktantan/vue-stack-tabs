@@ -11,11 +11,15 @@ Pages inside an iframe can communicate with the parent's vue-stack-tabs:
 
 The iframe page must be same-origin, or the parent must add the iframe origin to `iframeAllowedOrigins`.
 
+Import the bridge from the side-effect-free sub-entry `vue-stack-tabs/iframe-bridge` so the iframe page does not pull in the library styles:
+
+```typescript
+import { postOpenTab, onRefreshRequest } from 'vue-stack-tabs/iframe-bridge'
+```
+
 ## Open New Tab
 
 ```typescript
-import { postOpenTab } from 'vue-stack-tabs'
-
 postOpenTab({
   title: 'New Page',
   path: '/demo/detail',
@@ -23,6 +27,14 @@ postOpenTab({
   closable: true,
   refreshable: true
 })
+```
+
+Pass `targetOrigin` explicitly when the parent page is cross-origin (by default the iframe's own `window.location.origin` is used):
+
+```typescript
+import { postOpenTab } from 'vue-stack-tabs/iframe-bridge'
+
+postOpenTab({ title: 'New Page', path: '/detail' }, { targetOrigin: 'https://app.example.com' })
 ```
 
 If the iframe is cross-origin, configure `iframeAllowedOrigins`:
@@ -39,7 +51,7 @@ If the iframe is cross-origin, configure `iframeAllowedOrigins`:
 By default, refresh uses postMessage: the parent sends `vue-stack-tabs:refresh`; the iframe listens and reloads.
 
 ```typescript
-import { onRefreshRequest } from 'vue-stack-tabs'
+import { onRefreshRequest } from 'vue-stack-tabs/iframe-bridge'
 
 const unlisten = onRefreshRequest()
 
@@ -65,6 +77,7 @@ onRefreshRequest(undefined, {
   allowedOrigins: ['https://app.example.com']
 })
 ```
+
 :::
 
 ## Cross-Origin: reload Mode
@@ -83,9 +96,9 @@ openTab({
 
 ## API Reference
 
-| Method | Description |
-|--------|-------------|
-| `postOpenTab(payload)` | Request parent to open a new tab |
-| `onRefreshRequest(callback?)` | Register refresh listener; returns unsubscribe |
-| `MSG_REFRESH` | Refresh message type constant |
-| `MSG_OPEN_TAB` | Open tab message type constant |
+| Method                                  | Description                                    |
+| --------------------------------------- | ---------------------------------------------- |
+| `postOpenTab(payload, options?)`        | Request parent to open a new tab               |
+| `onRefreshRequest(callback?, options?)` | Register refresh listener; returns unsubscribe |
+| `MSG_REFRESH`                           | Refresh message type constant                  |
+| `MSG_OPEN_TAB`                          | Open tab message type constant                 |

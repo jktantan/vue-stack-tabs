@@ -13,11 +13,11 @@ import { useTabActions } from 'vue-stack-tabs'
 const { openTab } = useTabActions()
 
 /**
- * 如果没传ID，则新建页答
- * ID相同时，则只切换页签
- * return 页签ID
+ * 如果没传 ID，则新建页签
+ * ID 相同时，则只切换页签并显示最后页面
+ * 返回 Promise，resolve 为页签 ID
  */
-const tabId = openTab({
+const tabId = await openTab({
   id: 'dashboard',
   title: '首页',
   path: '/dashboard',
@@ -60,10 +60,10 @@ reset()
 // 引用 useTabActions
 import { useTabLoading } from 'vue-stack-tabs'
 
-const { openTabLoading,closeTabLoading } = useTabLoading()
+const { openTabLoading, closeTabLoading } = useTabLoading()
 
-//打开加载动画
+// 打开加载动画
 openTabLoading()
-//关闭加载动画
+// 关闭加载动画
 closeTabLoading()
 ```

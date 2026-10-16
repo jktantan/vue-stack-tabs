@@ -1,5 +1,10 @@
 # vue-stack-tabs
 
+[![npm version](https://img.shields.io/npm/v/vue-stack-tabs.svg)](https://www.npmjs.com/package/vue-stack-tabs)
+[![npm downloads](https://img.shields.io/npm/dm/vue-stack-tabs.svg)](https://www.npmjs.com/package/vue-stack-tabs)
+[![license](https://img.shields.io/npm/l/vue-stack-tabs.svg)](./LICENSE)
+[![minzipped size](https://img.shields.io/bundlephobia/minzip/vue-stack-tabs)](https://bundlephobia.com/package/vue-stack-tabs)
+
 [中文](./README.md) | [English](./README.en.md) | **Русский**
 
 > Библиотека управления вкладками для Vue 3 на основе Vue Router. Она обеспечивает изоляцию вкладок, подобную iframe, через независимые области видимости Vue: каждая вкладка сохраняет собственный экземпляр страницы, кэш и стек навигации.
@@ -13,6 +18,7 @@
 - **Сохранение сессии** — восстановление последних активных вкладок после обновления браузера
 - **Запоминание позиции прокрутки** — автоматическое восстановление позиции прокрутки при переключении вкладок
 - **Контекстное меню** — встроенные действия закрытия/обновления
+- **Слоты** — кнопки слева/справа на панели вкладок, свои плейсхолдеры загрузки/ошибки iframe
 - **Интернационализация** — встроенные китайский и английский языки, расширяемо
 - **Модуль Nuxt 3/4** — работает из коробки
 
@@ -38,7 +44,7 @@ pnpm add vue-stack-tabs
 // main.ts
 import { createApp } from 'vue'
 import VueStackTabs from 'vue-stack-tabs'
-import 'vue-stack-tabs/dist/vue-stack-tabs.css'
+import 'vue-stack-tabs/dist/style.css'
 import App from './App.vue'
 import router from './router'
 
@@ -47,6 +53,8 @@ app.use(router)
 app.use(VueStackTabs)
 app.mount('#app')
 ```
+
+> `vue-stack-tabs` поддерживает только один экземпляр `<VueStackTabs>` на приложение Vue. Экспорт по умолчанию — плагин Vue для `app.use(VueStackTabs)`; если нужен локальный импорт компонента, используйте именованный экспорт ниже.
 
 ### 2. Настройка маршрутов
 
@@ -100,6 +108,12 @@ const defaultTabs: ITabData[] = [
 </script>
 ```
 
+Если нужен локальный импорт компонента, используйте именованный экспорт `VueStackTabs`; именованный экспорт `StackTab` сохранён как алиас совместимости:
+
+```ts
+import { VueStackTabs as VueStackTabsComponent } from 'vue-stack-tabs'
+```
+
 ### 4. Открытие вкладок
 
 ```ts
@@ -133,9 +147,9 @@ refreshTab('about')
 export default defineNuxtConfig({
   modules: ['vue-stack-tabs/nuxt'],
   vueStackTabs: {
-    locale: 'en-US'
+    locale: 'zh-CN' // встроенные варианты: 'zh-CN' | 'en'
   },
-  css: ['vue-stack-tabs/dist/vue-stack-tabs.css']
+  css: ['vue-stack-tabs/dist/style.css']
 })
 ```
 
@@ -152,7 +166,9 @@ export default defineNuxtConfig({
 <script setup lang="ts">
 import type { ITabData } from 'vue-stack-tabs'
 
-const defaultTabs: ITabData[] = [{ title: 'Главная', path: '/', closable: false, refreshable: true }]
+const defaultTabs: ITabData[] = [
+  { title: 'Главная', path: '/', closable: false, refreshable: true }
+]
 </script>
 ```
 
@@ -163,7 +179,9 @@ const defaultTabs: ITabData[] = [{ title: 'Главная', path: '/', closable:
 <template>
   <div>
     <h1>Главная</h1>
-    <button @click="openTab({ title: 'О приложении', path: '/about' })">Открыть страницу «О приложении»</button>
+    <button @click="openTab({ title: 'О приложении', path: '/about' })">
+      Открыть страницу «О приложении»
+    </button>
   </div>
 </template>
 
@@ -183,7 +201,7 @@ const { openTab } = useTabActions()
 
 ```ts
 import VueStackTabs from 'vue-stack-tabs'
-import 'vue-stack-tabs/dist/vue-stack-tabs.css'
+import 'vue-stack-tabs/dist/style.css'
 ```
 
 Для iframe-страниц используйте суб-вход без побочных эффектов стилей:
@@ -219,7 +237,7 @@ const off = onRefreshRequest(() => window.location.reload(), {
 />
 ```
 
-Sandbox по умолчанию сохраняет типичные возможности бизнес-страниц и ориентирован на совместимость, не на строгую изоляцию. Для строгой изоляции удалите `allow-same-origin` и продолжайте уменьшать токены sandbox по потребностям бизнеса.
+Sandbox по умолчанию сохраняет типичные возможности бизнес-страниц и ориентирован на совместимость, не на строгую изоляцию. Для строгой изоляции удалите `allow-same-origin` и продолжайте уменьшать токены sandbox по потребностям бизнеса. Если ваши страницы того же источника не могут работать под sandbox, можно передать пустую строку для отключения sandbox, но это снижает уровень изоляции.
 
 ---
 
@@ -233,26 +251,36 @@ Sandbox по умолчанию сохраняет типичные возмож
 import { useTabActions } from 'vue-stack-tabs'
 
 const {
-  openTab, // (tab: ITabData, renew?: boolean) => Promise<string>
+  openTab, // (tab: ITabData, renew?: boolean) => Promise<string | undefined>
   closeTab, // (id: string) => string
   closeAllTabs, // () => void
   refreshTab, // (id: string) => void
   refreshAllTabs, // () => void
   activeTab, // (id: string, isRoute?: boolean) => void
+  moveTab, // (id: string, targetIndex: number) => boolean
   reset, // () => void
-  tabs // Ref<ITabItem[]>
+  tabs, // Ref<ITabItem[]>
+  setIFramePath, // (path: string) => void
+  getWrapper, // ({ tabId?, pageId? }) => HTMLElement | undefined
+  openInNewWindow // (id: string) => void
 } = useTabActions()
 ```
 
-| Метод                  | Описание                                                                          |
-| ---------------------- | --------------------------------------------------------------------------------- |
-| `openTab(tab, renew?)` | Открыть новую вкладку. При `renew=true` очищает стек страниц и открывает заново   |
-| `closeTab(id)`         | Закрыть указанную вкладку, возвращает ID новой активной вкладки                    |
-| `closeAllTabs()`       | Закрыть все закрываемые вкладки                                                   |
-| `refreshTab(id)`       | Обновить указанную вкладку (заменяет ID кэша, пересоздаёт экземпляр компонента)      |
-| `refreshAllTabs()`     | Обновить все вкладки                                                              |
-| `activeTab(id)`        | Активировать указанную вкладку (переключить вкладку)                               |
-| `reset()`              | Закрыть все вкладки и сбросить состояние                                          |
+| Метод                             | Описание                                                                                                                             |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `openTab(tab, renew?)`            | Открыть новую вкладку. При `renew=true` очищает стек страниц и открывает заново                                                      |
+| `closeTab(id)`                    | Закрыть указанную вкладку, возвращает ID новой активной вкладки                                                                      |
+| `closeAllTabs()`                  | Закрыть все закрываемые вкладки                                                                                                      |
+| `refreshTab(id)`                  | Обновить указанную вкладку (заменяет ID кэша, пересоздаёт экземпляр компонента)                                                      |
+| `refreshAllTabs()`                | Обновить все вкладки                                                                                                                 |
+| `activeTab(id)`                   | Активировать указанную вкладку (переключить вкладку)                                                                                 |
+| `moveTab(id, targetIndex)`        | Переместить вкладку на указанный индекс; панель вкладок также поддерживает перетаскивание                                            |
+| `reset()`                         | Закрыть все вкладки и сбросить состояние                                                                                             |
+| `setIFramePath(path)`             | Установить путь маршрута-заглушки iframe (вызывается внутри компонента)                                                              |
+| `getWrapper({ tabId?, pageId? })` | Получить DOM-контейнер содержимого; без параметров вернёт первый контейнер, при нескольких вкладках передавайте `tabId` или `pageId` |
+| `openInNewWindow(id)`             | Открыть вкладку iframe в новом окне (fallback, если встраивание невозможно)                                                          |
+
+> Закрытие слева / справа / остальных — операции только контекстного меню, выполняются внутри `TabHeader`/`ContextMenu` через `useTabPanel`.
 
 ---
 
@@ -268,9 +296,9 @@ const { forward, backward, addScrollTarget } = useTabRouter()
 
 | Метод                       | Описание                                                    |
 | --------------------------- | ----------------------------------------------------------- |
-| `forward(to)`               | Перейти вперёд к новой странице внутри текущей вкладки       |
+| `forward(to)`               | Перейти вперёд к новой странице внутри текущей вкладки      |
 | `backward(to, backQuery?)`  | Вернуться назад внутри текущей вкладки                      |
-| `addScrollTarget(selector)` | Зарегистрировать CSS-селектор DOM для запоминания прокрутки  |
+| `addScrollTarget(selector)` | Зарегистрировать CSS-селектор DOM для запоминания прокрутки |
 
 #### forward
 
@@ -333,35 +361,67 @@ fetchData().finally(() => closeTabLoading())
 
 Свойства компонента `<VueStackTabs>`:
 
-| Свойство               | Тип                         | По умолчанию            | Описание                                                      |
-| ----------------------- | --------------------------- | ----------------------- | ------------------------------------------------------------- |
-| `iframePath`            | `string`                    | **Обязательно**         | Путь маршрута-заглушки для iframe                              |
-| `iframeSandbox`         | `string`                    | `allow-scripts allow-forms allow-popups allow-downloads allow-same-origin` | Политика sandbox для iframe; по умолчанию совместимость, не строгая изоляция — удалите `allow-same-origin` для строгой изоляции; пустая строка отключает sandbox (не рекомендуется) |
-| `iframeReferrerPolicy`  | `ReferrerPolicy`            | `strict-origin-when-cross-origin`                                          | Атрибут referrerpolicy для iframe                             |
-| `iframeAllow`           | `string`                    | `''`                                                                       | Атрибут allow для iframe, например `fullscreen`               |
-| `iframeLoadTimeout`     | `number`                    | `15000`                                                                    | Тайм-аут загрузки iframe в мс                                |
-| `defaultTabs`           | `ITabData[]`                | `[]`                    | Начальный список вкладок                                      |
-| `max`                   | `number`                    | `20`                    | Максимальное количество вкладок                                |
-| `contextmenu`           | `boolean \| object`         | `true`                  | Включить контекстное меню                                      |
-| `pageTransition`        | `string`                    | `'stack-tab-swap'`      | Имя анимации перехода при навигации вперёд                     |
-| `pageTransitionBack`    | `string`                    | `'stack-tab-swap-back'` | Имя анимации перехода при навигации назад                      |
-| `tabTransition`         | `string \| TransitionProps` | `'stack-tab-zoom'`      | Эффект перехода при добавлении/удалении вкладок                |
-| `tabScrollMode`         | `TabScrollMode`             | `'both'`                | Режим прокрутки панели вкладок: `'wheel'` / `'button'` / `'both'` |
-| `width`                 | `string`                    | `'100%'`                | Ширина контейнера                                              |
-| `height`                | `string`                    | `'100%'`                | Высота контейнера                                              |
-| `i18n`                  | `string`                    | `'zh-CN'`               | Локаль интернационализации                                     |
-| `globalScroll`          | `boolean`                   | `false`                 | Включить запоминание прокрутки на уровне страницы              |
-| `sessionPrefix`         | `string`                    | `''`                    | Префикс ключа sessionStorage                                  |
-| `iframeAllowedOrigins`  | `string[]`                  | Тот же источник         | Разрешённые источники для iframe postMessage                   |
+| Свойство               | Тип                         | По умолчанию                                                               | Описание                                                                                                                                                                            |
+| ---------------------- | --------------------------- | -------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `iframePath`           | `string`                    | **Обязательно**                                                            | Путь маршрута-заглушки для iframe                                                                                                                                                   |
+| `iframeSandbox`        | `string`                    | `allow-scripts allow-forms allow-popups allow-downloads allow-same-origin` | Политика sandbox для iframe; по умолчанию совместимость, не строгая изоляция — удалите `allow-same-origin` для строгой изоляции; пустая строка отключает sandbox (не рекомендуется) |
+| `iframeReferrerPolicy` | `ReferrerPolicy`            | `strict-origin-when-cross-origin`                                          | Атрибут referrerpolicy для iframe                                                                                                                                                   |
+| `iframeAllow`          | `string`                    | `''`                                                                       | Атрибут allow для iframe, например `fullscreen`                                                                                                                                     |
+| `iframeLoadTimeout`    | `number`                    | `15000`                                                                    | Тайм-аут загрузки iframe в мс                                                                                                                                                       |
+| `defaultTabs`          | `ITabData[]`                | `[]`                                                                       | Начальный список вкладок                                                                                                                                                            |
+| `max`                  | `number`                    | `20`                                                                       | Максимальное количество вкладок                                                                                                                                                     |
+| `contextmenu`          | `boolean \| object`         | `true`                                                                     | Включить контекстное меню                                                                                                                                                           |
+| `pageTransition`       | `string`                    | `'stack-tab-swap'`                                                         | Имя анимации перехода при навигации вперёд                                                                                                                                          |
+| `pageTransitionBack`   | `string`                    | `'stack-tab-swap-back'`                                                    | Имя анимации перехода при навигации назад                                                                                                                                           |
+| `tabTransition`        | `string \| TransitionProps` | `'stack-tab-zoom'`                                                         | Эффект перехода при добавлении/удалении вкладок                                                                                                                                     |
+| `tabScrollMode`        | `TabScrollMode`             | `'both'`                                                                   | Режим прокрутки панели вкладок: `'wheel'` / `'button'` / `'both'`                                                                                                                   |
+| `space`                | `number`                    | `300`                                                                      | Шаг прокрутки панели вкладок (px)                                                                                                                                                   |
+| `width`                | `string`                    | `'100%'`                                                                   | Ширина контейнера                                                                                                                                                                   |
+| `height`               | `string`                    | `'100%'`                                                                   | Высота контейнера                                                                                                                                                                   |
+| `i18n`                 | `string`                    | `'zh-CN'`                                                                  | Локаль интернационализации, встроенные `'zh-CN'` / `'en'`                                                                                                                           |
+| `globalScroll`         | `boolean`                   | `false`                                                                    | Включить запоминание прокрутки на уровне страницы                                                                                                                                   |
+| `sessionPrefix`        | `string`                    | `''`                                                                       | Префикс ключа sessionStorage; полезно для нескольких экземпляров на одном источнике                                                                                                 |
+| `iframeAllowedOrigins` | `string[]`                  | `[]` (плюс текущий источник)                                               | Разрешённые источники для iframe postMessage                                                                                                                                        |
 
 ---
 
 ## События (Events)
 
-| Событие        | Параметры      | Описание                                      |
-| -------------- | -------------- | --------------------------------------------- |
-| `onActive`     | `(id: string)` | Срабатывает при активации вкладки              |
-| `onPageLoaded` | —              | Срабатывает при загрузке компонента страницы   |
+| Событие        | Параметры      | Описание                                     |
+| -------------- | -------------- | -------------------------------------------- |
+| `onActive`     | `(id: string)` | Срабатывает при активации вкладки            |
+| `onPageLoaded` | —              | Срабатывает при загрузке компонента страницы |
+
+```vue
+<VueStackTabs
+  iframe-path="/iframe"
+  @on-active="(id) => console.log('active:', id)"
+  @on-page-loaded="() => console.log('page loaded')"
+/>
+```
+
+---
+
+## Слоты
+
+| Слот            | Параметры слота  | Описание                                                             |
+| --------------- | ---------------- | -------------------------------------------------------------------- |
+| `leftButton`    | —                | Левая область панели вкладок, обычно с `TabHeaderButton`             |
+| `rightButton`   | —                | Правая область панели вкладок                                        |
+| `iframeLoading` | `{ tab }`        | Свой плейсхолдер загрузки для вкладки iframe                         |
+| `iframeError`   | `{ tab, retry }` | Свой плейсхолдер ошибки для вкладки iframe; `retry()` — перезагрузка |
+
+```vue
+<VueStackTabs iframe-path="/iframe">
+  <template #leftButton>
+    <TabHeaderButton title="Развернуть" @click="collapse = !collapse" />
+  </template>
+  <template #iframeError="{ tab, retry }">
+    <span>{{ tab.title }} не загрузилась</span>
+    <button @click="retry">Повторить</button>
+  </template>
+</VueStackTabs>
+```
 
 ---
 
@@ -451,23 +511,29 @@ window.addEventListener('message', (ev) => {
 
 ## Интернационализация
 
-Встроенные языки: `zh-CN` (китайский), `en-US` (английский).
+Встроенные языки: `zh-CN` (китайский), `en` (английский).
 
 ```ts
-// Переключить язык
-app.use(VueStackTabs, [{ locale: 'en-US' }])
+// Переключить язык через prop компонента
+// <VueStackTabs iframe-path="/iframe" i18n="en" />
+
+// Или при установке плагина
+app.use(VueStackTabs, [{ locale: 'en' }])
 ```
 
-Пользовательский языковой пакет:
+Пользовательский языковой пакет (`messages` — вложенный объект, глубоко сливается со встроенными языками):
 
 ```ts
 app.use(VueStackTabs, [
   {
     locale: 'ru-RU',
     messages: {
-      'VueStackTab.close': 'Закрыть',
-      'VueStackTab.refresh': 'Обновить'
-      // ...
+      VueStackTab: {
+        close: 'Закрыть',
+        reload: 'Обновить',
+        loading: 'Загрузка'
+        // ...
+      }
     }
   }
 ])
@@ -478,12 +544,14 @@ app.use(VueStackTabs, [
 ## Определения типов
 
 ```ts
+import type { LocationQueryRaw } from 'vue-router'
+
 /** Данные, передаваемые при открытии вкладки */
 interface ITabData {
   id?: string // ID вкладки (автоматически генерируемый UUID, если не указан)
   title: string // Заголовок вкладки
   path: string // Путь маршрута или URL iframe
-  query?: Record<string, string> // Параметры маршрута
+  query?: LocationQueryRaw // Параметры маршрута
   closable?: boolean // Можно ли закрыть (по умолчанию true)
   refreshable?: boolean // Можно ли обновить (по умолчанию true)
   iframe?: boolean // Является ли вкладкой iframe (по умолчанию false)
@@ -523,4 +591,4 @@ src/lib/
 
 ## Лицензия
 
-[LGPL-2.1](./LICENSE)
+[Apache-2.0](./LICENSE)

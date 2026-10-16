@@ -15,6 +15,7 @@ pnpm run docs:dev
 Demo 现在**直接嵌入在文档中**，无需单独的服务器或 iframe：
 
 ✅ **完整功能演示**
+
 - 基础标签操作
 - 滚动位置记忆
 - 表单状态保持
@@ -22,11 +23,13 @@ Demo 现在**直接嵌入在文档中**，无需单独的服务器或 iframe：
 - 动态创建标签
 
 ✅ **即开即用**
+
 - 只需一个 VitePress 服务
 - Demo 组件直接在文档内运行
 - 无需额外配置
 
 ✅ **开发友好**
+
 - 直接引用 src/lib 源码
 - 修改源码自动热更新
 - 完整 TypeScript 支持
@@ -55,8 +58,8 @@ Demo 通过以下方式嵌入：
 # 构建文档
 pnpm run docs:build
 
-# 预览构建
-pnpm run docs:preview
+# 预览构建（先执行 docs:build，再预览产物）
+pnpm exec vitepress preview docs
 
 # 清理端口（如需要）
 pnpm run clean:ports

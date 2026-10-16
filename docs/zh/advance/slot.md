@@ -2,12 +2,14 @@
 
 VueStackTabs 支持通过以下插槽个性化页签组件：
 
-| 插槽名称    | 说明             |
-| ----------- | ---------------- |
-| leftButton  | 页签栏左边按钮位 |
-| rightButton | 页签栏右边按钮位 |
+| 插槽名称      | 插槽参数         | 说明                                                |
+| ------------- | ---------------- | --------------------------------------------------- |
+| leftButton    | —                | 页签栏左边按钮位                                    |
+| rightButton   | —                | 页签栏右边按钮位                                    |
+| iframeLoading | `{ tab }`        | 自定义 iframe 加载中占位                            |
+| iframeError   | `{ tab, retry }` | 自定义 iframe 加载失败占位，调用 `retry()` 重新加载 |
 
-## 示例
+## 示例：页签栏按钮
 
 ```vue:line-numbers
 <script lang="ts" setup>
@@ -30,6 +32,22 @@ VueStackTabs 支持通过以下插槽个性化页签组件：
           /></el-icon>
         </template>
       </tab-header-button>
+    </template>
+  </vue-stack-tabs>
+</template>
+```
+
+## 示例：iframe 占位
+
+```vue:line-numbers
+<template>
+  <vue-stack-tabs iframe-path="/iframe">
+    <template #iframeLoading="{ tab }">
+      <span>{{ tab.title }} 加载中…</span>
+    </template>
+    <template #iframeError="{ tab, retry }">
+      <span>{{ tab.title }} 加载失败</span>
+      <button @click="retry">重试</button>
     </template>
   </vue-stack-tabs>
 </template>

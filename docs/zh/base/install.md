@@ -11,7 +11,7 @@
 ::: code-group
 
 ```bash [pnpm]
-pnpm install vue-stack-tabs
+pnpm add vue-stack-tabs
 ```
 
 ```bash [npm]
@@ -32,13 +32,15 @@ yarn add vue-stack-tabs
 ```bash [GitHub]
 git clone https://github.com/jktantan/vue-stack-tabs.git
 cd vue-stack-tabs
-pnpm lib:build
+pnpm install
+pnpm run lib:build
 ```
 
 ```bash [Gitee]
-git clone https://github.com/jktantan/vue-stack-tabs.git
+git clone https://gitee.com/jktantan/vue-stack-tabs.git
 cd vue-stack-tabs
-pnpm lib:build
+pnpm install
+pnpm run lib:build
 ```
 
 :::

@@ -27,41 +27,41 @@ Opens a new tab. If a tab with the same id exists, it is activated and the last 
 
 **Call:** `openTab(tab: ITabData, renew?: boolean)`
 
-| Property | Type | Required | Description |
-|----------|------|----------|-------------|
-| id | string | No | Tab id; auto-generated if omitted. Same id = activate existing tab |
-| title | string | Yes | Tab title |
-| path | string | Yes | Route path or iframe URL |
-| query | Record<string, string> | No | Query params |
-| closable | boolean | No | Can close; default true |
-| refreshable | boolean | No | Can refresh; default true |
-| iframe | boolean | No | Open as iframe |
-| iframeRefreshMode | 'postMessage' / 'reload' | No | iframe refresh mode; default postMessage |
+| Property          | Type                     | Required | Description                                                        |
+| ----------------- | ------------------------ | -------- | ------------------------------------------------------------------ |
+| id                | string                   | No       | Tab id; auto-generated if omitted. Same id = activate existing tab |
+| title             | string                   | Yes      | Tab title                                                          |
+| path              | string                   | Yes      | Route path or iframe URL                                           |
+| query             | Record<string, string>   | No       | Query params                                                       |
+| closable          | boolean                  | No       | Can close; default true                                            |
+| refreshable       | boolean                  | No       | Can refresh; default true                                          |
+| iframe            | boolean                  | No       | Open as iframe                                                     |
+| iframeRefreshMode | 'postMessage' / 'reload' | No       | iframe refresh mode; default postMessage                           |
 
 ## Close
 
-| Method | Description |
-|--------|-------------|
-| `closeTab(id)` | Close specific tab |
-| `closeAllTabs()` | Close all tabs |
+| Method           | Description                                            |
+| ---------------- | ------------------------------------------------------ |
+| `closeTab(id)`   | Close specific tab; returns the newly activated tab id |
+| `closeAllTabs()` | Close all tabs                                         |
 
 Close left/right/others are available via the right-click context menu.
 
 ## Refresh
 
-| Method | Description |
-|--------|-------------|
-| `refreshTab(id)` | Refresh current page of tab |
-| `refreshAllTabs()` | Refresh all tabs |
+| Method             | Description                 |
+| ------------------ | --------------------------- |
+| `refreshTab(id)`   | Refresh current page of tab |
+| `refreshAllTabs()` | Refresh all tabs            |
 
 ## Other
 
-| Method | Description |
-|--------|-------------|
-| `activeTab(id, isRoute?)` | Activate tab |
-| `moveTab(id, targetIndex)` | Move a tab to an index; the tab header also supports mouse drag-and-drop reordering |
-| `reset()` | Reset all |
-| `tabs` | Tab list (read-only) |
-| `setIFramePath(path)` | Set iframe path (internal) |
+| Method                            | Description                                                                                                               |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `activeTab(id, isRoute?)`         | Activate tab                                                                                                              |
+| `moveTab(id, targetIndex)`        | Move a tab to an index; the tab header also supports mouse drag-and-drop reordering                                       |
+| `reset()`                         | Reset all                                                                                                                 |
+| `tabs`                            | Tab list (read-only)                                                                                                      |
+| `setIFramePath(path)`             | Set iframe path (internal)                                                                                                |
 | `getWrapper({ tabId?, pageId? })` | Get a content DOM node. Omit parameters for legacy first-node behavior; use `tabId` or `pageId` when multiple tabs exist. |
-| `openInNewWindow(id)` | Open iframe tab in new window (fallback) |
+| `openInNewWindow(id)`             | Open iframe tab in new window (fallback)                                                                                  |

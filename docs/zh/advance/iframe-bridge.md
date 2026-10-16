@@ -11,11 +11,15 @@ iframe 内的页面可与父窗口的 vue-stack-tabs 通信，实现：
 
 iframe 内页面需与主应用同源，或主应用将 iframe 的 origin 加入 `iframeAllowedOrigins`。
 
+建议从无样式副作用的子入口 `vue-stack-tabs/iframe-bridge` 引入桥接工具，避免 iframe 页面加载整库样式：
+
+```typescript
+import { postOpenTab, onRefreshRequest } from 'vue-stack-tabs/iframe-bridge'
+```
+
 ## 打开新标签
 
 ```typescript
-import { postOpenTab } from 'vue-stack-tabs'
-
 postOpenTab({
   title: '新页面',
   path: '/demo/detail',
@@ -23,6 +27,14 @@ postOpenTab({
   closable: true,
   refreshable: true
 })
+```
+
+跨域父页面必须显式传入 `targetOrigin`（默认使用 iframe 页面自身的 `window.location.origin`）：
+
+```typescript
+import { postOpenTab } from 'vue-stack-tabs/iframe-bridge'
+
+postOpenTab({ title: '新页面', path: '/detail' }, { targetOrigin: 'https://app.example.com' })
 ```
 
 主应用需配置 `iframeAllowedOrigins`（若 iframe 与主应用不同源）：
@@ -39,7 +51,7 @@ postOpenTab({
 默认情况下，刷新使用 `postMessage` 模式：父窗口向 iframe 发送 `vue-stack-tabs:refresh`，iframe 内需监听并执行刷新。
 
 ```typescript
-import { onRefreshRequest } from 'vue-stack-tabs'
+import { onRefreshRequest } from 'vue-stack-tabs/iframe-bridge'
 
 // 页面加载时注册，收到刷新指令时执行 location.reload()
 const unlisten = onRefreshRequest()
@@ -58,6 +70,19 @@ onRefreshRequest(() => {
 })
 ```
 
+::: warning 安全提示
+默认情况下 `onRefreshRequest` **不校验** `MessageEvent.origin`，任何嵌入此 iframe 的父页面都能触发刷新回调，等同 `targetOrigin: '*'`，仅适合本地调试。
+
+生产环境请**务必显式传入 `allowedOrigins`**：
+
+```typescript
+onRefreshRequest(undefined, {
+  allowedOrigins: ['https://app.example.com']
+})
+```
+
+:::
+
 ## 跨域 iframe 使用 reload 模式
 
 若 iframe 为跨域且无法修改其代码，可指定 `iframeRefreshMode: 'reload'`，刷新时直接重载 iframe：
@@ -74,9 +99,9 @@ openTab({
 
 ## API 参考
 
-| 方法 | 说明 |
-|------|------|
-| `postOpenTab(payload)` | 向父窗口请求打开新标签 |
-| `onRefreshRequest(callback?)` | 注册刷新监听，返回取消函数 |
-| `MSG_REFRESH` | 刷新消息类型常量 |
-| `MSG_OPEN_TAB` | 打开标签消息类型常量 |
+| 方法                                    | 说明                       |
+| --------------------------------------- | -------------------------- |
+| `postOpenTab(payload, options?)`        | 向父窗口请求打开新标签     |
+| `onRefreshRequest(callback?, options?)` | 注册刷新监听，返回取消函数 |
+| `MSG_REFRESH`                           | 刷新消息类型常量           |
+| `MSG_OPEN_TAB`                          | 打开标签消息类型常量       |

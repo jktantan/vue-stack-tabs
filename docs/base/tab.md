@@ -14,9 +14,9 @@ const { openTab } = useTabActions()
 /**
  * If id is omitted, a new tab is created.
  * If id exists, the tab is activated and shown.
- * Returns the tab id.
+ * Returns a Promise resolving to the tab id.
  */
-const tabId = openTab({
+const tabId = await openTab({
   id: 'dashboard',
   title: 'Home',
   path: '/dashboard',

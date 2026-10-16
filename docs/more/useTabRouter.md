@@ -18,12 +18,12 @@ Push a new page onto the tab stack.
 
 Pop or jump within the tab stack.
 
-**Call:** `backward(to?: number | string, query?: Record<string, string>)`
+**Call:** `backward(to: number | string, backQuery?: Record<string, unknown>)`
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| to | number \| string | No | number: go back abs(x) steps; 0 = no-op. string: jump to first matching path |
-| query | Record<string, string> | No | Params passed to the target page |
+| Parameter | Type                    | Required | Description                                                                                             |
+| --------- | ----------------------- | -------- | ------------------------------------------------------------------------------------------------------- |
+| to        | number \| string        | Yes      | number: go back abs(x) steps; 0 = no-op. string: jump to the first page in the stack matching that path |
+| backQuery | Record<string, unknown> | No       | One-shot params for the target page; the target receives them as the `_back` prop                       |
 
 ## addScrollTarget
 

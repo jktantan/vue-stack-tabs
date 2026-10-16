@@ -92,7 +92,7 @@ jobs:
 
 ### Demo 工作原理
 
-- **开发环境**：`pnpm run docs:dev` 只启动文档，Demo iframe 指向 `localhost:5173`（需单独运行 `pnpm dev`）
+- **开发环境**：`pnpm run docs:dev` 启动文档服务，Demo 以 Vue 组件形式嵌入文档（见 `docs/.vitepress/EMBEDDED_DEMO.md`），无需单独启动 Demo 服务
 - **生产环境**：Demo 已构建到 `/demo/` 目录，iframe 直接加载部署后的 Demo
 
 ### 验证部署

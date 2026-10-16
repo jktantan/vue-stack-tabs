@@ -1,5 +1,10 @@
 # vue-stack-tabs
 
+[![npm version](https://img.shields.io/npm/v/vue-stack-tabs.svg)](https://www.npmjs.com/package/vue-stack-tabs)
+[![npm downloads](https://img.shields.io/npm/dm/vue-stack-tabs.svg)](https://www.npmjs.com/package/vue-stack-tabs)
+[![license](https://img.shields.io/npm/l/vue-stack-tabs.svg)](./LICENSE)
+[![minzipped size](https://img.shields.io/bundlephobia/minzip/vue-stack-tabs)](https://bundlephobia.com/package/vue-stack-tabs)
+
 [中文](./README.md) | **English** | [Русский](./README.ru.md)
 
 > A Vue 3 multi-tab manager built on Vue Router. It delivers iframe-like tab isolation through independent Vue scopes: every tab keeps its own page instance, cache, and navigation stack.
@@ -13,6 +18,7 @@
 - **Session persistence** — restore last active tabs after browser refresh
 - **Scroll position memory** — automatically restore scroll position when switching tabs
 - **Context menu** — built-in close/refresh actions
+- **Slots** — tab bar left/right buttons, custom iframe loading/error placeholders
 - **i18n** — built-in Chinese & English, extensible
 - **Nuxt 3/4 module** — works out of the box
 
@@ -38,7 +44,7 @@ pnpm add vue-stack-tabs
 // main.ts
 import { createApp } from 'vue'
 import VueStackTabs from 'vue-stack-tabs'
-import 'vue-stack-tabs/dist/vue-stack-tabs.css'
+import 'vue-stack-tabs/dist/style.css'
 import App from './App.vue'
 import router from './router'
 
@@ -47,6 +53,8 @@ app.use(router)
 app.use(VueStackTabs)
 app.mount('#app')
 ```
+
+> `vue-stack-tabs` supports only one `<VueStackTabs>` instance per Vue app. The default export is a Vue plugin for `app.use(VueStackTabs)`; if you need a local component import, use the named export below.
 
 ### 2. Configure Routes
 
@@ -100,6 +108,12 @@ const defaultTabs: ITabData[] = [
 </script>
 ```
 
+If you prefer a local component import, use the `VueStackTabs` named export; the `StackTab` named export is kept as a compatibility alias:
+
+```ts
+import { VueStackTabs as VueStackTabsComponent } from 'vue-stack-tabs'
+```
+
 ### 4. Open Tabs
 
 ```ts
@@ -133,9 +147,9 @@ refreshTab('about')
 export default defineNuxtConfig({
   modules: ['vue-stack-tabs/nuxt'],
   vueStackTabs: {
-    locale: 'en-US'
+    locale: 'en' // built-in options: 'zh-CN' | 'en'
   },
-  css: ['vue-stack-tabs/dist/vue-stack-tabs.css']
+  css: ['vue-stack-tabs/dist/style.css']
 })
 ```
 
@@ -183,7 +197,7 @@ Main application continues to use the root entry:
 
 ```ts
 import VueStackTabs from 'vue-stack-tabs'
-import 'vue-stack-tabs/dist/vue-stack-tabs.css'
+import 'vue-stack-tabs/dist/style.css'
 ```
 
 For iframe inner pages, use the side-effect-free sub-entry:
@@ -233,26 +247,36 @@ Tab-level operation composable.
 import { useTabActions } from 'vue-stack-tabs'
 
 const {
-  openTab, // (tab: ITabData, renew?: boolean) => Promise<string>
+  openTab, // (tab: ITabData, renew?: boolean) => Promise<string | undefined>
   closeTab, // (id: string) => string
   closeAllTabs, // () => void
   refreshTab, // (id: string) => void
   refreshAllTabs, // () => void
   activeTab, // (id: string, isRoute?: boolean) => void
+  moveTab, // (id: string, targetIndex: number) => boolean
   reset, // () => void
-  tabs // Ref<ITabItem[]>
+  tabs, // Ref<ITabItem[]>
+  setIFramePath, // (path: string) => void
+  getWrapper, // ({ tabId?, pageId? }) => HTMLElement | undefined
+  openInNewWindow // (id: string) => void
 } = useTabActions()
 ```
 
-| Method                 | Description                                                              |
-| ---------------------- | ------------------------------------------------------------------------ |
-| `openTab(tab, renew?)` | Open a new tab. When `renew=true`, clears page stack and reopens if exists |
-| `closeTab(id)`         | Close the specified tab, returns newly activated tab ID                  |
-| `closeAllTabs()`       | Close all closable tabs                                                  |
-| `refreshTab(id)`       | Refresh the specified tab (replaces cache ID, rebuilds component instance)   |
-| `refreshAllTabs()`     | Refresh all tabs                                                         |
-| `activeTab(id)`        | Activate the specified tab (switch tab)                                  |
-| `reset()`              | Close all tabs and reset state                                           |
+| Method                            | Description                                                                                                                          |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `openTab(tab, renew?)`            | Open a new tab. When `renew=true`, clears page stack and reopens if exists                                                           |
+| `closeTab(id)`                    | Close the specified tab, returns newly activated tab ID                                                                              |
+| `closeAllTabs()`                  | Close all closable tabs                                                                                                              |
+| `refreshTab(id)`                  | Refresh the specified tab (replaces cache ID, rebuilds component instance)                                                           |
+| `refreshAllTabs()`                | Refresh all tabs                                                                                                                     |
+| `activeTab(id)`                   | Activate the specified tab (switch tab)                                                                                              |
+| `moveTab(id, targetIndex)`        | Move a tab to a given index; the tab bar also supports mouse drag reordering                                                         |
+| `reset()`                         | Close all tabs and reset state                                                                                                       |
+| `setIFramePath(path)`             | Set the iframe placeholder route path (called internally on mount)                                                                   |
+| `getWrapper({ tabId?, pageId? })` | Get the content container DOM node; without arguments returns the first container, pass `tabId` or `pageId` when multiple tabs exist |
+| `openInNewWindow(id)`             | Open an iframe tab in a new window (fallback when embedding fails)                                                                   |
+
+> Close left / right / others are context-menu-only operations, handled inside `TabHeader`/`ContextMenu` through `useTabPanel`.
 
 ---
 
@@ -266,11 +290,11 @@ import { useTabRouter } from 'vue-stack-tabs'
 const { forward, backward, addScrollTarget } = useTabRouter()
 ```
 
-| Method                        | Description                                         |
-| ----------------------------- | --------------------------------------------------- |
-| `forward(to)`                 | Navigate forward to a new page within current tab   |
-| `backward(to, backQuery?)`    | Navigate backward within current tab                |
-| `addScrollTarget(selector)`   | Register a DOM selector for scroll position memory  |
+| Method                      | Description                                        |
+| --------------------------- | -------------------------------------------------- |
+| `forward(to)`               | Navigate forward to a new page within current tab  |
+| `backward(to, backQuery?)`  | Navigate backward within current tab               |
+| `addScrollTarget(selector)` | Register a DOM selector for scroll position memory |
 
 #### forward
 
@@ -333,35 +357,67 @@ fetchData().finally(() => closeTabLoading())
 
 `<VueStackTabs>` component properties:
 
-| Prop                   | Type                        | Default                 | Description                                              |
-| ---------------------- | --------------------------- | ----------------------- | -------------------------------------------------------- |
-| `iframePath`           | `string`                    | **Required**            | Path of the iframe placeholder route                     |
+| Prop                   | Type                        | Default                                                                    | Description                                                                                                                                                                           |
+| ---------------------- | --------------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `iframePath`           | `string`                    | **Required**                                                               | Path of the iframe placeholder route                                                                                                                                                  |
 | `iframeSandbox`        | `string`                    | `allow-scripts allow-forms allow-popups allow-downloads allow-same-origin` | iframe sandbox policy; default is compatibility-first, not strict isolation — remove `allow-same-origin` for strict isolation; pass empty string to disable sandbox (not recommended) |
-| `iframeReferrerPolicy` | `ReferrerPolicy`            | `strict-origin-when-cross-origin`                                          | iframe referrerpolicy attribute                              |
-| `iframeAllow`          | `string`                    | `''`                                                                       | iframe allow attribute, e.g. `fullscreen`                    |
-| `iframeLoadTimeout`    | `number`                    | `15000`                                                                    | iframe load timeout in ms                                    |
-| `defaultTabs`          | `ITabData[]`                | `[]`                    | Initial tab list                                         |
-| `max`                  | `number`                    | `20`                    | Maximum number of tabs                                   |
-| `contextmenu`          | `boolean \| object`         | `true`                  | Enable context menu                                      |
-| `pageTransition`       | `string`                    | `'stack-tab-swap'`      | Page transition animation name for forward navigation    |
-| `pageTransitionBack`   | `string`                    | `'stack-tab-swap-back'` | Page transition animation name for backward navigation   |
-| `tabTransition`        | `string \| TransitionProps` | `'stack-tab-zoom'`      | Transition effect for tab add/remove                     |
-| `tabScrollMode`        | `TabScrollMode`             | `'both'`                | Tab bar scroll mode: `'wheel'` / `'button'` / `'both'`  |
-| `width`                | `string`                    | `'100%'`                | Container width                                          |
-| `height`               | `string`                    | `'100%'`                | Container height                                         |
-| `i18n`                 | `string`                    | `'zh-CN'`               | i18n locale                                              |
-| `globalScroll`         | `boolean`                   | `false`                 | Enable page-level scroll memory                          |
-| `sessionPrefix`        | `string`                    | `''`                    | sessionStorage key prefix                                |
-| `iframeAllowedOrigins` | `string[]`                  | Same origin             | Allowed origins for iframe postMessage                   |
+| `iframeReferrerPolicy` | `ReferrerPolicy`            | `strict-origin-when-cross-origin`                                          | iframe referrerpolicy attribute                                                                                                                                                       |
+| `iframeAllow`          | `string`                    | `''`                                                                       | iframe allow attribute, e.g. `fullscreen`                                                                                                                                             |
+| `iframeLoadTimeout`    | `number`                    | `15000`                                                                    | iframe load timeout in ms                                                                                                                                                             |
+| `defaultTabs`          | `ITabData[]`                | `[]`                                                                       | Initial tab list                                                                                                                                                                      |
+| `max`                  | `number`                    | `20`                                                                       | Maximum number of tabs                                                                                                                                                                |
+| `contextmenu`          | `boolean \| object`         | `true`                                                                     | Enable context menu                                                                                                                                                                   |
+| `pageTransition`       | `string`                    | `'stack-tab-swap'`                                                         | Page transition animation name for forward navigation                                                                                                                                 |
+| `pageTransitionBack`   | `string`                    | `'stack-tab-swap-back'`                                                    | Page transition animation name for backward navigation                                                                                                                                |
+| `tabTransition`        | `string \| TransitionProps` | `'stack-tab-zoom'`                                                         | Transition effect for tab add/remove                                                                                                                                                  |
+| `tabScrollMode`        | `TabScrollMode`             | `'both'`                                                                   | Tab bar scroll mode: `'wheel'` / `'button'` / `'both'`                                                                                                                                |
+| `space`                | `number`                    | `300`                                                                      | Pixel distance scrolled per tab bar step                                                                                                                                              |
+| `width`                | `string`                    | `'100%'`                                                                   | Container width                                                                                                                                                                       |
+| `height`               | `string`                    | `'100%'`                                                                   | Container height                                                                                                                                                                      |
+| `i18n`                 | `string`                    | `'zh-CN'`                                                                  | i18n locale, built-in `'zh-CN'` / `'en'`                                                                                                                                              |
+| `globalScroll`         | `boolean`                   | `false`                                                                    | Enable page-level scroll memory                                                                                                                                                       |
+| `sessionPrefix`        | `string`                    | `''`                                                                       | sessionStorage key prefix; useful for multiple instances on the same origin                                                                                                           |
+| `iframeAllowedOrigins` | `string[]`                  | `[]` (plus current origin)                                                 | Allowed origins for iframe postMessage openTab                                                                                                                                        |
 
 ---
 
 ## Events
 
-| Event          | Params         | Description                        |
-| -------------- | -------------- | ---------------------------------- |
-| `onActive`     | `(id: string)` | Triggered when a tab is activated  |
+| Event          | Params         | Description                         |
+| -------------- | -------------- | ----------------------------------- |
+| `onActive`     | `(id: string)` | Triggered when a tab is activated   |
 | `onPageLoaded` | —              | Triggered when page component loads |
+
+```vue
+<VueStackTabs
+  iframe-path="/iframe"
+  @on-active="(id) => console.log('active:', id)"
+  @on-page-loaded="() => console.log('page loaded')"
+/>
+```
+
+---
+
+## Slots
+
+| Slot            | Slot props       | Description                                                          |
+| --------------- | ---------------- | -------------------------------------------------------------------- |
+| `leftButton`    | —                | Left area of the tab bar, usually with `TabHeaderButton`             |
+| `rightButton`   | —                | Right area of the tab bar                                            |
+| `iframeLoading` | `{ tab }`        | Custom loading placeholder for an iframe tab                         |
+| `iframeError`   | `{ tab, retry }` | Custom error placeholder for an iframe tab; call `retry()` to reload |
+
+```vue
+<VueStackTabs iframe-path="/iframe">
+  <template #leftButton>
+    <TabHeaderButton title="Toggle" @click="collapse = !collapse" />
+  </template>
+  <template #iframeError="{ tab, retry }">
+    <span>{{ tab.title }} failed to load</span>
+    <button @click="retry">Retry</button>
+  </template>
+</VueStackTabs>
+```
 
 ---
 
@@ -451,23 +507,29 @@ You can specify refresh behavior via `iframeRefreshMode` when calling `openTab`:
 
 ## i18n
 
-Built-in languages: `zh-CN` (Chinese), `en-US` (English).
+Built-in languages: `zh-CN` (Chinese), `en` (English).
 
 ```ts
-// Switch language
-app.use(VueStackTabs, [{ locale: 'en-US' }])
+// Switch language via component prop
+// <VueStackTabs iframe-path="/iframe" i18n="en" />
+
+// Or when installing the plugin
+app.use(VueStackTabs, [{ locale: 'en' }])
 ```
 
-Custom language pack:
+Custom language pack (`messages` is a nested object and is deep-merged with the built-in languages):
 
 ```ts
 app.use(VueStackTabs, [
   {
     locale: 'ja-JP',
     messages: {
-      'VueStackTab.close': 'Close',
-      'VueStackTab.refresh': 'Refresh'
-      // ...
+      VueStackTab: {
+        close: 'Close',
+        reload: 'Reload',
+        loading: 'Loading'
+        // ...
+      }
     }
   }
 ])
@@ -478,12 +540,14 @@ app.use(VueStackTabs, [
 ## Type Definitions
 
 ```ts
+import type { LocationQueryRaw } from 'vue-router'
+
 /** Data passed when opening a tab */
 interface ITabData {
   id?: string // Tab ID (auto-generated UUID if omitted)
   title: string // Tab title
   path: string // Route path or iframe URL
-  query?: Record<string, string> // Route params
+  query?: LocationQueryRaw // Route params
   closable?: boolean // Whether closable (default true)
   refreshable?: boolean // Whether refreshable (default true)
   iframe?: boolean // Whether it's an iframe tab (default false)
@@ -523,4 +587,4 @@ For detailed architecture design, see [`ARCHITECTURE.md`](./ARCHITECTURE.md).
 
 ## License
 
-[LGPL-2.1](./LICENSE)
+[Apache-2.0](./LICENSE)
