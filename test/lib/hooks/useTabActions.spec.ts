@@ -21,7 +21,7 @@ vi.mock('throttle-debounce', () => ({
 }))
 
 vi.mock('vue-router', () => ({
-  useRouter: () => ({ push }),
+  useRouter: () => ({ push, replace: vi.fn() }),
   isNavigationFailure: (value: unknown) =>
     typeof value === 'object' && value !== null && 'type' in value
 }))

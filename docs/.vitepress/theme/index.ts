@@ -1,47 +1,21 @@
+import { h } from 'vue'
 import DefaultTheme from 'vitepress/theme'
-import { createRouter, createMemoryHistory } from 'vue-router'
-import VueStackTabs from '../../../src/lib/index'
-import '../../../src/lib/assets/style/stackTab.scss'
 import DemoPreview from './DemoPreview.vue'
-import FullDemo from './components/FullDemo.vue'
-import { demoRoutes } from './demo-routes'
+import StackHero from './components/StackHero.vue'
 import './demo-preview.css'
+import './styles/custom.css'
 
 export default {
   extends: DefaultTheme,
-  enhanceApp({ app }) {
-    // 创建一个内存路由用于 Demo
-    const demoRouter = createRouter({
-      history: createMemoryHistory(),
-      routes: demoRoutes
+  Layout() {
+    // 首页 hero 右侧用 CSS 画的「标签栈」示意替换默认图片（见 components/StackHero.vue）
+    return h(DefaultTheme.Layout, null, {
+      'home-hero-image': () => h(StackHero)
     })
-
-    // 注册 VueStackTabs 插件
-    app.use(demoRouter)
-    app.use(VueStackTabs, [
-      {
-        locale: 'zh-CN',
-        messages: {
-          VueStackTab: {
-            close: '关闭 / Close',
-            closeLeft: '关闭左侧 / Close Left',
-            closeRight: '关闭右侧 / Close Right',
-            closeOthers: '关闭其他 / Close Others',
-            closeAll: '关闭全部 / Close All',
-            reload: '刷新 / Reload',
-            reloadAll: '刷新全部 / Reload All',
-            maximum: '最大化 / Maximize',
-            restore: '还原 / Restore',
-            undefined: '未定义 / Undefined',
-            loading: '加载中... / Loading...'
-          }
-        }
-      }
-    ])
-
-    // 注册组件
+  },
+  enhanceApp({ app }) {
+    // 演示以独立应用 + iframe 的形式提供（见 DemoPreview.vue），
+    // 文档站不再注册 vue-stack-tabs 与内存路由，避免与 VitePress 自身路由冲突。
     app.component('DemoPreview', DemoPreview)
-    app.component('FullDemo', FullDemo)
-    app.component('DemoTest', () => import('./components/DemoTest.vue'))
   }
 }

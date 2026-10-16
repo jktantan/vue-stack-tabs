@@ -77,8 +77,10 @@
   },
   "scripts": {
     "clean:ports": "node -e \"const { execSync } = require('child_process'); try { if (process.platform === 'win32') { execSync('netstat -ano | findstr \":5173\" | findstr \"LISTENING\"').toString().split('\\n').forEach(line => { const pid = line.trim().split(/\\s+/)[4]; if (pid) try { execSync(`taskkill /F /PID ${pid}`, { stdio: 'ignore' }); } catch(e) {} }); execSync('netstat -ano | findstr \":5174\" | findstr \"LISTENING\"').toString().split('\\n').forEach(line => { const pid = line.trim().split(/\\s+/)[4]; if (pid) try { execSync(`taskkill /F /PID ${pid}`, { stdio: 'ignore' }); } catch(e) {} }); } else { execSync('lsof -ti:5173 | xargs kill -9 || true', { shell: '/bin/bash' }); execSync('lsof -ti:5174 | xargs kill -9 || true', { shell: '/bin/bash' }); } console.log('✅ 端口清理完成'); } catch(e) { console.log('✅ 端口已经空闲或清理完成'); }\"",
-    "docs:dev": "vitepress dev docs",
-    "docs:build": "vitepress build docs && vite build --config vite.config.docs-demo.ts && node -e \"const fs=require('fs');const p='docs/.vitepress/dist/demo';fs.mkdirSync(p+'/demo',{recursive:true});fs.copyFileSync(p+'/index.html',p+'/demo/index.html');\"",
+    "docs:dev": "run-p docs:dev:docs docs:dev:demo",
+    "docs:dev:docs": "vitepress dev docs",
+    "docs:dev:demo": "vite --config vite.config.docs-demo.ts",
+    "docs:build": "vitepress build docs && vite build --config vite.config.docs-demo.ts",
     "dev": "vite  --host ",
     "build": "run-p type-check \"build-only {@}\" --",
     "preview": "vite preview",

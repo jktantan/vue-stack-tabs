@@ -1,166 +1,71 @@
-# 嵌入式 Demo 架构说明
+# 演示（Demo）架构说明
 
-## 概述
+文档里的在线演示**不是一个 Vue 组件**，而是用一个 iframe 包住的**独立应用**。
 
-vue-stack-tabs 的文档 Demo 现在完全嵌入在 VitePress 中，无需单独的服务器或 iframe。
+## 为什么用 iframe
 
-## 架构
+`vue-stack-tabs` 把每个标签栈绑定到浏览器 URL，并且会在运行期驱动 `vue-router`。如果把它直接挂在文档站里，就会和 VitePress 争用同一个 router。
 
-### 1. VitePress 主题扩展
+早期版本把演示组件直接内嵌进 VitePress（`createMemoryHistory` + `app.use(VueStackTabs)`），需要给文档站塞一个内存路由来回避冲突，还让文档站被迫加载整个库；那套文件后来与库 API 脱节、已经无法运行，现已整体移除。
 
-```typescript
-// docs/.vitepress/theme/index.ts
-import VueStackTabs from 'vue-stack-tabs'
-import { createRouter, createMemoryHistory } from 'vue-router'
+现在的做法：演示应用自己是一个完整应用（自己的 router、自己的 URL），文档只用一个 iframe 指向它。两边路由互不干预，演示里的行为就是真实业务应用里的行为。
 
-export default {
-  extends: DefaultTheme,
-  enhanceApp({ app }) {
-    // 创建内存路由用于 Demo 页面
-    const demoRouter = createRouter({
-      history: createMemoryHistory(),
-      routes: demoRoutes
-    })
-
-    // 注册插件
-    app.use(demoRouter)
-    app.use(VueStackTabs, [...config])
-
-    // 注册组件
-    app.component('FullDemo', FullDemo)
-  }
-}
-```
-
-### 2. Demo 组件结构
+## 结构
 
 ```
-docs/.vitepress/theme/
-├── components/
-│   ├── FullDemo.vue              # 主 Demo 容器
-│   └── demo-pages/               # Demo 页面
-│       ├── DemoHome.vue          # 首页
-│       ├── DemoAbout.vue         # 关于
-│       ├── DemoContact.vue       # 联系
-│       ├── DemoPage.vue          # 通用页面
-│       ├── DemoScroll.vue        # 滚动演示
-│       ├── DemoForm.vue          # 表单演示
-│       ├── DemoNested.vue        # 嵌套路由
-│       └── DemoDynamic.vue       # 动态标签
-├── demo-routes.ts                # Demo 路由配置
-└── index.ts                      # 主题入口
+docs/.vitepress/
+├── demo-app/                      # 独立演示应用（vite root）
+│   ├── index.html
+│   ├── public/
+│   │   └── iframe-child.html      # iframe 标签的演示页（原生 postMessage 桥）
+│   └── src/
+│       ├── main.ts                # 挂载 Vue app 并 app.use(VueStackTabs)
+│       ├── App.vue                # <router-view />
+│       ├── Shell.vue              # <VueStackTabs> + 演示控制台
+│       ├── router.ts              # 真实路由（含 /iframe 占位路由）
+│       ├── styles.css             # 演示应用样式（品牌色与文档站一致）
+│       └── pages/                 # 各演示页面
+└── theme/
+    ├── DemoPreview.vue            # iframe 包装，文档里写 <DemoPreview />
+    ├── demo-preview.css
+    └── components/StackHero.vue    # 首页 hero 的「标签栈」示意（与演示无关）
 ```
 
-### 3. 在 Markdown 中使用
+## 命令
+
+| 命令                     | 作用                                                            |
+| ------------------------ | --------------------------------------------------------------- |
+| `pnpm run docs:dev`      | 并行启动文档（5173）与演示应用（5174）的 dev server             |
+| `pnpm run docs:dev:docs` | 只启动文档                                                      |
+| `pnpm run docs:dev:demo` | 只启动演示应用                                                  |
+| `pnpm run docs:build`    | 先构建文档，再把演示应用构建到 `docs/.vitepress/dist/demo-app/` |
+
+## 在文档里使用
 
 ```md
-# Demo 页面
-
-<FullDemo />
+<DemoPreview height="660px" title="在线演示" />
 ```
 
-## 优势
+| Prop     | 默认值                    | 说明                                                  |
+| -------- | ------------------------- | ----------------------------------------------------- |
+| `path`   | `''`                      | 演示应用内的路由路径（hash 路由），留空则落到演示首页 |
+| `title`  | `vue-stack-tabs 在线演示` | 标题栏文字                                            |
+| `height` | `620px`                   | iframe 高度                                           |
 
-### ✅ 简化部署
+## 端口与路径约定
 
-- 只需要一个 VitePress 服务
-- 无需管理多个端口
-- 无需 iframe 跨域处理
+- 演示应用 base：`/vue-stack-tabs/demo-app/`（`vite.config.docs-demo.ts` 的 `DEMO_BASE`，可用环境变量覆盖）
+- dev 端口：`5174`（与 `DemoPreview.vue` 的 `DEV_DEMO_ORIGIN` 一致）
+- 生产路径：`{vitepress base}demo-app/`
 
-### ✅ 更好的性能
+⚠️ 路径**不要**用 `demo/`：文档站的 `docs/demo.md` 会生成 `demo.html`，静态服务器对 `/demo/` 会优先命中文档页，导致 iframe 里套娃加载自己（已踩过）。
 
-- 无 iframe 开销
-- 直接 Vue 组件渲染
-- 共享应用状态
+演示应用使用 **hash 路由**：站点部署在静态托管上，无法为 `{base}demo-app/xxx` 提供 history fallback，hash 能保证在 iframe 内刷新任意路径都可用。
 
-### ✅ 开发体验
+改端口或 base 时，`vite.config.docs-demo.ts` 与 `DemoPreview.vue` 必须同步修改。
 
-- 热模块替换（HMR）
-- 统一的开发服务器
-- 更简单的调试
+## 新增一个演示页面
 
-### ✅ 用户体验
-
-- 无需等待多个服务启动
-- 更快的加载速度
-- 更流畅的交互
-
-## Demo 功能
-
-### 基础功能
-
-- 🏠 不可关闭的默认标签
-- 📄 可关闭的普通标签
-- 📑 批量打开多个标签
-
-### 高级功能
-
-- 📜 **滚动位置记忆**: 50 个区块演示自动保存滚动位置
-- 📝 **表单状态保持**: 完整表单演示状态持久化
-- 🔗 **嵌套路由**: 标签内的路由导航
-- 🎲 **动态标签**: 运行时创建唯一标签
-
-### 交互操作
-
-- 按钮式控制面板
-- 右键菜单（关闭左侧/右侧/其他/全部）
-- 刷新标签功能
-
-## 技术细节
-
-### 路由处理
-
-使用 `createMemoryHistory()` 而不是 `createWebHistory()`，避免与 VitePress 的路由冲突：
-
-```typescript
-const demoRouter = createRouter({
-  history: createMemoryHistory(), // ✅ 内存路由
-  routes: demoRoutes
-})
-```
-
-### 状态管理
-
-Demo 页面的状态通过 Vue 的响应式系统自然保持：
-
-- 表单输入：使用 `ref()` 绑定
-- 滚动位置：由 VueStackTabs 自动管理
-- 路由状态：由内存路由管理
-
-### 样式隔离
-
-每个 Demo 页面使用 `scoped` 样式，避免污染文档：
-
-```vue
-<style scoped>
-.demo-page {
-  /* 样式 */
-}
-</style>
-```
-
-## 开发指南
-
-### 添加新的 Demo 页面
-
-1. 创建组件：`docs/.vitepress/theme/components/demo-pages/DemoNew.vue`
-2. 添加路由：`docs/.vitepress/theme/demo-routes.ts`
-3. 在 `FullDemo.vue` 中添加按钮
-
-### 修改 Demo 样式
-
-编辑对应的 `.vue` 文件，修改会自动热更新。
-
-### 调试
-
-使用浏览器开发者工具，Demo 组件就像普通的 Vue 组件一样可调试。
-
-## 部署
-
-构建时 Demo 会自动包含在文档中：
-
-```bash
-pnpm run docs:build
-```
-
-输出：`docs/.vitepress/dist/` - 包含文档和嵌入的 Demo
+1. 在 `docs/.vitepress/demo-app/src/pages/` 新建页面组件
+2. 在 `docs/.vitepress/demo-app/src/router.ts` 注册路由
+3. 需要入口按钮时，在 `Shell.vue` 的控制台分组、或首页页面的快捷入口里加一个 `openTab` 调用

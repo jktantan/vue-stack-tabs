@@ -1,29 +1,98 @@
+/* 演示预览（iframe 容器）样式：让它看起来像一个"窗口"，而不是一块裸 iframe。 */
+
 .demo-preview {
-  margin: 1.5rem 0;
+  margin: 1.75rem 0;
   border: 1px solid var(--vp-c-divider);
-  border-radius: 8px;
+  border-radius: 12px;
   overflow: hidden;
+  background: var(--vp-c-bg);
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.04),
+    0 14px 36px -20px rgba(15, 23, 42, 0.3);
 }
 
-.demo-preview-frame-wrap {
+.demo-preview__bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--vp-c-divider);
+  background: var(--vp-c-bg-soft);
+}
+
+.demo-preview__dots {
+  display: inline-flex;
+  gap: 5px;
+}
+
+.demo-preview__dots i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--vp-c-divider);
+}
+
+.demo-preview__title {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  color: var(--vp-c-text-2);
+}
+
+.demo-preview__open {
+  flex: 0 0 auto;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--vp-c-brand-1);
+  text-decoration: none;
+}
+
+.demo-preview__open:hover {
+  text-decoration: underline;
+}
+
+.demo-preview__stage {
   position: relative;
-  min-height: 400px;
+  background: #fff;
 }
 
-.demo-preview-iframe {
-  width: 100%;
-  height: 500px;
-  border: none;
+.demo-preview__frame {
   display: block;
+  width: 100%;
+  height: 100%;
+  border: none;
 }
 
-.demo-preview-error {
+.demo-preview__fallback {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-start;
+  justify-content: center;
+  height: 100%;
   padding: 2rem;
-  text-align: center;
   color: var(--vp-c-text-2);
   background: var(--vp-c-bg-soft);
 }
 
-.demo-preview-error p {
-  margin: 0.5rem 0;
+.demo-preview__fallback p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.demo-preview__fallback code {
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--vp-c-default-soft);
+  font-size: 12px;
+}
+
+@media (max-width: 640px) {
+  .demo-preview__stage {
+    height: 460px !important;
+  }
 }

@@ -2,9 +2,17 @@ import { defineConfig } from 'vitepress'
 import { tasklist } from '@mdit/plugin-tasklist'
 import { fileURLToPath, URL } from 'node:url'
 
+/** 站点部署路径：GitHub Pages 项目站点为 /<repo>/；换域名或根路径时只改这一处 */
+const base = '/vue-stack-tabs/'
+
 export default defineConfig({
-  base: '/vue-stack-tabs/',
+  base,
   vite: {
+    server: {
+      // 固定端口，与演示应用的 5174 区分开；端口被占用时先执行 `pnpm run clean:ports`
+      port: 5173,
+      strictPort: true
+    },
     resolve: {
       alias: {
         '@': fileURLToPath(new URL('../../src', import.meta.url))
@@ -134,7 +142,7 @@ export default defineConfig({
   title: 'Vue Stack Tabs',
   description:
     'Vue 3 multi-tab manager built on Vue Router: iframe-like tab isolation, stack-based navigation, keep-alive caching and a Nuxt 3/4 module.',
-  head: [['link', { rel: 'icon', href: '/img/logo.svg' }]],
+  head: [['link', { rel: 'icon', type: 'image/svg+xml', href: `${base}img/logo.svg` }]],
   themeConfig: {
     logo: '/img/logo.svg',
     footer: {

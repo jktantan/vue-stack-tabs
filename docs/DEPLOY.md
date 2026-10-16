@@ -91,10 +91,12 @@ jobs:
           publish_dir: ./docs/.vitepress/dist
 ```
 
-### Demo 工作原理
+### 演示（Demo）工作原理
 
-- **开发环境**：`pnpm run docs:dev` 启动文档服务，Demo 以 Vue 组件形式嵌入文档（见 `docs/.vitepress/EMBEDDED_DEMO.md`），无需单独启动 Demo 服务
-- **生产环境**：Demo 已构建到 `/demo/` 目录，iframe 直接加载部署后的 Demo
+- **开发环境**：`pnpm run docs:dev` 会并行启动文档（5173）与演示应用（5174）；文档中的 `<DemoPreview />` 以 iframe 指向演示应用
+- **生产环境**：`docs:build` 先构建文档，再把演示应用构建到 `docs/.vitepress/dist/demo-app/`，部署后 iframe 指向 `{base}demo-app/`
+
+实现细节见 `docs/.vitepress/EMBEDDED_DEMO.md`。
 
 ### 验证部署
 
@@ -102,8 +104,8 @@ jobs:
 
 - 文档首页：`https://username.github.io/vue-stack-tabs/`
 - 中文文档：`https://username.github.io/vue-stack-tabs/zh/`
-- Demo 页面：`https://username.github.io/vue-stack-tabs/demo.html`
-- Demo 应用：`https://username.github.io/vue-stack-tabs/demo/demo`
+- 演示页（文档中内嵌的 iframe）：`https://username.github.io/vue-stack-tabs/demo.html`
+- 演示应用（独立打开）：`https://username.github.io/vue-stack-tabs/demo-app/`
 
 ## 本地预览
 

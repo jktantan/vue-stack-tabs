@@ -21,7 +21,7 @@ vi.mock('vue', async () => {
 
 vi.mock('vue-router', () => ({
   useRoute: () => ({ query: { __tab: 'encoded-tab' } }),
-  useRouter: () => ({ push }),
+  useRouter: () => ({ push, replace: vi.fn() }),
   isNavigationFailure: (value: unknown) =>
     typeof value === 'object' && value !== null && 'type' in value
 }))

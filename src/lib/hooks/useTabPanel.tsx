@@ -222,7 +222,22 @@ export default (providedRuntimeContext?: StackTabsRuntimeContext) => {
     return true
   }
 
-  /** 从路由解析 tabInfo，若无则创建默认信息，调用方负责把编码信息写入内部 page.query */
+  /** 把已有标签的对外字段提取为 ITabBase（用于让路由归属回该标签） */
+  const toTabBase = (tab: ITabItem): ITabBase => ({
+    id: tab.id,
+    title: tab.title,
+    closable: tab.closable,
+    refreshable: tab.refreshable,
+    iframe: tab.iframe,
+    iframeRefreshMode: tab.iframeRefreshMode
+  })
+
+  /**
+   * 从路由解析 tabInfo，若无则创建默认信息，调用方负责把编码信息写入内部 page.query。
+   *
+   * 首次进入应用时 URL 上通常还没有 __tab：此时优先接管 path 匹配的默认标签（defaultTabs），
+   * 由调用方把 __tab 写回地址，保证「URL 指向默认标签」；确实找不到归属时才新建兜底标签。
+   */
   const parseTabInfoFromRoute = (route: RouteLocationNormalizedLoaded): ITabBase => {
     if (typeof route.query.__tab === 'string') {
       const tabInfo = decodeTabInfo(route.query.__tab)
@@ -233,14 +248,14 @@ export default (providedRuntimeContext?: StackTabsRuntimeContext) => {
     const activeTab = tabs.value.find((tab) => tab.active)
     const activePage = activeTab?.pages.peek()
     if (activeTab && activePage?.path === path) {
-      return {
-        id: activeTab.id,
-        title: activeTab.title,
-        closable: activeTab.closable,
-        refreshable: activeTab.refreshable,
-        iframe: activeTab.iframe,
-        iframeRefreshMode: activeTab.iframeRefreshMode
-      }
+      return toTabBase(activeTab)
+    }
+
+    // 尚无激活标签（首屏）：接管栈顶 path 与当前路由一致的默认标签，
+    // 避免同一个页面既留下默认标签、又生成一个「未命名」的兜底标签。
+    if (!activeTab) {
+      const defaultTab = tabs.value.find((tab) => tab.pages.peek()?.path === path)
+      if (defaultTab) return toTabBase(defaultTab)
     }
 
     return {
@@ -383,6 +398,16 @@ export default (providedRuntimeContext?: StackTabsRuntimeContext) => {
       targetTab = findOrCreateTargetTab(tabInfo, route, cacheName, page)
     } else {
       setActiveTab(targetTab!.id)
+    }
+
+    // 首屏 URL 往往没有 __tab（用户直接打开默认路由）：把解析出的标签编码写回地址，
+    // 保证 URL 始终指向当前标签；之后的导航各自会带上自己的 __tab。
+    if (typeof route.query.__tab !== 'string') {
+      void router.replace({
+        path: route.path,
+        query: { ...cloneLocationQuery(route.query), __tab: encodeTabInfo(tabInfo) },
+        hash: route.hash
+      })
     }
 
     saveActiveTabToSession(targetTab!)

@@ -1,0 +1,322 @@
+/**
+ * 演示应用的全局样式。
+ *
+ * 品牌色取自仓库 favicon.svg：#377dff（主）+ #00d797（强调），
+ * 与文档站保持同一套 token，使 iframe 内外观感连续。
+ */
+:root {
+  --demo-brand: #377dff;
+  --demo-brand-strong: #2b68db;
+  --demo-brand-soft: #eaf1ff;
+  --demo-accent: #00d797;
+  --demo-text: #1f2d3d;
+  --demo-muted: #5c6b7a;
+  --demo-border: #e2e8f0;
+  --demo-bg: #f7f9fc;
+  --demo-surface: #ffffff;
+  --demo-surface-2: #eef2f8;
+  --demo-danger: #d94b4b;
+  --demo-radius: 10px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family:
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    'PingFang SC',
+    'Hiragino Sans GB',
+    'Microsoft YaHei',
+    sans-serif;
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--demo-text);
+  background: var(--demo-bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+code,
+kbd {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.9em;
+  padding: 1px 5px;
+  border-radius: 5px;
+  background: var(--demo-surface-2);
+  color: var(--demo-brand-strong);
+}
+
+/* ---------- 按钮 ---------- */
+
+.demo-btn {
+  padding: 6px 12px;
+  border: 1px solid var(--demo-border);
+  border-radius: 7px;
+  background: var(--demo-surface);
+  color: var(--demo-text);
+  font-size: 12px;
+  line-height: 1.5;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    color 0.15s ease,
+    background 0.15s ease;
+}
+
+.demo-btn:hover {
+  border-color: var(--demo-brand);
+  color: var(--demo-brand);
+}
+
+.demo-btn:focus-visible {
+  outline: 2px solid var(--demo-brand);
+  outline-offset: 1px;
+}
+
+.demo-btn--danger:hover {
+  border-color: var(--demo-danger);
+  color: var(--demo-danger);
+}
+
+.demo-btn--primary {
+  border-color: transparent;
+  background: var(--demo-brand);
+  color: #fff;
+}
+
+.demo-btn--primary:hover {
+  background: var(--demo-brand-strong);
+  color: #fff;
+}
+
+/* ---------- 页面骨架 ---------- */
+
+.page {
+  padding: 30px 34px 40px;
+  max-width: 900px;
+}
+
+.page-head {
+  margin-bottom: 24px;
+}
+
+.eyebrow {
+  margin: 0 0 6px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--demo-brand);
+}
+
+.page h1 {
+  margin: 0 0 8px;
+  font-size: 24px;
+  line-height: 1.3;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.page h2 {
+  margin: 28px 0 10px;
+  font-size: 15px;
+  font-weight: 650;
+}
+
+.lead {
+  margin: 0;
+  max-width: 62ch;
+  color: var(--demo-muted);
+}
+
+.muted {
+  color: var(--demo-muted);
+}
+
+/* ---------- 卡片与网格 ---------- */
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 14px;
+}
+
+.card {
+  padding: 16px 18px;
+  border: 1px solid var(--demo-border);
+  border-radius: var(--demo-radius);
+  background: var(--demo-surface);
+}
+
+.card h3 {
+  margin: 0 0 6px;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.card p {
+  margin: 0;
+  color: var(--demo-muted);
+  font-size: 13px;
+}
+
+.card--accent {
+  border-color: color-mix(in srgb, var(--demo-accent) 45%, var(--demo-border));
+  background: color-mix(in srgb, var(--demo-accent) 6%, var(--demo-surface));
+}
+
+/* ---------- 表格 ---------- */
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid var(--demo-border);
+  border-radius: var(--demo-radius);
+  overflow: hidden;
+  background: var(--demo-surface);
+}
+
+.table th,
+.table td {
+  padding: 11px 14px;
+  text-align: left;
+  border-bottom: 1px solid var(--demo-border);
+  font-size: 13px;
+}
+
+.table th {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--demo-muted);
+  background: var(--demo-surface-2);
+}
+
+.table tr:last-child td {
+  border-bottom: none;
+}
+
+.tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  background: var(--demo-brand-soft);
+  color: var(--demo-brand-strong);
+}
+
+/* ---------- 表单 ---------- */
+
+.field {
+  margin-bottom: 16px;
+}
+
+.field label {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 12px;
+  color: var(--demo-muted);
+}
+
+.field input,
+.field select,
+.field textarea {
+  width: 100%;
+  max-width: 420px;
+  padding: 8px 10px;
+  border: 1px solid var(--demo-border);
+  border-radius: 7px;
+  background: var(--demo-surface);
+  font: inherit;
+  font-size: 13px;
+  color: var(--demo-text);
+}
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+  outline: none;
+  border-color: var(--demo-brand);
+  box-shadow: 0 0 0 3px var(--demo-brand-soft);
+}
+
+/* ---------- 步骤 / 列表 ---------- */
+
+.steps {
+  margin: 0;
+  padding-left: 20px;
+  color: var(--demo-muted);
+}
+
+.steps li {
+  margin-bottom: 6px;
+}
+
+.row-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--demo-border);
+  border-radius: var(--demo-radius);
+  background: var(--demo-surface);
+  overflow: hidden;
+}
+
+.row-list li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--demo-border);
+  font-variant-numeric: tabular-nums;
+}
+
+.row-list li:last-child {
+  border-bottom: none;
+}
+
+.row-list .idx {
+  width: 44px;
+  font-size: 12px;
+  color: var(--demo-muted);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.notice {
+  padding: 14px 16px;
+  border-left: 3px solid var(--demo-brand);
+  border-radius: 0 var(--demo-radius) var(--demo-radius) 0;
+  background: var(--demo-brand-soft);
+  color: var(--demo-text);
+  font-size: 13px;
+}
+
+.notice p {
+  margin: 0 0 8px;
+}
+
+.notice p:last-child {
+  margin-bottom: 0;
+}
+
+@media (max-width: 640px) {
+  .page {
+    padding: 20px 18px 30px;
+  }
+}

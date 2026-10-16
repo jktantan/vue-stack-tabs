@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>iframe 标签内的页面</title>
+    <style>
+      :root {
+        color-scheme: light;
+      }
+      body {
+        margin: 0;
+        padding: 24px;
+        font-family:
+          system-ui,
+          -apple-system,
+          'Segoe UI',
+          'PingFang SC',
+          'Microsoft YaHei',
+          sans-serif;
+        background: #eef7f1;
+        color: #1f2d3d;
+      }
+      .card {
+        background: #fff;
+        border: 1px solid #d8e6dd;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 2px 12px rgba(31, 45, 61, 0.06);
+      }
+      h1 {
+        margin: 0 0 4px;
+        font-size: 18px;
+      }
+      .hint {
+        margin: 0 0 16px;
+        color: #5c6b7a;
+        font-size: 13px;
+        line-height: 1.7;
+      }
+      code {
+        background: #f3f6f4;
+        border-radius: 4px;
+        padding: 1px 5px;
+        font-size: 12px;
+      }
+      input {
+        width: 100%;
+        max-width: 320px;
+        padding: 8px 10px;
+        border: 1px solid #cbd5d0;
+        border-radius: 6px;
+        font-size: 13px;
+      }
+      label {
+        display: block;
+        margin: 16px 0 6px;
+        font-size: 13px;
+        color: #5c6b7a;
+      }
+      button {
+        margin-top: 16px;
+        padding: 9px 16px;
+        border: none;
+        border-radius: 6px;
+        background: #2f9e6b;
+        color: #fff;
+        font-size: 13px;
+        cursor: pointer;
+      }
+      button.secondary {
+        background: #fff;
+        color: #2f9e6b;
+        border: 1px solid #9ed0b4;
+        margin-left: 8px;
+      }
+      .log {
+        margin-top: 16px;
+        padding: 10px 12px;
+        border-radius: 6px;
+        background: #f6faf7;
+        color: #5c6b7a;
+        font-size: 12px;
+        min-height: 18px;
+      }
+      footer {
+        margin-top: 16px;
+        font-size: 12px;
+        color: #8a97a3;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h1>这个页面运行在隔离的 iframe 里</h1>
+      <p class="hint">
+        它属于 <code>vue-stack-tabs</code> 的 iframe 标签：拥有独立的
+        <code>window</code> 与文档，缓存与路由标签页互不干扰。下面的输入内容不会被标签切换销毁。
+      </p>
+
+      <label for="note">输入点内容，切走再切回来：</label>
+      <input id="note" type="text" placeholder="切走该标签页，内容是否还在？" />
+
+      <button type="button" id="open-tab">请求父窗口打开一个新标签</button>
+      <button type="button" class="secondary" id="reload">模拟内页刷新</button>
+
+      <div class="log" id="log">等待操作…</div>
+      <footer>加载时间：<span id="time"></span></footer>
+    </div>
+
+    <script>
+      const log = (message) => {
+        document.getElementById('log').innerText = message
+      }
+      document.getElementById('time').innerText = new Date().toLocaleTimeString()
+
+      // iframe -> 父窗口：请求打开新标签（生产环境请使用明确的父窗口 origin）
+      document.getElementById('open-tab').addEventListener('click', () => {
+        window.parent.postMessage(
+          {
+            type: 'vue-stack-tabs:openTab',
+            payload: {
+              title: '来自 iframe 的新标签',
+              path: '/notice'
+            }
+          },
+          window.location.origin
+        )
+        log('已向父窗口发送 vue-stack-tabs:openTab')
+      })
+
+      document.getElementById('reload').addEventListener('click', () => {
+        location.reload()
+      })
+
+      // 父窗口 -> iframe：刷新请求
+      window.addEventListener('message', (event) => {
+        if (event.source !== window.parent) return
+        if (event.data && event.data.type === 'vue-stack-tabs:refresh') {
+          log('收到父窗口刷新请求，正在重载内页…')
+          location.reload()
+        }
+      })
+    </script>
+  </body>
+</html>

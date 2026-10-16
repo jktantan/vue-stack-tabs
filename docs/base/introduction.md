@@ -2,7 +2,7 @@
 
 ## Live Preview
 
-<DemoPreview path="/demo" title="Getting Started Demo" />
+<DemoPreview title="Getting Started Demo" />
 
 ## Import the Plugin
 

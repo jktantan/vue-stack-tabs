@@ -2,7 +2,7 @@
 
 ## 效果预览
 
-<DemoPreview path="/demo" title="入门示例" />
+<DemoPreview title="入门示例 · Getting Started" />
 
 ## 引入组件
 
