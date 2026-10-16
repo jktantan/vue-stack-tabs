@@ -2,7 +2,7 @@
   <section class="page">
     <header class="page-head">
       <p class="eyebrow">公告 · Notice</p>
-      <h1>v1.4.0 发布说明</h1>
+      <h1>v1.4.1 发布说明</h1>
       <p class="lead">这是一个普通的内容页，用来演示「同一路由可以被多个标签分别打开」。</p>
     </header>
 
