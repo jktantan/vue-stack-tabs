@@ -177,6 +177,41 @@ describe('useTabPanel', () => {
     runtime.cleanup()
   })
 
+  it('session 恢复的标签与当前路由不一致时，首屏路由归属到 path 匹配的默认标签', async () => {
+    const runtime = await withRuntimeContext()
+    const { Stack } = await import('@/lib/model/TabModel')
+    const { default: useTabPanel } = await import('@/lib/hooks/useTabPanel')
+    const panel = useTabPanel()
+
+    // 上次会话停留在 /form（重新加载后 URL 上没有 hash，首屏路由是 /）
+    window.sessionStorage.setItem(
+      'stacktab-active-tab',
+      JSON.stringify({
+        id: 'form',
+        title: '表单',
+        closable: true,
+        refreshable: true,
+        iframe: false,
+        iframeRefreshMode: 'postMessage',
+        url: 'about:blank',
+        active: true,
+        pages: new Stack([{ id: 'form-page', tabId: 'form', path: '/form', query: {} }])
+      })
+    )
+
+    panel.initialize([{ id: 'home', title: '首页', path: '/' }])
+    panel.addPage(mockRoute('/'), {} as never)
+
+    expect(panel.tabs.value.map((tab: ITabItem) => tab.id)).toEqual(['home', 'form'])
+    expect(panel.tabs.value.find((tab: ITabItem) => tab.active)?.id).toBe('home')
+    expect(panel.tabs.value.some((tab: ITabItem) => tab.title === 'VueStackTab.undefined')).toBe(
+      false
+    )
+
+    panel.destroy()
+    runtime.cleanup()
+  })
+
   it('无效 __tab 不会创建空 id 标签', async () => {
     const runtime = await withRuntimeContext()
     const { default: useTabPanel } = await import('@/lib/hooks/useTabPanel')

@@ -251,12 +251,11 @@ export default (providedRuntimeContext?: StackTabsRuntimeContext) => {
       return toTabBase(activeTab)
     }
 
-    // 尚无激活标签（首屏）：接管栈顶 path 与当前路由一致的默认标签，
-    // 避免同一个页面既留下默认标签、又生成一个「未命名」的兜底标签。
-    if (!activeTab) {
-      const defaultTab = tabs.value.find((tab) => tab.pages.peek()?.path === path)
-      if (defaultTab) return toTabBase(defaultTab)
-    }
+    // 当前激活标签与路由不一致：首屏 URL 无 __tab，或 session 恢复了上次激活的其它标签
+    //（演示应用在 iframe 中重载后 hash 为空即属此类）。此时接管栈顶 path 与当前路由一致的
+    // 标签（默认标签或已有标签），避免同一个页面既留下已有标签、又生成一个「未命名」的兜底标签。
+    const pathMatchedTab = tabs.value.find((tab) => tab.pages.peek()?.path === path)
+    if (pathMatchedTab) return toTabBase(pathMatchedTab)
 
     return {
       id: crypto.randomUUID(),

@@ -75,6 +75,29 @@ describe('首屏 URL 没有 __tab 时的标签归属', () => {
     expect(decodeTabInfo(String(encoded)).id).toBe('home')
   })
 
+  it('session 恢复了其它标签时，首屏路由仍归属 path 匹配的默认标签', async () => {
+    // 上次会话停留在 /iframe（例如演示应用重新加载后 hash 为空，首屏路由是 /）
+    window.sessionStorage.setItem(
+      'stacktab-active-tab',
+      JSON.stringify({
+        id: 'restored',
+        title: '恢复的标签',
+        closable: true,
+        refreshable: true,
+        iframe: false,
+        iframeRefreshMode: 'postMessage',
+        active: true,
+        pages: [{ id: 'restored-page', tabId: 'restored', path: '/iframe', query: {} }]
+      })
+    )
+
+    const { wrapper, router } = await mountStackTabs([{ id: 'home', title: '首页', path: '/' }])
+
+    const tabIds = wrapper.findAll('[role="tab"]').map((tab) => tab.attributes('data-tab-id'))
+    expect(tabIds).toEqual(['home', 'restored'])
+    expect(decodeTabInfo(String(router.currentRoute.value.query.__tab)).id).toBe('home')
+  })
+
   it('没有匹配的默认标签时才创建兜底标签', async () => {
     // 默认标签的 path 与当前路由（/）不一致 → 只能新建承载标签
     const { wrapper } = await mountStackTabs([{ id: 'other', title: '其它', path: '/iframe' }])
