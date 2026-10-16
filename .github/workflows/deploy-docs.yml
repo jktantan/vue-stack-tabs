@@ -1,0 +1,83 @@
+# 构建 VitePress 文档 + 独立演示应用，并发布到 GitHub Pages。
+#
+# 首次使用需要在本仓库的 Settings → Pages 中把 Source 设为 “GitHub Actions”。
+# 站点地址：https://<owner>.github.io/vue-stack-tabs/
+# （对应的 base 在 docs/.vitepress/config.ts 的 `base` 常量里，换域名时只改那一处）
+name: Deploy docs to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  # 支持在 Actions 页面手动触发
+  workflow_dispatch:
+
+# GitHub Pages 部署所需权限：pages 写权限 + OIDC id-token
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 同一时刻只允许一个 Pages 部署；不打断进行中的部署
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 12
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          # 与本地开发保持一致（@tsconfig/node26 / @types/node 26）
+          node-version: 26
+
+      # 仓库未提交 pnpm-lock.yaml（见 .gitignore），因此用 package.json 计算缓存 key
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/share/pnpm/store
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      # 质量门禁：类型与单测不通过则不部署
+      - name: Type check
+        run: pnpm run type-check
+
+      - name: Unit tests
+        run: pnpm run test
+
+      # 构建文档站，并额外把演示应用构建到 docs/.vitepress/dist/demo-app/
+      - name: Build docs and demo
+        run: pnpm run docs:build
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/.vitepress/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
