@@ -37,6 +37,7 @@ export default function useTabActions(providedRuntimeContext?: StackTabsRuntimeC
     canAddTab,
     renewTab,
     getTab,
+    getTopPage,
     tabs,
     moveTab,
     removeTab,
@@ -152,8 +153,7 @@ export default function useTabActions(providedRuntimeContext?: StackTabsRuntimeC
     target: { tabId?: string; pageId?: string } = {}
   ): HTMLElement | undefined => {
     if (typeof document === 'undefined') return undefined
-    const pageId =
-      target.pageId ?? (target.tabId ? getTab(target.tabId)?.pages.peek()?.id : undefined)
+    const pageId = target.pageId ?? (target.tabId ? getTopPage(target.tabId)?.id : undefined)
     if (pageId) return document.getElementById(`W-${pageId}`) ?? undefined
     return document.querySelector<HTMLElement>('.cache-page-wrapper') ?? undefined
   }

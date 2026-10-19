@@ -2,7 +2,6 @@ import { defu } from 'defu'
 import { getCurrentInstance } from 'vue'
 import type { ComponentInternalInstance } from 'vue'
 import type { LocationQueryRaw, RouteLocationPathRaw } from 'vue-router'
-import type { ITabPage } from '../model/TabModel'
 import { isNavigationFailure, useRoute, useRouter } from 'vue-router'
 
 import useTabPanel from './useTabPanel'
@@ -17,18 +16,6 @@ import { TabEventType, useTabEmitter } from './useTabEventBus'
 import { runNavigationTransaction } from './tabPanel/navigationTransaction'
 
 import { createPageId } from '../utils/tabInfoEncoder'
-
-interface PageStackLike {
-  clear: () => void
-  push: (page: ITabPage) => void
-}
-
-const restorePages = (stack: PageStackLike, pages: ITabPage[]) => {
-  stack.clear()
-  for (const page of pages) {
-    stack.push(clonePage(page))
-  }
-}
 
 /**
  * useTabRouter - 标签内路由 Hook
@@ -62,7 +49,19 @@ export default function useTabRouter() {
   const route = useRoute()
   const router = useRouter()
   const emitter = useTabEmitter()
-  const { getTab, evictPageCache, addPageScroller, active: activateTab } = useTabPanel()
+  const {
+    getTab,
+    getTopPage,
+    getPages,
+    appendPage,
+    popPages,
+    getPageSnapshot,
+    replacePages,
+    updatePage,
+    evictPageCache,
+    addPageScroller,
+    active: activateTab
+  } = useTabPanel()
 
   /**
    * 当前标签的编码信息字符串，存于 URL query.__tab。
@@ -87,7 +86,7 @@ export default function useTabRouter() {
     const targetQuery = (to.query || {}) as LocationQueryRaw
 
     if (tab) {
-      const top = tab.pages.peek()
+      const top = getTopPage(tab.id)
       if (top && top.path === to.path) {
         if (isSameQueryIgnoringReserved(targetQuery, top.query || {})) {
           if (!tab.active) {
@@ -107,10 +106,10 @@ export default function useTabRouter() {
     let optimisticPageId = ''
     runNavigationTransaction({
       apply: () => {
-        const snapshot = tab ? tab.pages.readonlyList().map((p) => clonePage(p)) : []
+        const snapshot = tab ? getPageSnapshot(tab.id) : []
         if (tab) {
           optimisticPageId = createPageId()
-          tab.pages.push({
+          appendPage(tab.id, {
             id: optimisticPageId,
             tabId: tab.id,
             path: to.path,
@@ -121,14 +120,14 @@ export default function useTabRouter() {
       },
       navigate: () => router.push({ path: to.path, query }),
       rollback: (snapshot) => {
-        if (tab) restorePages(tab.pages, snapshot)
+        if (tab) replacePages(tab.id, snapshot)
       },
       isFailureResult: isNavigationFailure,
       isCurrent: () => navigationVersion === transactionVersion,
       cleanupStale: () => {
         if (!tab || !optimisticPageId) return
-        const pages = tab.pages.list().filter((page) => page.id !== optimisticPageId)
-        restorePages(tab.pages, pages)
+        const pages = getPages(tab.id).filter((page) => page.id !== optimisticPageId)
+        replacePages(tab.id, pages)
       }
     }).catch((error: unknown) => {
       if (!import.meta.env.PROD) {
@@ -149,7 +148,7 @@ export default function useTabRouter() {
     const tab = getTab(tabId)
     if (!tab) return false
 
-    const stack = tab.pages
+    const pages = getPages(tab.id)
     let steps = 0
 
     if (typeof to === 'number') {
@@ -157,10 +156,9 @@ export default function useTabRouter() {
     } else {
       const parsed = parseUrl(to)
       const targetQuery = parsed.query || {}
-      const pages = stack.readonlyList()
       let found = false
 
-      for (let i = stack.size() - 2; i >= 0; i--) {
+      for (let i = pages.length - 2; i >= 0; i--) {
         steps++
         const page = pages[i]
         if (
@@ -184,33 +182,30 @@ export default function useTabRouter() {
 
     if (steps <= 0) return false
 
-    if (stack.size() <= steps) {
+    const availableSteps = pages.length - 1
+    if (availableSteps < steps) {
       // 请求退栈步数大于当前可用层数时，仅退到栈底（首页）；开发模式下提示维护者。
       if (!import.meta.env.PROD) {
         console.warn(
-          `[vue-stack-tabs] backward requested ${steps} steps but stack only has ${stack.size() - 1} available.`
+          `[vue-stack-tabs] backward requested ${steps} steps but stack only has ${availableSteps} available.`
         )
       }
-      steps = stack.size() - 1
+      steps = availableSteps
     }
 
     if (steps <= 0) return false
 
-    const originalPages = stack.readonlyList().map((p) => clonePage(p))
-    const recyclingBin: string[] = []
-    for (let i = 0; i < steps; i++) {
-      const popped = stack.pop()
-      if (popped) recyclingBin.push(popped.id)
-    }
+    const originalPages = getPageSnapshot(tab.id)
+    const recyclingBin = popPages(tab.id, steps).map((page) => page.id)
 
-    const target = stack.peek()
+    const target = getTopPage(tab.id)
     if (!target) {
-      restorePages(stack, originalPages)
+      replacePages(tab.id, originalPages)
       return false
     }
 
     if (backQuery) {
-      target._backParams = backQuery
+      updatePage(tab.id, target.id, { _backParams: backQuery })
     }
 
     emitter.emit(TabEventType.BACKWARD)
@@ -222,7 +217,7 @@ export default function useTabRouter() {
     runNavigationTransaction({
       apply: () => originalPages,
       navigate: () => router.push({ path: target.path, query: targetQueryWithTab }),
-      rollback: (snapshot) => restorePages(stack, snapshot),
+      rollback: (snapshot) => replacePages(tab.id, snapshot),
       isFailureResult: isNavigationFailure,
       isCurrent: () => navigationVersion === transactionVersion,
       commit: () => {
@@ -231,7 +226,7 @@ export default function useTabRouter() {
         }
       },
       cleanupStale: () => {
-        const activePageIds = new Set(stack.list().map((page) => page.id))
+        const activePageIds = new Set(getPages(tab.id).map((page) => page.id))
         for (const id of recyclingBin) {
           if (!activePageIds.has(id)) evictPageCache(id)
         }

@@ -25,15 +25,14 @@ import {
   omitStackTabsReservedQuery,
   toSafeTabUrl,
   decodeSafeTabUrl,
-  cloneLocationQuery,
-  clonePage
+  cloneLocationQuery
 } from '../utils/urlParser'
 import { TabEventType, useTabEmitter } from './useTabEventBus'
 import { runNavigationTransaction } from './tabPanel/navigationTransaction'
 import { useI18n } from 'vue-i18n-lite'
 
 import { resolveStackTabsRuntimeContext, type StackTabsRuntimeContext } from './stackTabsContext'
-import { createTabPanelEviction } from './tabPanel/evict'
+import { getTabStore } from './tabPanel/tabStore'
 import { createTabPanelScroll } from './tabPanel/scroll'
 import { createTabPanelSession } from './tabPanel/session'
 import { createTabPanelRefresh } from './tabPanel/refresh'
@@ -58,27 +57,50 @@ export default (providedRuntimeContext?: StackTabsRuntimeContext) => {
   const runtimeContext = providedRuntimeContext ?? resolveStackTabsRuntimeContext()
   const emitter = useTabEmitter(runtimeContext)
   const { t } = useI18n()
+  const { tabs, defaultTabs, caches, refreshKey, iframeRefreshKeys, isInitialized } = runtimeContext
+  const store = getTabStore(runtimeContext)
   const {
-    tabs,
-    defaultTabs,
-    caches,
-    components,
-    tabIdsToEvict,
-    refreshKey,
-    iframeRefreshKeys,
-    isInitialized,
-    cacheIdsToEvict
-  } = runtimeContext
-  const {
+    getTabs,
+    getTab,
+    getActiveTab,
+    findTabByTopPagePath,
+    hasTab,
+    canAddTab,
+    getPages,
+    getTopPage,
+    getPageSnapshot,
+    addTab,
+    addTabs,
+    activateTab,
+    moveTab,
+    removeTab: removeTabFromStore,
+    removeTabs: removeTabsFromStore,
+    appendPage,
+    popPages,
+    replacePages,
+    clearPages,
+    updatePage,
+    consumeBackParams,
     markCacheForEviction,
-    markTabPagesForEviction,
     markTabPagesForEvictionOnly,
     addCache,
     removeCache,
     evictMarkedCaches,
     evictPageCache,
-    replacePageCaches
-  } = createTabPanelEviction(runtimeContext)
+    replacePageCaches,
+    isTabMarkedForEviction,
+    isCacheMarkedForEviction,
+    unmarkCacheForEviction,
+    clearTabEvictionMarks,
+    getComponent,
+    setComponent,
+    deleteComponent,
+    snapshotComponents,
+    restoreComponents,
+    snapshotCaches,
+    restoreCaches,
+    reset: resetStore
+  } = store
   const { restoreScroller, saveScroller, removeScroller, addPageScroller } =
     createTabPanelScroll(runtimeContext)
   const {
@@ -89,7 +111,7 @@ export default (providedRuntimeContext?: StackTabsRuntimeContext) => {
     getSessionKey
   } = createTabPanelSession(runtimeContext)
 
-  const size = (): number => tabs.value.length
+  const size = (): number => getTabs().length
 
   /**
    * 初始化：根据 defaultTabs 创建标签与初始页面，并尝试从 sessionStorage 恢复上次激活的标签
@@ -139,88 +161,43 @@ export default (providedRuntimeContext?: StackTabsRuntimeContext) => {
     }
 
     defaultTabs.value = [...defaultTabs.value, ...newDefaults]
-    tabs.value = [...tabs.value, ...newTabs]
+    addTabs(newTabs)
 
     // SSR 环境无 sessionStorage，直接跳过恢复。
     const storedTabJson =
       typeof window !== 'undefined' ? sessionStorage.getItem(getSessionKey()) : null
     const restoredTab = restoreTabFromSession(storedTabJson)
-    if (restoredTab && !tabs.value.some((t) => t.id === restoredTab.id)) {
+    if (restoredTab && !hasTab(restoredTab.id)) {
       if (restoredTab.url) restoredTab.url = toSafeTabUrl(restoredTab.url)
       if (restoredTab.iframe && restoredTab.url && restoredTab.iframeRefreshMode === undefined) {
         restoredTab.iframeRefreshMode = isCrossOriginUrl(restoredTab.url) ? 'reload' : 'postMessage'
       }
 
       if (restoredTab.pages && typeof restoredTab.pages.list === 'function') {
-        const pages = restoredTab.pages.list()
-        pages.forEach((page) => {
+        addTab(restoredTab)
+        for (const page of getPages(restoredTab.id)) {
           if (page && page.id) addCache(page.id)
-        })
+        }
+      } else {
+        addTab(restoredTab)
       }
-
-      tabs.value = [...tabs.value, restoredTab]
     }
     isInitialized.value = true
   }
 
-  const hasTab = (id: string) => tabs.value.some((t) => t.id === id)
-  const canAddTab = () =>
-    runtimeContext.maxTabCount.value <= 0 ||
-    (runtimeContext.maxTabCount.value > 0 && runtimeContext.maxTabCount.value > tabs.value.length)
-
-  const addTab = (tab: ITabItem): void => {
-    tabs.value = [...tabs.value, tab]
-  }
-
-  const getTab = (id: string) => tabs.value.find((t) => t.id === id) ?? null
-
-  /**
-   * 唯一的标签激活状态写入口。即使标签对象保持不变，也替换列表引用，
-   * 让 TabHeader 与 iframe 视图在同一个响应式提交中观察到一致状态。
-   */
-  const setActiveTab = (id: string): ITabItem | null => {
-    let activeTab: ITabItem | null = null
-    tabs.value = tabs.value.map((tab) => {
-      tab.active = tab.id === id
-      if (tab.active) activeTab = tab
-      return tab
-    })
-    return activeTab
-  }
-
   const { resolvePageComponent } = createPageComponentFactory({
     runtimeContext,
-    getTab,
+    consumeBackParams,
+    getComponent,
+    setComponent,
     addCache,
     evictMarkedCaches,
+    clearTabEvictionMarks,
     addPageScroller,
     saveScroller,
     restoreScroller,
     removeScroller
   })
-
-  /**
-   * 将指定标签移动到目标索引。标签对象本身不变，因此其页面栈和缓存关联保持不受影响。
-   * @returns 是否实际调整了顺序
-   */
-  const moveTab = (id: string, targetIndex: number): boolean => {
-    const sourceIndex = tabs.value.findIndex((tab) => tab.id === id)
-    if (
-      sourceIndex < 0 ||
-      targetIndex < 0 ||
-      targetIndex >= tabs.value.length ||
-      sourceIndex === targetIndex
-    ) {
-      return false
-    }
-
-    const reorderedTabs = tabs.value.slice()
-    const [tab] = reorderedTabs.splice(sourceIndex, 1)
-    if (!tab) return false
-    reorderedTabs.splice(targetIndex, 0, tab)
-    tabs.value = reorderedTabs
-    return true
-  }
 
   /** 把已有标签的对外字段提取为 ITabBase（用于让路由归属回该标签） */
   const toTabBase = (tab: ITabItem): ITabBase => ({
@@ -245,8 +222,8 @@ export default (providedRuntimeContext?: StackTabsRuntimeContext) => {
     }
 
     const path = normalizePathForCache(route)
-    const activeTab = tabs.value.find((tab) => tab.active)
-    const activePage = activeTab?.pages.peek()
+    const activeTab = getActiveTab()
+    const activePage = activeTab ? getTopPage(activeTab.id) : null
     if (activeTab && activePage?.path === path) {
       return toTabBase(activeTab)
     }
@@ -254,7 +231,7 @@ export default (providedRuntimeContext?: StackTabsRuntimeContext) => {
     // 当前激活标签与路由不一致：首屏 URL 无 __tab，或 session 恢复了上次激活的其它标签
     //（演示应用在 iframe 中重载后 hash 为空即属此类）。此时接管栈顶 path 与当前路由一致的
     // 标签（默认标签或已有标签），避免同一个页面既留下已有标签、又生成一个「未命名」的兜底标签。
-    const pathMatchedTab = tabs.value.find((tab) => tab.pages.peek()?.path === path)
+    const pathMatchedTab = findTabByTopPagePath(path)
     if (pathMatchedTab) return toTabBase(pathMatchedTab)
 
     return {
@@ -292,13 +269,14 @@ export default (providedRuntimeContext?: StackTabsRuntimeContext) => {
         active: true,
         pages
       } as unknown as ITabItem
-      setActiveTab('')
+      activateTab('')
       addTab(targetTab)
       emitter.emit(TabEventType.TAB_ACTIVE, { id: tabInfo.id!, isRoute: false })
     } else {
-      setActiveTab(targetTab.id)
-      if (targetTab.pages.isEmpty() || targetTab.pages.peek()!.id !== page.id) {
-        targetTab.pages.push(page)
+      activateTab(targetTab.id)
+      const topPage = getTopPage(targetTab.id)
+      if (!topPage || topPage.id !== page.id) {
+        appendPage(targetTab.id, page)
       }
     }
     return targetTab
@@ -318,7 +296,7 @@ export default (providedRuntimeContext?: StackTabsRuntimeContext) => {
     | { empty: true }
     | { recovered: DefineComponent; cacheName: string } => {
     const tabInfo = parseTabInfoFromRoute(route)
-    if (tabIdsToEvict.has(tabInfo.id!)) return { empty: true }
+    if (isTabMarkedForEviction(tabInfo.id!)) return { empty: true }
 
     const path = normalizePathForCache(route)
 
@@ -326,14 +304,14 @@ export default (providedRuntimeContext?: StackTabsRuntimeContext) => {
     let cacheName: string
     let page: ITabPage | null = null
 
-    if (targetTab && !targetTab.pages.isEmpty()) {
-      const top = targetTab.pages.peek()
+    if (targetTab && getTopPage(targetTab.id)) {
+      const top = getTopPage(targetTab.id)!
       if (!top) throw new Error('[vue-stack-tabs] Stack is not empty but peek() returned undefined')
 
       if (top.path === path) {
         cacheName = top.id
       } else {
-        const pagesList = targetTab.pages.readonlyList()
+        const pagesList = getPages(targetTab.id)
         let foundIndex = -1
         for (let i = pagesList.length - 2; i >= 0; i--) {
           const pastPage = pagesList[i]
@@ -350,13 +328,11 @@ export default (providedRuntimeContext?: StackTabsRuntimeContext) => {
             )
           }
           const stepsToPop = pagesList.length - 1 - foundIndex
-          for (let i = 0; i < stepsToPop; i++) {
-            const popped = targetTab.pages.pop()
-            // 仅标记待驱逐，由 onActivated 或下一拍 evictMarkedCaches 统一清理，
-            // 避免 watcher 同步执行与守卫拒绝路由之间产生不一致。
-            if (popped) markCacheForEviction(popped.id)
-          }
-          const newTop = targetTab.pages.peek()
+          const poppedPages = popPages(targetTab.id, stepsToPop)
+          // 仅标记待驱逐，由 onActivated 或下一拍 evictMarkedCaches 统一清理，
+          // 避免 watcher 同步执行与守卫拒绝路由之间产生不一致。
+          for (const popped of poppedPages) markCacheForEviction(popped.id)
+          const newTop = getTopPage(targetTab.id)
           cacheName = newTop ? newTop.id : createPageId()
 
           if (!newTop) {
@@ -387,16 +363,16 @@ export default (providedRuntimeContext?: StackTabsRuntimeContext) => {
       }
     }
 
-    if (cacheIdsToEvict.has(cacheName)) {
-      cacheIdsToEvict.delete(cacheName)
-      const cached = components.get(cacheName)
+    if (isCacheMarkedForEviction(cacheName)) {
+      unmarkCacheForEviction(cacheName)
+      const cached = getComponent(cacheName)
       if (cached) return { recovered: cached, cacheName }
     }
 
     if (page) {
       targetTab = findOrCreateTargetTab(tabInfo, route, cacheName, page)
     } else {
-      setActiveTab(targetTab!.id)
+      activateTab(targetTab!.id)
     }
 
     // 首屏 URL 往往没有 __tab（用户直接打开默认路由）：把解析出的标签编码写回地址，
@@ -417,8 +393,8 @@ export default (providedRuntimeContext?: StackTabsRuntimeContext) => {
   const activeCacheKey = ref<string>('')
   /** 只随当前活动页面刷新变化，避免一个 Tab 刷新导致其他 Tab 的缓存 key 失效。 */
   const activePageRefreshVersion = computed(() => {
-    const activeTab = tabs.value.find((tab) => tab.active)
-    return activeTab?.pages.peek()?.refreshVersion ?? 0
+    const activeTab = getActiveTab()
+    return activeTab ? (getTopPage(activeTab.id)?.refreshVersion ?? 0) : 0
   })
 
   let lastRouteKey = ''
@@ -455,74 +431,45 @@ export default (providedRuntimeContext?: StackTabsRuntimeContext) => {
     const currentTab = getTab(tab.id!)
     if (!currentTab) return undefined
 
-    const pageSnapshot = currentTab.pages.list().map((p) => clonePage(p))
-    const cacheSnapshot = [...caches.value]
-    const componentSnapshot = new Map(components)
+    const pageSnapshot = getPageSnapshot(currentTab.id)
+    const cacheSnapshot = snapshotCaches()
+    const componentSnapshot = snapshotComponents()
 
     markTabPagesForEvictionOnly(currentTab)
     evictMarkedCaches()
-    currentTab.pages.clear()
+    clearPages(currentTab.id)
 
     return () => {
-      currentTab.pages.clear()
-      for (const page of pageSnapshot) currentTab.pages.push(clonePage(page))
-      caches.value = [...cacheSnapshot]
-      components.clear()
-      for (const [id, component] of componentSnapshot) components.set(id, component)
+      replacePages(currentTab.id, pageSnapshot)
+      restoreCaches(cacheSnapshot)
+      restoreComponents(componentSnapshot)
     }
   }
 
   const removeTab = (id: string): string => {
-    let activeTabId = ''
-    const currentTab = getTab(id)
-    const tabList = tabs.value
-    const i = tabList.findIndex((t) => t?.id === id)
-    if (i < 0) return ''
+    const result = removeTabFromStore(id)
+    if (result.status === 'not-found') return ''
+    if (result.status === 'not-closable') return id
 
-    const tab = tabList[i]!
-    if (!tab.closable) return id
-
-    markTabPagesForEviction(tab)
-    tab.pages.clear()
-    if (tabList.length > 1 && tab.active) {
-      activeTabId = (i === 0 ? tabList[1] : tabList[i - 1])?.id ?? ''
-    }
-    tabs.value = [...tabList.slice(0, i), ...tabList.slice(i + 1)]
-
-    if (activeTabId) {
-      emitter.emit(TabEventType.TAB_ACTIVE, { id: activeTabId })
-    }
-    if (!currentTab?.active) {
-      evictMarkedCaches()
-      tabIdsToEvict.clear()
+    if (result.nextActiveId) {
+      emitter.emit(TabEventType.TAB_ACTIVE, { id: result.nextActiveId })
     }
 
-    return activeTabId
+    return result.nextActiveId
   }
 
   /** 批量关闭满足条件的可关闭标签，并统一标记其页面缓存待驱逐。 */
-  const removeTabs = (shouldRemove: (tab: ITabItem, index: number) => boolean) => {
-    const removed: ITabItem[] = []
-    const remaining = tabs.value.filter((tab, index) => {
-      if (!tab.closable || !shouldRemove(tab, index)) return true
-      markTabPagesForEviction(tab)
-      tab.pages.clear()
-      removed.push(tab)
-      return false
-    })
-    tabs.value = remaining
-    return removed
-  }
+  const removeTabs = (shouldRemove: (tab: ITabItem, index: number) => boolean) =>
+    removeTabsFromStore(shouldRemove)
 
   const removeAllTabs = () => {
     removeTabs(() => true)
-    const hasActive = tabs.value.some((t) => t.active)
-    if (hasActive) {
+    if (getActiveTab()) {
       evictMarkedCaches()
-      tabIdsToEvict.clear()
+      clearTabEvictionMarks()
       return
     }
-    const last = tabs.value.at(-1)
+    const last = getTabs().at(-1)
     if (last) emitter.emit(TabEventType.TAB_ACTIVE, { id: last.id })
   }
 
@@ -533,50 +480,50 @@ export default (providedRuntimeContext?: StackTabsRuntimeContext) => {
       emitter.emit(TabEventType.TAB_ACTIVE, { id })
     } else {
       evictMarkedCaches()
-      tabIdsToEvict.clear()
+      clearTabEvictionMarks()
     }
   }
 
   const removeLeftTabs = (id: string) => {
-    const pivot = tabs.value.findIndex((t) => t?.id === id)
+    const pivot = getTabs().findIndex((t) => t?.id === id)
     if (pivot <= 0) return
 
     removeTabs((_, index) => index < pivot)
-    if (tabs.value.some((t) => t.active)) {
+    if (getActiveTab()) {
       evictMarkedCaches()
-      tabIdsToEvict.clear()
+      clearTabEvictionMarks()
       return
     }
-    const first = tabs.value[0]
+    const first = getTabs()[0]
     if (first) emitter.emit(TabEventType.TAB_ACTIVE, { id: first.id })
   }
 
   const removeRightTabs = (id: string) => {
-    const pivot = tabs.value.findIndex((t) => t?.id === id)
-    if (pivot < 0 || pivot >= tabs.value.length - 1) return
+    const tabList = getTabs()
+    const pivot = tabList.findIndex((t) => t?.id === id)
+    if (pivot < 0 || pivot >= tabList.length - 1) return
 
     removeTabs((_, index) => index > pivot)
-    if (tabs.value.some((t) => t.active)) {
+    if (getActiveTab()) {
       evictMarkedCaches()
-      tabIdsToEvict.clear()
+      clearTabEvictionMarks()
       return
     }
-    const last = tabs.value.at(-1)
+    const last = getTabs().at(-1)
     if (last) emitter.emit(TabEventType.TAB_ACTIVE, { id: last.id })
   }
 
   const { refreshTab, refreshAllTabs } = createTabPanelRefresh({
-    tabs,
+    getTabs,
+    getTopPage,
+    updatePage,
     iframeRefreshKeys,
-    getTab,
     createPageId,
     addCache,
     evictPageCache,
     replacePageCaches,
     refreshIframeByPostMessage: (id) => emitter.emit(TabEventType.REFRESH_IFRAME_POSTMESSAGE, id)
   })
-
-  const getComponent = (id: string) => components.get(id)
 
   /**
    * 激活指定标签，更新 active 状态并可选跳转路由
@@ -589,9 +536,9 @@ export default (providedRuntimeContext?: StackTabsRuntimeContext) => {
     if (!target) return Promise.resolve()
     if (target.active) return Promise.resolve()
 
-    const top = target.pages.peek()
+    const top = getTopPage(id)
     const activateTarget = () => {
-      const activeTab = setActiveTab(id)
+      const activeTab = activateTab(id)
       if (activeTab) saveActiveTabToSession(activeTab)
     }
 
@@ -616,7 +563,7 @@ export default (providedRuntimeContext?: StackTabsRuntimeContext) => {
 
     return runNavigationTransaction({
       apply: () => {
-        const prevActiveId = tabs.value.find((tab) => tab.active)?.id
+        const prevActiveId = getActiveTab()?.id
         // SSR 环境无 sessionStorage；快照为 null 时 rollback 视为「无变化」。
         const sessionSnapshot =
           typeof window !== 'undefined' ? window.sessionStorage.getItem(getSessionKey()) : null
@@ -625,7 +572,7 @@ export default (providedRuntimeContext?: StackTabsRuntimeContext) => {
       },
       navigate: () => router.push({ path: top.path, query }),
       rollback: (snapshot) => {
-        setActiveTab(snapshot.prevActiveId ?? '')
+        activateTab(snapshot.prevActiveId ?? '')
         restoreActiveTabSession(snapshot.sessionSnapshot)
       },
       isFailureResult: isNavigationFailure,
@@ -636,13 +583,9 @@ export default (providedRuntimeContext?: StackTabsRuntimeContext) => {
   const reset = () => removeAllTabs()
 
   const destroy = () => {
-    tabs.value = []
+    resetStore()
     defaultTabs.value = []
-    cacheIdsToEvict.clear()
-    tabIdsToEvict.clear()
     iframeRefreshKeys.value = {}
-    caches.value = []
-    components.clear()
     runtimeContext.scrollPositionsByPageId.clear()
     runtimeContext.isInitialized.value = false
     runtimeContext.refreshKey.value = 0
@@ -669,8 +612,17 @@ export default (providedRuntimeContext?: StackTabsRuntimeContext) => {
     addCache,
     removeCache,
     getTab,
+    getActiveTab,
+    getTopPage,
+    getPages,
+    getPageSnapshot,
     moveTab,
     addTab,
+    appendPage,
+    popPages,
+    replacePages,
+    clearPages,
+    updatePage,
     removeTab,
     removeAllTabs,
     removeLeftTabs,
@@ -679,12 +631,13 @@ export default (providedRuntimeContext?: StackTabsRuntimeContext) => {
     hasTab,
     renewTab,
     addPage,
-    addComponent: (id: string, comp: DefineComponent) => components.set(id, comp),
+    addComponent: setComponent,
     getComponent,
-    removeComponent: (id: string) => components.delete(id),
+    removeComponent: deleteComponent,
     markCacheForEviction,
     evictMarkedCaches,
     evictPageCache,
+    clearTabEvictionMarks,
     refreshTab,
     refreshAllTabs,
     iframeRefreshKeys,

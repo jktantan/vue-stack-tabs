@@ -15,16 +15,19 @@ import {
   shallowRef
 } from 'vue'
 import type { DefineComponent, PropType, VNode } from 'vue'
-import type { ITabBase, ITabItem } from '../../model/TabModel'
+import type { ITabBase } from '../../model/TabModel'
 import PageLoading from '../../components/PageLoading.vue'
 import type { StackTabsRuntimeContext } from '../stackTabsContext'
 import { useScrollShadow } from '../useScrollShadow'
 
 interface PageComponentFactoryOptions {
   runtimeContext: StackTabsRuntimeContext
-  getTab: (id: string) => ITabItem | null
+  consumeBackParams: (tabId: string, pageId: string) => Record<string, unknown> | null
+  getComponent: (id: string) => DefineComponent | undefined
+  setComponent: (id: string, component: DefineComponent) => void
   addCache: (cacheName: string) => void
   evictMarkedCaches: () => void
+  clearTabEvictionMarks: () => void
   addPageScroller: (pageId: string, ...selectors: string[]) => void
   saveScroller: (pageId: string) => void
   restoreScroller: (pageId: string) => void
@@ -34,19 +37,21 @@ interface PageComponentFactoryOptions {
 export const createPageComponentFactory = (options: PageComponentFactoryOptions) => {
   const {
     runtimeContext,
-    getTab,
+    consumeBackParams,
+    getComponent,
+    setComponent,
     addCache,
     evictMarkedCaches,
+    clearTabEvictionMarks,
     addPageScroller,
     saveScroller,
     restoreScroller,
     removeScroller
   } = options
-  const { components, tabIdsToEvict } = runtimeContext
 
   const resolvePageComponent = (ctx: { cacheName: string; tabInfo: ITabBase }): DefineComponent => {
     const { cacheName, tabInfo } = ctx
-    const existing = components.get(cacheName)
+    const existing = getComponent(cacheName)
     if (existing) {
       addCache(cacheName)
       return existing
@@ -70,18 +75,7 @@ export const createPageComponentFactory = (options: PageComponentFactoryOptions)
         const pageRoot = ref<HTMLElement | null>(null)
 
         const checkAndConsumeBackParams = () => {
-          try {
-            const tab = getTab(tabInfo.id!)
-            const top = tab?.pages.peek()
-            if (top && top.id === cacheName && top._backParams) {
-              localBackParams.value = { ...top._backParams }
-              delete top._backParams
-            } else {
-              localBackParams.value = null
-            }
-          } catch {
-            localBackParams.value = null
-          }
+          localBackParams.value = consumeBackParams(tabInfo.id!, cacheName)
         }
 
         onMounted(() => {
@@ -94,7 +88,7 @@ export const createPageComponentFactory = (options: PageComponentFactoryOptions)
           context.emit('onLoaded')
           restoreScroller(cacheName)
           evictMarkedCaches()
-          tabIdsToEvict.clear()
+          clearTabEvictionMarks()
           checkAndConsumeBackParams()
         })
         onUnmounted(() => removeScroller(cacheName))
@@ -133,7 +127,7 @@ export const createPageComponentFactory = (options: PageComponentFactoryOptions)
         }
       }
     }) as DefineComponent
-    components.set(cacheName, cacheComponent)
+    setComponent(cacheName, cacheComponent)
     addCache(cacheName)
     return cacheComponent
   }

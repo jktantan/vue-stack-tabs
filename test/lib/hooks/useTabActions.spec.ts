@@ -35,6 +35,7 @@ vi.mock('@/lib/hooks/useTabPanel', () => ({
     canAddTab,
     renewTab,
     getTab,
+    getTopPage: () => pages.peek(),
     tabs,
     removeTab: vi.fn(),
     removeAllTabs: vi.fn(),

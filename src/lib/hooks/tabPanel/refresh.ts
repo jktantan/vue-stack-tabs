@@ -4,8 +4,8 @@
  * 活动普通页面保持 cache id 稳定，只递增页面级刷新版本；非活动页面可直接替换缓存。
  */
 import type { Ref } from 'vue'
-import { triggerRef } from 'vue'
-import type { ITabItem } from '../../model/TabModel'
+import type { ITabItem, ITabPage } from '../../model/TabModel'
+import type { PagePatch } from './tabStore'
 
 export interface TabPanelRefreshApi {
   refreshTab: (id: string) => void
@@ -13,9 +13,11 @@ export interface TabPanelRefreshApi {
 }
 
 export interface CreateTabPanelRefreshOptions {
-  tabs: Ref<ITabItem[]>
+  getTabs: () => readonly ITabItem[]
+  getTopPage: (tabId: string) => ITabPage | null
+  /** 修改页面字段（刷新版本 / 页面 id）并触发 tabs 更新 */
+  updatePage: (tabId: string, pageId: string, patch: PagePatch) => boolean
   iframeRefreshKeys: Ref<Record<string, number>>
-  getTab: (id: string) => ITabItem | null
   createPageId: () => string
   addCache: (cacheName: string) => void
   evictPageCache: (cacheName: string) => void
@@ -30,9 +32,10 @@ export const createTabPanelRefresh = (
   options: CreateTabPanelRefreshOptions
 ): TabPanelRefreshApi => {
   const {
-    tabs,
+    getTabs,
+    getTopPage,
+    updatePage,
     iframeRefreshKeys,
-    getTab,
     createPageId,
     addCache,
     evictPageCache,
@@ -52,30 +55,31 @@ export const createTabPanelRefresh = (
   }
 
   const refreshPage = (tab: ITabItem, cacheNamesToEvict?: string[], cacheNamesToAdd?: string[]) => {
-    const currentPage = tab.pages.peek()
+    const currentPage = getTopPage(tab.id)
     if (!currentPage) return
 
     if (tab.active) {
-      currentPage.refreshVersion = (currentPage.refreshVersion ?? 0) + 1
-      // 通知 activePageRefreshVersion 这类依赖 tabs.value 的计算属性重新计算
-      triggerRef(tabs)
+      // updatePage 内部会触发 tabs 更新，activePageRefreshVersion 随之重新求值。
+      updatePage(tab.id, currentPage.id, {
+        refreshVersion: (currentPage.refreshVersion ?? 0) + 1
+      })
       return
     }
 
     const oldCacheName = currentPage.id
-    currentPage.id = createPageId()
-    currentPage.refreshVersion = 0
+    const nextPageId = createPageId()
+    updatePage(tab.id, oldCacheName, { id: nextPageId, refreshVersion: 0 })
     if (cacheNamesToEvict && cacheNamesToAdd) {
       cacheNamesToEvict.push(oldCacheName)
-      cacheNamesToAdd.push(currentPage.id)
+      cacheNamesToAdd.push(nextPageId)
       return
     }
     evictPageCache(oldCacheName)
-    addCache(currentPage.id)
+    addCache(nextPageId)
   }
 
   const refreshTab = (id: string) => {
-    const tab = getTab(id)
+    const tab = getTabs().find((item) => item.id === id)
     if (!tab?.refreshable) return
     if (tab.iframe) {
       refreshIframe(tab)
@@ -90,7 +94,7 @@ export const createTabPanelRefresh = (
     const iframeKeysUpdate = { ...iframeRefreshKeys.value }
     let iframeKeysChanged = false
 
-    for (const tab of tabs.value) {
+    for (const tab of getTabs()) {
       if (!tab.refreshable) continue
       if (tab.iframe) {
         if (tab.iframeRefreshMode === 'reload') {

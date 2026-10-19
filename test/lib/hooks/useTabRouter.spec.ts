@@ -1,12 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { Stack } from '@/lib/model/TabModel'
-import type { ITabItem } from '@/lib/model/TabModel'
+import type { ITabItem, ITabPage } from '@/lib/model/TabModel'
 
 const push = vi.fn()
 const emit = vi.fn()
 const evictPageCache = vi.fn()
 const active = vi.fn()
 let currentTab: ITabItem
+
+const clonePageForTest = (page: ITabPage): ITabPage => ({
+  ...page,
+  query: page.query ? { ...page.query } : undefined
+})
 
 vi.mock('vue', async () => {
   const actual = await vi.importActual<typeof import('vue')>('vue')
@@ -29,6 +34,29 @@ vi.mock('vue-router', () => ({
 vi.mock('@/lib/hooks/useTabPanel', () => ({
   default: () => ({
     getTab: () => currentTab,
+    getTopPage: () => currentTab.pages.peek() ?? null,
+    getPages: () => currentTab.pages.readonlyList(),
+    appendPage: (_tabId: string, page: ITabPage) => currentTab.pages.push(page),
+    popPages: (_tabId: string, steps: number) => {
+      const popped: ITabPage[] = []
+      for (let index = 0; index < steps; index++) {
+        const page = currentTab.pages.pop()
+        if (!page) break
+        popped.push(page)
+      }
+      return popped
+    },
+    getPageSnapshot: () => currentTab.pages.list().map(clonePageForTest),
+    replacePages: (_tabId: string, pages: readonly ITabPage[]) => {
+      currentTab.pages.clear()
+      for (const page of pages) currentTab.pages.push(clonePageForTest(page))
+    },
+    updatePage: (_tabId: string, pageId: string, patch: Partial<ITabPage>) => {
+      const page = currentTab.pages.list().find((item) => item.id === pageId)
+      if (!page) return false
+      Object.assign(page, patch)
+      return true
+    },
     evictPageCache,
     addPageScroller: vi.fn(),
     active
