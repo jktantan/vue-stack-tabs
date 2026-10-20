@@ -76,7 +76,7 @@ const router = createRouter({
         // iframe route - must match iframe-path
         { path: 'iframe', name: 'iframe', component: IFrame },
         { path: '404', component: () => importPage('404') },
-        { path: ':pathMatch(.*)', redirect: '/404' }
+        { path: ':pathMatch(.*)*', redirect: '/404' }
       ]
     }
   ]

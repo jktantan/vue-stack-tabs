@@ -19,6 +19,7 @@ const zh = {
     form: '表单',
     scroll: '长列表',
     notice: '公告',
+    loading: '页面加载',
     reportShort: '报表',
     iframe: 'iframe'
   },
@@ -31,6 +32,7 @@ const zh = {
     none: '无',
     openReports: '打开 3 个报表标签',
     openIframe: '打开 iframe 标签',
+    openLoading: '打开 Loading 演示',
     refreshCurrent: '刷新当前',
     refreshAll: '刷新全部',
     closeAll: '关闭全部'
@@ -113,7 +115,7 @@ const zh = {
   },
   notice: {
     eyebrow: '公告',
-    title: 'v1.4.1 发布说明',
+    title: 'v2.0.0 发布说明',
     lead: '这是一个普通的内容页，用来演示「同一路由可以被多个标签分别打开」。',
     tipPrefix: '提示：',
     tipBody: '从控制台可以再打开一个「公告」标签，两个标签互不影响。',
@@ -126,6 +128,17 @@ const zh = {
     nextTitle: '接下来',
     nextBody:
       '回到「首页」标签，或从下方控制台继续打开其它演示标签。关闭标签后缓存会被驱逐，下次打开是全新的实例。'
+  },
+  loading: {
+    eyebrow: '页签内加载',
+    title: '页面加载遮罩',
+    lead: '页面里的异步操作可以用 <code>useTabLoading()</code> 打开页签级遮罩：遮罩只覆盖当前页签，切到别的标签不受影响，也不会阻塞整个应用。',
+    button: '模拟 2 秒加载',
+    busy: '加载中…',
+    tipPrefix: '提示：',
+    tipBody:
+      '遮罩由库按 <code>tabId</code> 渲染，所以只能在页签内的页面组件里调用；页面卸载时库会自动关闭它。',
+    codeTitle: '页面内调用'
   },
   notFound: {
     title: '没有找到这个路由',
@@ -140,6 +153,7 @@ const en: typeof zh = {
     form: 'Form',
     scroll: 'Long list',
     notice: 'Notice',
+    loading: 'Page loading',
     reportShort: 'Report',
     iframe: 'iframe'
   },
@@ -152,6 +166,7 @@ const en: typeof zh = {
     none: 'none',
     openReports: 'Open 3 report tabs',
     openIframe: 'Open an iframe tab',
+    openLoading: 'Open the loading demo',
     refreshCurrent: 'Refresh active',
     refreshAll: 'Refresh all',
     closeAll: 'Close all'
@@ -245,7 +260,7 @@ const en: typeof zh = {
   },
   notice: {
     eyebrow: 'Notice',
-    title: 'Release notes for v1.4.1',
+    title: 'Release notes for v2.0.0',
     lead: 'A plain content page, used to show that the same route can be opened in several tabs at once.',
     tipPrefix: 'Tip:',
     tipBody: 'You can open another "Notice" tab from the console — the two do not interfere.',
@@ -261,6 +276,17 @@ const en: typeof zh = {
     nextTitle: 'Next',
     nextBody:
       'Go back to the "Home" tab, or keep opening demo tabs from the console below. Closing a tab evicts its cache, so the next open is a fresh instance.'
+  },
+  loading: {
+    eyebrow: 'In-tab loading',
+    title: 'Page loading overlay',
+    lead: 'Async work inside a page can open a tab-level overlay with <code>useTabLoading()</code>: the overlay covers only the current tab, other tabs keep working, and the rest of the app is never blocked.',
+    button: 'Simulate a 2s request',
+    busy: 'Loading…',
+    tipPrefix: 'Tip:',
+    tipBody:
+      'The overlay is rendered per <code>tabId</code>, so it only works inside a page component rendered by vue-stack-tabs; the library closes it automatically when the page unmounts.',
+    codeTitle: 'Call it from the page'
   },
   notFound: {
     title: 'This route does not exist',

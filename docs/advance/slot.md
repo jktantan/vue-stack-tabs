@@ -2,12 +2,12 @@
 
 VueStackTabs supports these slots:
 
-| Slot          | Slot props       | Description                                                             |
-| ------------- | ---------------- | ----------------------------------------------------------------------- |
-| leftButton    | —                | Left side of tab bar                                                    |
-| rightButton   | —                | Right side of tab bar                                                   |
-| iframeLoading | `{ tab }`        | Custom loading placeholder for an iframe tab                            |
-| iframeError   | `{ tab, retry }` | Custom error placeholder for an iframe tab; call `retry()` to reload it |
+| Slot          | Slot props       | Description                                                                   |
+| ------------- | ---------------- | ----------------------------------------------------------------------------- |
+| leftButton    | —                | Left side of tab bar                                                          |
+| rightButton   | —                | Right side of tab bar                                                         |
+| iframeLoading | `{ tab }`        | Custom loading placeholder for an iframe tab                                  |
+| iframeError   | `{ tab, retry }` | Custom error placeholder for an iframe tab; call `retry(tab.id)` to reload it |
 
 **Example — tab bar buttons:**
 
@@ -16,7 +16,7 @@ VueStackTabs supports these slots:
   import { TabHeaderButton } from 'vue-stack-tabs'
 </script>
 <template>
-  <vue-stack-tabs>
+  <vue-stack-tabs iframe-path="/iframe">
     <template #leftButton>
       <tab-header-button
         title="Toggle"
@@ -48,7 +48,7 @@ VueStackTabs supports these slots:
     </template>
     <template #iframeError="{ tab, retry }">
       <span>{{ tab.title }} failed to load</span>
-      <button @click="retry">Retry</button>
+      <button @click="retry(tab.id)">Retry</button>
     </template>
   </vue-stack-tabs>
 </template>

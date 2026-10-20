@@ -16,6 +16,7 @@ You can customize tab and page transitions via `tab-transition`, `page-transitio
 ```vue:line-numbers
 <template>
   <vue-stack-tabs
+    iframe-path="/iframe"
     page-transition="page-fade"
     page-transition-back="page-fade-back"
     tab-transition="tab-scale"

@@ -14,6 +14,7 @@ import DetailPage from './pages/DetailPage.vue'
 import FormPage from './pages/FormPage.vue'
 import ScrollPage from './pages/ScrollPage.vue'
 import NoticePage from './pages/NoticePage.vue'
+import LoadingPage from './pages/LoadingPage.vue'
 import NotFoundPage from './pages/NotFoundPage.vue'
 
 export const router = createRouter({
@@ -31,6 +32,7 @@ export const router = createRouter({
         { path: 'form', name: 'form', component: FormPage },
         { path: 'scroll', name: 'scroll', component: ScrollPage },
         { path: 'notice', name: 'notice', component: NoticePage },
+        { path: 'loading', name: 'loading', component: LoadingPage },
         // iframe 占位路由：与 <VueStackTabs iframe-path="/iframe"> 保持一致
         { path: 'iframe', name: 'iframe', component: IFrame },
         { path: ':pathMatch(.*)*', name: 'not-found', component: NotFoundPage }

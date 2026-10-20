@@ -17,6 +17,7 @@
 ```vue:line-numbers
 <template>
   <vue-stack-tabs
+    iframe-path="/iframe"
     page-transition="page-fade"
     page-transition-back="page-fade-back"
     tab-transition="tab-scale"

@@ -34,6 +34,7 @@ const openReportList = () => open({ id: 'report', title: t('Demo.tabs.report'), 
 const openForm = () => open({ id: 'form', title: t('Demo.tabs.form'), path: '/form' })
 const openScroll = () => open({ id: 'scroll', title: t('Demo.tabs.scroll'), path: '/scroll' })
 const openNotice = () => open({ id: 'notice', title: t('Demo.tabs.notice'), path: '/notice' })
+const openLoading = () => open({ id: 'loading', title: t('Demo.tabs.loading'), path: '/loading' })
 
 /** 三个独立标签指向同一路由的不同参数，各自持有独立缓存 */
 const openReports = () => {
@@ -94,6 +95,9 @@ const refreshActive = () => {
           </button>
           <button class="demo-btn" type="button" @click="openNotice">
             {{ t('Demo.tabs.notice') }}
+          </button>
+          <button class="demo-btn" type="button" @click="openLoading">
+            {{ t('Demo.console.openLoading') }}
           </button>
         </div>
 

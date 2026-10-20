@@ -27,8 +27,6 @@ const { forward, backward, addScrollTarget } = useTabRouter()
 | to        |    string 或 number     |  是  | 数字：回退 abs(x) 步（0 不做任何操作，返回 false）；URL：回退到栈中第一个路径匹配的页面 |
 | backQuery | Record<string, unknown> |  否  | 一次性参数，随回退传给目标页面，目标页通过 `props._back` 接收                           |
 
-to:
-
 ## addScrollTarget
 
 设置当前页面的滚动元素。

@@ -23,3 +23,22 @@
 | sessionPrefix        | Prefix for sessionStorage keys; useful when hosting multiple instances on the same origin                                     | `string`                                | `''`                                                                       |
 
 > **Note**: `iframePath` is required. When it is missing, the component throws an Error in development and logs `console.error` in production. See [Nuxt](../base/nuxt.md) and [iframe & Parent Communication](../advance/iframe-bridge.md).
+
+## Events
+
+| Event          | Payload      | Description                                                                          |
+| -------------- | ------------ | ------------------------------------------------------------------------------------ |
+| `onActive`     | `id: string` | Fired when a tab becomes active, whether by a click or by an API call.               |
+| `onPageLoaded` | —            | Fired when the page inside a tab mounts or is reactivated from the keep-alive cache. |
+
+```vue:line-numbers
+<template>
+  <vue-stack-tabs
+    iframe-path="/iframe"
+    @on-active="(id) => console.log('active tab:', id)"
+    @on-page-loaded="() => console.log('page ready')"
+  />
+</template>
+```
+
+`onPageLoaded` fires on every activation of a cached page, not only on its first mount.

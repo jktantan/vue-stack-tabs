@@ -48,13 +48,23 @@ reset()
 
 ## Tab Loading Indicator
 
-**Example:**
+`useTabLoading` shows a page-level overlay above the current tab. It must be used inside a page component rendered by `<VueStackTabs>`, because the library resolves the owning tab from the `tId` it injects into the page.
 
-```typescript:line-numbers
+```vue:line-numbers
+<script setup lang="ts">
 import { useTabLoading } from 'vue-stack-tabs'
 
 const { openTabLoading, closeTabLoading } = useTabLoading()
 
-openTabLoading()
-closeTabLoading()
+const load = async () => {
+  openTabLoading()
+  try {
+    await fetchData()
+  } finally {
+    closeTabLoading()
+  }
+}
+</script>
 ```
+
+Only the current tab is masked; other tabs keep working. See [useTabLoading](../more/useTabLoading.md) for the full API, and [In-Tab Operations](./operator.md) for the scope rules.

@@ -23,3 +23,22 @@
 | sessionPrefix        | sessionStorage 键前缀；同一 origin 下托管多实例时用于隔离                                                       | string                    | ''                                                                       |
 
 > **注意**：`iframePath` 必填，缺失时开发环境会抛 Error，生产环境会打印 `console.error`。详见 [Nuxt 集成](../base/nuxt.md) 与 [iframe 与父窗口通信](../advance/iframe-bridge.md)。
+
+## 事件
+
+| 事件           | 参数         | 说明                                                   |
+| -------------- | ------------ | ------------------------------------------------------ |
+| `onActive`     | `id: string` | 页签被激活时触发，点击页签或通过 API 激活都会触发      |
+| `onPageLoaded` | —            | 页签内页面挂载完成、或从 keep-alive 缓存重新激活时触发 |
+
+```vue:line-numbers
+<template>
+  <vue-stack-tabs
+    iframe-path="/iframe"
+    @on-active="(id) => console.log('当前页签:', id)"
+    @on-page-loaded="() => console.log('页面就绪')"
+  />
+</template>
+```
+
+`onPageLoaded` 在缓存页每次激活时都会触发，不只是首次挂载。

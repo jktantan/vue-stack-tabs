@@ -8,7 +8,7 @@ By default, global scroll is off. Enable it with `global-scroll`:
 
 ```vue:line-numbers
 <template>
-  <vue-stack-tabs global-scroll />
+  <vue-stack-tabs iframe-path="/iframe" global-scroll />
 </template>
 ```
 

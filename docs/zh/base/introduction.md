@@ -97,7 +97,7 @@ const router = createRouter({
         },
         // 其他路由就跳404
         {
-          path: ':pathMatch(.*)',
+          path: ':pathMatch(.*)*',
           redirect:'/404',
         }
       ]

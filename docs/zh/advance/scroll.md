@@ -8,7 +8,7 @@ VueStackTabs 默认不开启全局滚动，如需全局滚动请设置`global-sc
 
 ```vue:line-numbers
 <template>
-  <vue-stack-tabs global-scroll />
+  <vue-stack-tabs iframe-path="/iframe" global-scroll />
 </template>
 ```
 

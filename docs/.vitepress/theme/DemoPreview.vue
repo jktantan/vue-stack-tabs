@@ -38,6 +38,9 @@ const siteBase = import.meta.env.BASE_URL || '/'
  * 文档站切换语言会整页跳转、iframe 随之重建，因此无需额外通信。
  */
 const { lang } = useData()
+/** 文档站语言：预览外壳的按钮与兜底文案跟随 VitePress locale */
+const isZh = computed(() => (lang.value || '').toLowerCase().startsWith('zh'))
+const openLabel = computed(() => (isZh.value ? '在新窗口打开 ↗' : 'Open in a new window ↗'))
 
 const demoBase = computed(() => {
   if (isDev) return DEV_DEMO_ORIGIN + DEMO_BASE
@@ -86,7 +89,7 @@ const onLoad = () => {
       <span class="demo-preview__dots" aria-hidden="true"> <i /><i /><i /> </span>
       <span class="demo-preview__title">{{ title }}</span>
       <a class="demo-preview__open" :href="src" target="_blank" rel="noreferrer">
-        在新窗口打开 ↗
+        {{ openLabel }}
       </a>
     </div>
 
@@ -100,12 +103,22 @@ const onLoad = () => {
         @load="onLoad"
       />
       <div v-else class="demo-preview__fallback">
-        <p><b>演示应用未就绪</b></p>
         <p>
+          <b>{{ isZh ? '演示应用未就绪' : 'The demo app is not ready' }}</b>
+        </p>
+        <p v-if="isZh">
           本地开发请使用 <code>pnpm run docs:dev</code>（它会同时启动文档与演示应用的 dev
           server）；部署后无需额外操作。
         </p>
-        <p><a :href="src" target="_blank" rel="noreferrer">仍要尝试直接打开 ↗</a></p>
+        <p v-else>
+          For local development run <code>pnpm run docs:dev</code> (it starts both the docs and the
+          demo dev server); no extra step is needed after deployment.
+        </p>
+        <p>
+          <a :href="src" target="_blank" rel="noreferrer">
+            {{ isZh ? '仍要尝试直接打开 ↗' : 'Try opening it anyway ↗' }}
+          </a>
+        </p>
       </div>
     </div>
   </div>

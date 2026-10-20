@@ -6,19 +6,28 @@
 
 ## 加载动画
 
-**示例：**
+`useTabLoading` 会在当前页签上方显示页面级遮罩。请在本页签的页面组件中调用——库会把所属页签的 id 注入页面，遮罩按页签渲染。
 
-```typescript:line-numbers
-// 引用 vue-stack-tabs
+```vue:line-numbers
+<script setup lang="ts">
 import { useTabLoading } from 'vue-stack-tabs'
 
-const { openTabLoading,closeTabLoading } = useTabLoading()
+const { openTabLoading, closeTabLoading } = useTabLoading()
 
-//打开加载动画
-openTabLoading()
-//关闭加载动画
-closeTabLoading()
+const submit = async () => {
+  openTabLoading()
+  try {
+    await saveForm()
+  } finally {
+    closeTabLoading()
+  }
+}
+</script>
 ```
+
+- 只遮挡当前页签，其它页签与标签栏仍可交互。
+- 页面卸载时遮罩会自动关闭，但请求结束就应主动关闭，避免用户干等。
+- 在页签外调用不会生效，完整说明见 [useTabLoading](../more/useTabLoading.md)。
 
 ## 路由
 
