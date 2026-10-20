@@ -251,7 +251,7 @@ onBeforeUnmount(() => {
       height: height,
       'z-index': maximumZIndex
     }"
-    :class="{ 'stack-tab__maximum': maximum }"
+    :class="{ 'stack-tab--maximum': maximum }"
   >
     <tab-header
       :space="space"

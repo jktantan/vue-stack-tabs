@@ -6,7 +6,11 @@ import { describe, expect, it } from 'vitest'
 import ContextMenuItem from '@/lib/components/ContextMenu/ContextMenuItem.vue'
 
 const stackTabStyles = readFileSync(
-  resolve(process.cwd(), 'src/lib/assets/style/stackTab.scss'),
+  resolve(process.cwd(), 'src/lib/assets/style/stack-tab.scss'),
+  'utf8'
+)
+const stackTabMixinStyles = readFileSync(
+  resolve(process.cwd(), 'src/lib/assets/style/common/mixins.scss'),
   'utf8'
 )
 
@@ -14,7 +18,7 @@ describe('ContextMenuItem accessibility', () => {
   it('渲染为 menuitem button', () => {
     const wrapper = mount(ContextMenuItem, {
       props: {
-        icon: 'stack-tab__icon-reload svg-mask',
+        icon: 'stack-tab__icon stack-tab__icon--reload stack-tab__icon--mask',
         title: '刷新'
       }
     })
@@ -36,11 +40,12 @@ describe('ContextMenuItem accessibility', () => {
   })
 
   it('button 原生 reset 放在全局菜单样式层', () => {
-    expect(stackTabStyles).toContain('font: inherit')
-    expect(stackTabStyles).toContain('border: 0')
-    expect(stackTabStyles).toContain('appearance: none')
+    expect(stackTabStyles).toContain('@include button-reset')
+    expect(stackTabMixinStyles).toContain('font: inherit')
+    expect(stackTabMixinStyles).toContain('border: 0')
+    expect(stackTabMixinStyles).toContain('appearance: none')
+    expect(stackTabMixinStyles).toContain('text-align: inherit')
     expect(stackTabStyles).toContain('background: transparent')
-    expect(stackTabStyles).toContain('text-align: inherit')
   })
 
   it('右键菜单项保持原 div 菜单项的整行盒模型', () => {

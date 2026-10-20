@@ -4,11 +4,11 @@
     role="presentation"
     class="stack-tab__item"
     :class="{
-      'is-active': item.active,
-      'is-icon': item.closable,
-      'is-dragging': dragging,
-      'is-drop-before': dropPosition === 'before',
-      'is-drop-after': dropPosition === 'after'
+      'stack-tab__item--active': item.active,
+      'stack-tab__item--closable': item.closable,
+      'stack-tab__item--dragging': dragging,
+      'stack-tab__item--drop-before': dropPosition === 'before',
+      'stack-tab__item--drop-after': dropPosition === 'after'
     }"
     :draggable="true"
     @click.self="handleActivate(true)"
@@ -40,7 +40,7 @@
     <button
       v-if="item.closable"
       type="button"
-      class="stack-tab__icon-close-fill stack-tab__item-button"
+      class="stack-tab__icon stack-tab__icon--close-fill stack-tab__item-button"
       :title="t('VueStackTab.close')"
       :aria-label="`${t('VueStackTab.close')} ${title}`"
       :tabindex="item.active ? 0 : -1"

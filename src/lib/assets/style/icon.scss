@@ -1,99 +1,32 @@
-@use 'common/var' as *;
+// 图标名 => SVG 文件
+$stack-tab-icons: (
+  fullscreen: 'fullscreen.svg',
+  restore: 'restore.svg',
+  close: 'close.svg',
+  close-fill: 'close_fill.svg',
+  close-lefts: 'close_lefts.svg',
+  close-rights: 'close_rights.svg',
+  close-others: 'close_other.svg',
+  close-all: 'close_all.svg',
+  reload: 'loading.svg',
+  reload-lefts: 'reload_lefts.svg',
+  reload-rights: 'reload_rights.svg',
+  reload-all: 'reload.svg',
+  left-arrow: 'left_arrow.svg',
+  right-arrow: 'right_arrow.svg',
+  open: 'open.svg'
+);
 
-// 全屏
-.stack-tab__icon-fullscreen {
-  /* 类似一个到路径上做一个遮罩， 用法和background属性一样 */
-  mask: url('../image/fullscreen.svg') no-repeat center center;
-  mask-size: contain;
-}
-// 恢复
-.stack-tab__icon-restore {
-  /* 类似一个到路径上做一个遮罩， 用法和background属性一样 */
-  mask: url('../image/restore.svg') no-repeat center center;
-  mask-size: contain;
-}
-// 关闭
-.stack-tab__icon-close {
-  /* 类似一个到路径上做一个遮罩， 用法和background属性一样 */
-  mask: url('../image/close.svg') no-repeat center center;
-  mask-size: contain;
-}
-
-.stack-tab__icon-close-fill {
-  /* 类似一个到路径上做一个遮罩， 用法和background属性一样 */
-  mask: url('../image/close_fill.svg') no-repeat center center;
-  mask-size: contain;
-}
-
-.stack-tab__icon-close-lefts {
-  /* 类似一个到路径上做一个遮罩， 用法和background属性一样 */
-  mask: url('../image/close_lefts.svg') no-repeat center center;
+// 图标基础样式：颜色由使用处的 background-color 控制
+.stack-tab__icon {
+  mask-repeat: no-repeat;
+  mask-position: center center;
   mask-size: contain;
 }
 
-.stack-tab__icon-close-rights {
-  /* 类似一个到路径上做一个遮罩， 用法和background属性一样 */
-  mask: url('../image/close_rights.svg') no-repeat center center;
-  mask-size: contain;
-}
-
-.stack-tab__icon-close-others {
-  /* 类似一个到路径上做一个遮罩， 用法和background属性一样 */
-  mask: url('../image/close_other.svg') no-repeat center center;
-  mask-size: contain;
-}
-
-.stack-tab__icon-close-all {
-  /* 类似一个到路径上做一个遮罩， 用法和background属性一样 */
-  mask: url('../image/close_all.svg') no-repeat center center;
-  mask-size: contain;
-}
-
-/*
-刷新
- */
-.stack-tab__icon-reload {
-  /* 类似一个到路径上做一个遮罩， 用法和background属性一样 */
-  mask: url('../image/loading.svg') no-repeat center center;
-  mask-size: contain;
-}
-
-.stack-tab__icon-reload-lefts {
-  /* 类似一个到路径上做一个遮罩， 用法和background属性一样 */
-  mask: url('../image/reload_lefts.svg') no-repeat center center;
-  mask-size: contain;
-}
-
-.stack-tab__icon-reload-rights {
-  /* 类似一个到路径上做一个遮罩， 用法和background属性一样 */
-  mask: url('../image/reload_rights.svg') no-repeat center center;
-  mask-size: contain;
-}
-
-.stack-tab__icon-reload-all {
-  /* 类似一个到路径上做一个遮罩， 用法和background属性一样 */
-  mask: url('../image/reload.svg') no-repeat center center;
-  mask-size: contain;
-}
-/*
-左箭头
- */
-.stack-tab__icon-left-arrow {
-  /* 类似一个到路径上做一个遮罩， 用法和background属性一样 */
-  mask: url('../image/left_arrow.svg') no-repeat center center;
-  mask-size: contain;
-}
-/*
-右箭头
- */
-.stack-tab__icon-right-arrow {
-  /* 类似一个到路径上做一个遮罩， 用法和background属性一样 */
-  mask: url('../image/right_arrow.svg') no-repeat center center;
-  mask-size: contain;
-}
-
-/* 新窗口打开 */
-.stack-tab__icon-open {
-  mask: url('../image/open.svg') no-repeat center center;
-  mask-size: contain;
+// 每个图标只声明自己的 mask-image
+@each $name, $file in $stack-tab-icons {
+  .stack-tab__icon--#{$name} {
+    mask-image: url('../image/#{$file}');
+  }
 }

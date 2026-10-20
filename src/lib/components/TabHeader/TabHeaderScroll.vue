@@ -6,7 +6,7 @@
 <template>
   <tab-header-button
     v-if="isScrollButtonVisible"
-    icon-class="stack-tab__icon-left-arrow"
+    icon-class="stack-tab__icon stack-tab__icon--left-arrow"
     :disabled="isDisabledLeftButton"
     :title="t('VueStackTab.scrollLeft')"
     :aria-label="t('VueStackTab.scrollLeft')"
@@ -29,12 +29,12 @@
       v-show="hasScroller"
       ref="bar"
       class="stack-tab__scrollbar"
-      :class="{ 'is-dragging': scrollDragging }"
+      :class="{ 'stack-tab__scrollbar--dragging': scrollDragging }"
     >
       <div
         ref="thumb"
         class="stack-tab__scrollbar-thumb"
-        :class="{ 'is-dragging': scrollDragging }"
+        :class="{ 'stack-tab__scrollbar-thumb--dragging': scrollDragging }"
         :style="{
           width: `${thumbWidth}px`,
           transform: `translateX(${thumbLeft}px)`
@@ -45,7 +45,7 @@
   </div>
   <tab-header-button
     v-if="isScrollButtonVisible"
-    icon-class="stack-tab__icon-right-arrow"
+    icon-class="stack-tab__icon stack-tab__icon--right-arrow"
     :disabled="isDisabledRightButton"
     :title="t('VueStackTab.scrollRight')"
     :aria-label="t('VueStackTab.scrollRight')"
@@ -161,7 +161,7 @@ const updateScrollState = () => {
 /** 确保激活的标签在可视区域内 */
 const ensureActiveTabInView = () => {
   const activeTabEl = container.value?.querySelector(
-    '.stack-tab__item.is-active'
+    '.stack-tab__item--active'
   ) as HTMLElement | null
   if (activeTabEl && !isInView(activeTabEl)) {
     scrollIntoView(activeTabEl)

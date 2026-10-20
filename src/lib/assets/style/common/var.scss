@@ -1,68 +1,108 @@
 @use 'sass:color';
-/*
-主色调
- */
+
+// ============================================================
+// 颜色
+// ============================================================
+
+// 基础色
+$stack-tab-color-white: #fff !default;
+$stack-tab-color-black: #000 !default;
+
+// 主色
 $stack-tab-color-primary: #409eff !default;
 $stack-tab-color-primary-invert: #ffac30 !default;
-/*
-大红色
- */
+$stack-tab-color-primary-activate: color.mix(
+  $stack-tab-color-primary,
+  $stack-tab-color-black,
+  80%
+) !default;
+
+// 功能色
 $stack-tab-color-danger: #ef4f4f !default;
-/*
-白色
- */
-$stack-tab-color-white: #fff !default;
-/*
-黑色
- */
-$stack-tab-color-black: #000 !default;
+
+// 中性色
 $stack-tab-color-grey: #4d4d4d !default;
 $stack-tab-color-disabled: #aaa !default;
-/*
-ICON点击颜色
- */
-$stack-tab-color-primary-activate: color.mix($stack-tab-color-primary, #000, 80%) !default;
-/*
-背景颜色
- */
+$stack-tab-color-text-secondary: #666 !default;
+$stack-tab-color-text-tertiary: #999 !default;
+$stack-tab-color-scrollbar: rgb(0 0 0 / 10%) !default;
+
+// ============================================================
+// 背景
+// ============================================================
+
 $stack-tab-background-color-base: #fff !default;
 $stack-tab-background-color-inactive: #fafafa !default;
-/*
-tab边框颜色
- */
-$stack-tab-border-color: #f0f0f0;
-$stack-tab-border: 1px solid $stack-tab-border-color;
-/*
-tab文本颜色
- */
-$stack-tab-text-color: $stack-tab-color-grey;
-/*
-tab文本大小
- */
-$stack-tab-font-size: 14px;
+$stack-tab-iframe-loading-bg: #f5f5f5 !default;
+$stack-tab-iframe-error-bg: rgb(255 255 255 / 92%) !default;
 
-$stack-tab-padding: 24px;
-$stack-tab-icon-margin: 4px;
-$stack-tab-icon-size: 14px;
+// ============================================================
+// 边框与圆角
+// ============================================================
 
-$stack-tab-button-size: 20px;
-/*
-tab头高度
- */
-$stack-tab-head-height: 40px;
-$stack-tab-head-invalid-height: $stack-tab-head-height -3px;
+$stack-tab-border-color: #f0f0f0 !default;
+$stack-tab-border: 1px solid $stack-tab-border-color !default;
+$stack-tab-tab-radius: 8px 8px 0 0 !default;
+$stack-tab-contextmenu-radius: 10px 0 !default;
 
-$stack-tab-scroll-height: 6px;
-$stack-tab-scroll-border-radius: $stack-tab-scroll-height;
-$stack-tab__trans: all 0.15s ease-in-out;
+// ============================================================
+// 文本
+// ============================================================
 
-/*
-阴影
- */
-$stack-tab-shadow-left: -5px 0 5px -5px rgb(0 0 0 / 60%); //#ccc;
-$stack-tab-shadow-right: 5px 0 5px -5px rgb(0 0 0 / 60%); //#ccc;
-$stack-tab-shadow-right-inset: inset -5px 0 5px -5px rgb(0 0 0 / 60%); //#ccc;
-$stack-tab-shadow-left-inset: inset 5px 0 5px -5px rgb(0 0 0 / 60%); //#ccc;
-$stack-tab-shadow-top-inset: inset 0 5px 5px -5px rgb(0 0 0 / 60%); //#ccc;
-$stack-tab-shadow-bottom-inset: inset 0 -5px 5px -5px rgb(0 0 0 / 60%); //#ccc;
-$stack-tab-shadow-context-menu: 5px 5px 5px rgb(0 0 0 / 10%);
+$stack-tab-text-color: $stack-tab-color-grey !default;
+$stack-tab-font-size: 14px !default;
+$stack-tab-iframe-loading-color: $stack-tab-color-text-tertiary !default;
+$stack-tab-iframe-error-color: $stack-tab-color-text-secondary !default;
+
+// ============================================================
+// 尺寸
+// ============================================================
+
+$stack-tab-padding: 24px !default;
+$stack-tab-icon-margin: 4px !default;
+$stack-tab-icon-size: 14px !default;
+$stack-tab-button-size: 20px !default;
+
+// 标签头高度
+$stack-tab-head-height: 40px !default;
+$stack-tab-head-invalid-height: $stack-tab-head-height - 3px !default;
+
+// 滚动条
+$stack-tab-scroll-height: 6px !default;
+$stack-tab-scroll-border-radius: $stack-tab-scroll-height !default;
+
+// ============================================================
+// 动效
+// ============================================================
+
+// 图标、滚动条等高频交互的快速过渡
+$stack-tab-transition-fast: all 0.15s ease-in-out !default;
+$stack-tab-transition-duration: 0.3s !default;
+$stack-tab-transition-slide-distance: 30px !default;
+$stack-tab-transition-slide:
+  opacity $stack-tab-transition-duration ease-in-out,
+  transform $stack-tab-transition-duration ease-in-out !default;
+
+// ============================================================
+// 阴影
+// ============================================================
+
+$stack-tab-shadow-color: rgb(0 0 0 / 60%) !default;
+$stack-tab-shadow-left: -5px 0 5px -5px $stack-tab-shadow-color !default;
+$stack-tab-shadow-right: 5px 0 5px -5px $stack-tab-shadow-color !default;
+$stack-tab-shadow-right-inset: inset -5px 0 5px -5px $stack-tab-shadow-color !default;
+$stack-tab-shadow-left-inset: inset 5px 0 5px -5px $stack-tab-shadow-color !default;
+$stack-tab-shadow-top-inset: inset 0 5px 5px -5px $stack-tab-shadow-color !default;
+$stack-tab-shadow-bottom-inset: inset 0 -5px 5px -5px $stack-tab-shadow-color !default;
+$stack-tab-shadow-context-menu: 5px 5px 5px rgb(0 0 0 / 10%) !default;
+
+// ============================================================
+// 加载态
+// ============================================================
+
+$stack-tab-loading-mask-color: $stack-tab-color-white !default;
+$stack-tab-loading-mask-opacity: 0.8 !default;
+$stack-tab-loading-size: 50px !default;
+$stack-tab-loading-border-width: 8px !default;
+$stack-tab-loading-color: #007bff97 !default;
+$stack-tab-loading-duration: 1s !default;

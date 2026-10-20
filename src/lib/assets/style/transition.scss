@@ -1,10 +1,10 @@
-/*
-transition 过渡样式
- */
+@use 'common/var' as *;
+
+// 缩放淡入
 .stack-tab-zoom {
   &-enter-active,
   &-leave-active {
-    transition: all 0.3s ease-in-out;
+    transition: $stack-tab-transition-slide;
   }
 
   &-enter-from,
@@ -14,16 +14,12 @@ transition 过渡样式
   }
 }
 
-/*
-页面交换
- */
+// 前进：从右向左滑入
 .stack-tab-swap {
-  $trans: 30px;
-
   &-move,
   &-enter-active,
   &-leave-active {
-    transition: all 0.3s ease-in-out;
+    transition: $stack-tab-transition-slide;
   }
 
   &-enter-from,
@@ -32,20 +28,19 @@ transition 过渡样式
   }
 
   &-enter-from {
-    transform: translateX($trans);
+    transform: translateX($stack-tab-transition-slide-distance);
   }
 
   &-leave-to {
-    transform: translateX(-$trans);
+    transform: translateX(-$stack-tab-transition-slide-distance);
   }
 }
 
+// 后退：从左向右滑入
 .stack-tab-swap-back {
-  $trans: 30px;
-
   &-enter-active,
   &-leave-active {
-    transition: all 0.3s ease-in-out;
+    transition: $stack-tab-transition-slide;
   }
 
   &-enter-from,
@@ -54,10 +49,10 @@ transition 过渡样式
   }
 
   &-enter-from {
-    transform: translateX(-$trans);
+    transform: translateX(-$stack-tab-transition-slide-distance);
   }
 
   &-leave-to {
-    transform: translateX($trans);
+    transform: translateX($stack-tab-transition-slide-distance);
   }
 }

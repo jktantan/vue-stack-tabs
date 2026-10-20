@@ -1,63 +1,51 @@
 @use 'sass:math';
 @use 'common/var' as *;
-@use 'common/mixins';
+@use 'common/mixins' as *;
 
 .stack-tab {
   display: flex;
   min-height: 300px;
   background-color: $stack-tab-background-color-base;
   flex-direction: column;
-  grid-gap: 5px;
+  gap: 5px;
 
   &__container {
     flex: 1 1 0;
     position: relative;
     overflow: hidden;
   }
+
   &__keep-alive-panel {
-    position: absolute;
-    top: 0;
-    left: 0;
+    @include absolute-fill;
+  }
+
+  // 缓存页面 wrapper
+  &__cache-page-wrapper {
     width: 100%;
     height: 100%;
   }
 
-  /*缓存页面wrapper*/
-  .cache-page-wrapper {
-    width: 100%;
-    height: 100%;
-  }
-  &__maximum {
+  &--maximum {
+    position: fixed;
+    inset: 0;
     width: 100vw !important;
     height: 100vh !important;
-    top: 0;
-    left: 0;
-    position: fixed;
   }
 
-  //蒙版按钮
+  // 蒙版按钮
   &__mask-button {
     height: 100%;
     width: $stack-tab-button-size;
-    background-color: $stack-tab-text-color;
     margin: 0 5px;
-    transition: $stack-tab__trans;
+    @include icon-button-color;
 
     .stack-tab__header-button[disabled] & {
       cursor: not-allowed;
       background-color: $stack-tab-color-disabled;
       transition: none;
-      //pointer-events: none;
-    }
-    &:hover {
-      background-color: $stack-tab-color-primary;
-    }
-
-    &:active {
-      // cursor: pointer;
-      background-color: $stack-tab-color-primary-activate;
     }
   }
+
   &__button {
     height: $stack-tab-button-size;
     width: $stack-tab-button-size;
@@ -71,9 +59,8 @@
     height: $stack-tab-head-height;
     border-bottom: 1px solid $stack-tab-border-color;
     box-sizing: border-box;
-    //user-select: none;
 
-    //tab header上面的按钮
+    // tab header 上面的按钮
     &-button {
       z-index: 2;
       height: $stack-tab-head-height;
@@ -83,14 +70,11 @@
       cursor: pointer;
       display: flex;
       align-items: center;
-      border: 0;
       padding: 0;
       color: inherit;
-      font: inherit;
-      text-align: inherit;
-      appearance: none;
+      @include button-reset;
 
-      //按钮禁用样式
+      // 按钮禁用样式
       &[disabled] {
         background-color: $stack-tab-background-color-inactive;
         box-shadow: none;
@@ -98,7 +82,8 @@
       }
     }
   }
-  //tab header上的滚动条
+
+  // tab header 上的滚动条
   &__scroll {
     position: relative;
     flex: 1 1 0;
@@ -111,55 +96,54 @@
       overflow: hidden;
 
       // 移动设备原生滚动
-      &.is-mobile {
+      &--mobile {
         overflow-x: auto;
         overflow-y: hidden;
       }
     }
   }
+
   &__scrollbar {
     position: absolute;
     right: 0;
     bottom: 0;
     left: 0;
-    /*z-index: 2;*/
     height: $stack-tab-scroll-height;
-    background-color: rgb(0 0 0 / 10%);
+    background-color: $stack-tab-color-scrollbar;
     border-radius: $stack-tab-scroll-border-radius;
     opacity: 0;
-    transition: $stack-tab__trans;
+    transition: $stack-tab-transition-fast;
 
     .stack-tab__scroll:hover &,
-    &.is-dragging {
+    &--dragging {
       opacity: 1;
     }
   }
+
   &__scrollbar-thumb {
     position: absolute;
     top: 0;
     left: 0;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.1);
-
+    background-color: $stack-tab-color-scrollbar;
     border-radius: $stack-tab-scroll-border-radius;
-    transition: background-color 0.3s ease-in-out;
+    transition: background-color $stack-tab-transition-duration ease-in-out;
 
     &:hover {
       cursor: grab;
+
       &:active {
         cursor: grabbing;
       }
     }
 
-    .stack-tab__scrollbar.is-dragging &,
+    .stack-tab__scrollbar--dragging &,
     &:hover {
       background-color: $stack-tab-color-primary !important;
     }
   }
 
-  /*
-  页签导航
-   */
+  // 页签导航
   &__nav {
     position: relative;
     display: inline-flex;
@@ -171,9 +155,7 @@
     content-visibility: auto;
   }
 
-  /*
-  页签项
-   */
+  // 页签项
   &__item {
     position: relative;
     display: flex;
@@ -184,8 +166,8 @@
     background-color: $stack-tab-background-color-inactive;
     border: $stack-tab-border;
     border-left: none;
-    border-radius: 8px 8px 0 0;
-    transition: $stack-tab__trans;
+    border-radius: $stack-tab-tab-radius;
+    transition: $stack-tab-transition-fast;
     user-select: none;
     flex: none;
     align-items: center;
@@ -197,12 +179,12 @@
       border-left: $stack-tab-border;
     }
 
-    &.is-dragging {
+    &--dragging {
       opacity: 0.55;
     }
 
-    &.is-drop-before::before,
-    &.is-drop-after::after {
+    &--drop-before::before,
+    &--drop-after::after {
       position: absolute;
       z-index: 2;
       top: 2px;
@@ -214,37 +196,37 @@
       box-shadow: 0 0 6px rgba($stack-tab-color-primary, 0.8);
     }
 
-    &.is-drop-before::before {
+    &--drop-before::before {
       left: -3px;
     }
 
-    &.is-drop-after::after {
+    &--drop-after::after {
       right: -3px;
     }
 
-    /*
-    激活右键菜单的页签
-     */
-    &.is-contextmenu {
-      color: #000;
+    // 激活右键菜单的页签
+    &--context-menu {
+      color: $stack-tab-color-black;
     }
 
-    /*
-    激活的页签
-     */
-    &.is-active {
+    // 激活的页签
+    &--active {
       z-index: 1;
       background-color: $stack-tab-background-color-base;
-      border-bottom-color: #fff;
+      border-bottom-color: $stack-tab-background-color-base;
       box-shadow: $stack-tab-shadow-left, $stack-tab-shadow-right;
       margin-top: unset;
     }
 
     &:hover,
-    &.is-active {
+    &--active {
       color: $stack-tab-color-primary;
+    }
 
-      &.is-icon {
+    // 可关闭标签在悬停/激活时给关闭按钮腾出空间
+    &--closable {
+      &:hover,
+      &.stack-tab__item--active {
         padding: 0
           ($stack-tab-padding - math.div($stack-tab-button-size + $stack-tab-icon-margin, 2));
 
@@ -260,20 +242,15 @@
       flex: 1 1 auto;
       min-width: 0;
       height: 100%;
-      padding: 0;
-      color: inherit;
       cursor: inherit;
       background: transparent;
-      border: 0;
-      font: inherit;
-      text-align: inherit;
-      appearance: none;
+      padding: 0;
+      color: inherit;
+      @include button-reset;
       align-items: center;
     }
 
-    /*
-    页签标题
-     */
+    // 页签标题
     &-title {
       flex: 1 1 0;
       display: flex;
@@ -287,41 +264,23 @@
       }
     }
 
-    /*
-    页签图标
-     */
+    // 页签图标
     &-icon {
       margin-right: 5px;
       font-size: 16px;
     }
-    /*
-    页答按钮
-     */
+
+    // 页签按钮
     &-button {
       height: 100%;
       width: 0;
-      background-color: $stack-tab-text-color;
-      transition: $stack-tab__trans;
-      border: 0;
-      font: inherit;
-      appearance: none;
       padding: 0;
-
-      &:hover {
-        background-color: $stack-tab-color-primary;
-      }
-
-      &:active {
-        /*
-        cursor: pointer;
-         */
-        background-color: $stack-tab-color-primary-activate;
-      }
+      @include button-reset;
+      @include icon-button-color;
     }
   }
-  /*
-  角徽样式
-   */
+
+  // 角徽样式
   &__badge {
     position: relative;
     display: inline-block;
@@ -335,87 +294,63 @@
       padding: 0.3rem;
       font-size: 0.5rem;
       line-height: 0.4rem;
-      color: #fff;
+      color: $stack-tab-color-white;
       text-align: center;
       border: 1px solid $stack-tab-background-color-base;
       border-radius: 0.5rem;
       transform: translateX(100%) translateY(-50%);
       box-sizing: border-box;
 
-      &.default {
+      &--default {
         background: $stack-tab-color-danger;
       }
 
-      &.primary {
+      &--primary {
         background: $stack-tab-color-primary;
       }
     }
   }
 
   &__iframes {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    @include absolute-fill;
     pointer-events: none;
   }
 
   &__iframe-wrapper {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: auto; /* 恢复鼠标事件，允许与 iframe 交互 */
+    @include absolute-fill;
+    pointer-events: auto; // 恢复鼠标事件，允许与 iframe 交互
   }
 
   &__iframe {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    @include absolute-fill;
     border: 0;
   }
 
   &__iframe-loading {
-    position: absolute;
-    top: 0;
-    left: 0;
+    @include absolute-fill;
+    @include flex-center;
     z-index: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    height: 100%;
-    background: var(--stack-tab-iframe-loading-bg, #f5f5f5);
+    background: var(--stack-tab-iframe-loading-bg, #{$stack-tab-iframe-loading-bg});
 
     &-text {
-      color: var(--stack-tab-iframe-loading-color, #999);
-      font-size: var(--stack-tab-font-size, 14px);
+      color: var(--stack-tab-iframe-loading-color, #{$stack-tab-iframe-loading-color});
+      font-size: var(--stack-tab-font-size, #{$stack-tab-font-size});
     }
   }
 
   &__iframe-error {
-    position: absolute;
-    top: 0;
-    left: 0;
+    @include absolute-fill;
+    @include flex-center;
     z-index: 2;
-    display: flex;
     gap: 8px;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    height: 100%;
     padding: 16px;
     pointer-events: auto;
-    background: var(--stack-tab-iframe-error-bg, rgb(255 255 255 / 92%));
+    background: var(--stack-tab-iframe-error-bg, #{$stack-tab-iframe-error-bg});
     box-sizing: border-box;
 
     &-text {
-      color: var(--stack-tab-iframe-error-color, #666);
-      font-size: var(--stack-tab-font-size, 14px);
+      color: var(--stack-tab-iframe-error-color, #{$stack-tab-iframe-error-color});
+      font-size: var(--stack-tab-font-size, #{$stack-tab-font-size});
     }
 
     &-retry,
@@ -429,18 +364,17 @@
       font: inherit;
     }
   }
-  /*
-  右键菜单
-   */
-  &__contextmenu {
+
+  // 右键菜单
+  &__context-menu {
     position: fixed;
     z-index: 999;
     min-width: 120px;
     padding: 8px;
     font-size: $stack-tab-font-size;
-    background: #fff;
+    background: $stack-tab-background-color-base;
     border: $stack-tab-border;
-    border-radius: 10px 0;
+    border-radius: $stack-tab-contextmenu-radius;
     box-shadow: $stack-tab-shadow-context-menu;
     transform-origin: left top;
 
@@ -452,17 +386,14 @@
       width: 100%;
       min-height: 30px;
       margin: 0;
+      @include button-reset;
       padding: 0 10px;
       line-height: 30px;
-      font: inherit;
-      text-align: inherit;
-      appearance: none;
       box-sizing: border-box;
       color: $stack-tab-text-color;
       cursor: pointer;
       background: transparent;
-      border: 0;
-      border-radius: 10px 0;
+      border-radius: $stack-tab-contextmenu-radius;
       // 仅过渡悬停态实际会改变的颜色，避免触发菜单布局与合成层的无关动画。
       transition:
         color 0.2s ease-in-out,
@@ -475,7 +406,7 @@
         color: $stack-tab-color-white;
         background-color: $stack-tab-color-primary;
 
-        .svg-mask {
+        .stack-tab__icon--mask {
           background-color: $stack-tab-color-white;
         }
       }
@@ -490,7 +421,7 @@
         cursor: default;
         background: none;
 
-        .svg-mask {
+        .stack-tab__icon--mask {
           background-color: $stack-tab-color-disabled;
         }
       }
@@ -501,7 +432,7 @@
       height: $stack-tab-font-size;
       transition: background-color 0.2s ease-in-out;
 
-      &.svg-mask {
+      &.stack-tab__icon--mask {
         width: $stack-tab-font-size;
         height: $stack-tab-font-size;
         background-color: $stack-tab-text-color;
@@ -518,32 +449,29 @@
   box-shadow: $stack-tab-shadow-right;
 }
 
-/**
-内阴影
- */
+// 内阴影
 .stack-tab__shadow-inset {
-  &-left::after {
-    @include mixins.insetShadow();
-    box-shadow: $stack-tab-shadow-left-inset;
+  &-left {
+    @include inset-shadow($stack-tab-shadow-left-inset);
   }
-  &-right::after {
-    @include mixins.insetShadow();
-    box-shadow: $stack-tab-shadow-right-inset;
+
+  &-right {
+    @include inset-shadow($stack-tab-shadow-right-inset);
   }
-  &-all::after {
-    @include mixins.insetShadow();
-    box-shadow: $stack-tab-shadow-left-inset, $stack-tab-shadow-right-inset;
+
+  &-all {
+    @include inset-shadow($stack-tab-shadow-left-inset, $stack-tab-shadow-right-inset);
   }
-  &-top::after {
-    @include mixins.insetShadow();
-    box-shadow: $stack-tab-shadow-top-inset;
+
+  &-top {
+    @include inset-shadow($stack-tab-shadow-top-inset);
   }
-  &-bottom::after {
-    @include mixins.insetShadow();
-    box-shadow: $stack-tab-shadow-bottom-inset;
+
+  &-bottom {
+    @include inset-shadow($stack-tab-shadow-bottom-inset);
   }
-  &-vertical::after {
-    @include mixins.insetShadow();
-    box-shadow: $stack-tab-shadow-top-inset, $stack-tab-shadow-bottom-inset;
+
+  &-vertical {
+    @include inset-shadow($stack-tab-shadow-top-inset, $stack-tab-shadow-bottom-inset);
   }
 }

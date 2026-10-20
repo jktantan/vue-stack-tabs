@@ -7,7 +7,7 @@
 <template>
   <div
     ref="menuElementRef"
-    class="stack-tab__contextmenu"
+    class="stack-tab__context-menu"
     role="menu"
     tabindex="-1"
     :style="{
@@ -18,47 +18,47 @@
     @keydown="handleMenuKeydown"
   >
     <context-menu-item
-      icon="stack-tab__icon-reload svg-mask"
+      icon="stack-tab__icon stack-tab__icon--reload stack-tab__icon--mask"
       :title="t('VueStackTab.reload')"
       :disabled="!tabItem.refreshable"
       @click="handleMenuItemClick(() => refreshTab(tabItem.id))"
     />
     <context-menu-item
-      icon="stack-tab__icon-reload-all svg-mask"
+      icon="stack-tab__icon stack-tab__icon--reload-all stack-tab__icon--mask"
       :title="t('VueStackTab.reloadAll')"
       @click="handleMenuItemClick(refreshAllTabs)"
     />
     <context-menu-item
-      icon="stack-tab__icon-close svg-mask"
+      icon="stack-tab__icon stack-tab__icon--close stack-tab__icon--mask"
       :title="t('VueStackTab.close')"
       :disabled="!tabItem.closable"
       @click="handleMenuItemClick(() => closeTab(tabItem.id))"
     />
     <context-menu-item
-      icon="stack-tab__icon-close-lefts svg-mask"
+      icon="stack-tab__icon stack-tab__icon--close-lefts stack-tab__icon--mask"
       :title="t('VueStackTab.closeLeft')"
       :disabled="index <= 0"
       @click="handleMenuItemClick(() => removeLeftTabs(tabItem.id))"
     />
     <context-menu-item
-      icon="stack-tab__icon-close-rights svg-mask"
+      icon="stack-tab__icon stack-tab__icon--close-rights stack-tab__icon--mask"
       :title="t('VueStackTab.closeRight')"
       :disabled="index >= max - 1"
       @click="handleMenuItemClick(() => removeRightTabs(tabItem.id))"
     />
     <context-menu-item
-      icon="stack-tab__icon-close-others svg-mask"
+      icon="stack-tab__icon stack-tab__icon--close-others stack-tab__icon--mask"
       :title="t('VueStackTab.closeOthers')"
       @click="handleMenuItemClick(() => removeOtherTabs(tabItem.id))"
     />
     <context-menu-item
-      icon="stack-tab__icon-close-all svg-mask"
+      icon="stack-tab__icon stack-tab__icon--close-all stack-tab__icon--mask"
       :title="t('VueStackTab.closeAll')"
       @click="handleMenuItemClick(closeAllTabs)"
     />
     <context-menu-item
       v-if="tabItem.iframe && tabItem.url"
-      icon="stack-tab__icon-open svg-mask"
+      icon="stack-tab__icon stack-tab__icon--open stack-tab__icon--mask"
       :title="t('VueStackTab.openInNewWindow')"
       @click="handleMenuItemClick(() => openInNewWindow(tabItem.id))"
     />

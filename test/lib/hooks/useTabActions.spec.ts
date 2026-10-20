@@ -211,8 +211,8 @@ describe('useTabActions', () => {
 
   it('getWrapper 可按 tabId 或 pageId 精确获取缓存容器，未传参数保持兼容行为', async () => {
     document.body.innerHTML = [
-      '<div id="W-page-1" class="cache-page-wrapper"></div>',
-      '<div id="W-page-2" class="cache-page-wrapper"></div>'
+      '<div id="W-page-1" class="stack-tab__cache-page-wrapper"></div>',
+      '<div id="W-page-2" class="stack-tab__cache-page-wrapper"></div>'
     ].join('')
     pages.peek.mockReturnValue({ id: 'page-2' })
     getTab.mockReturnValue({ pages })

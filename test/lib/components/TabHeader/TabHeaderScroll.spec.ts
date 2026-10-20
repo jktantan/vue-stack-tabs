@@ -79,7 +79,8 @@ async function mountScrollableHeaderScroll(props: Record<string, unknown>) {
       ...props
     },
     slots: {
-      default: '<ul class="stack-tab__nav"><li class="stack-tab__item is-active">Tab</li></ul>'
+      default:
+        '<ul class="stack-tab__nav"><li class="stack-tab__item stack-tab__item--active">Tab</li></ul>'
     },
     global: {
       stubs: {

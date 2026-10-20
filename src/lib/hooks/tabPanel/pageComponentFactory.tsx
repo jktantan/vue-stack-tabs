@@ -93,7 +93,7 @@ export const createPageComponentFactory = (options: PageComponentFactoryOptions)
         })
         onUnmounted(() => removeScroller(cacheName))
 
-        // 给 .cache-page-wrapper 挂滚动阴影，确保 keep-alive 的 suspended/deactivated 生命周期下表现一致
+        // 给 .stack-tab__cache-page-wrapper 挂滚动阴影，确保 keep-alive 的 suspended/deactivated 生命周期下表现一致
         useScrollShadow({ target: pageRoot })
 
         return () => {
@@ -113,7 +113,7 @@ export const createPageComponentFactory = (options: PageComponentFactoryOptions)
           return (
             <div
               ref={pageRoot}
-              class="cache-page-wrapper"
+              class="stack-tab__cache-page-wrapper"
               id={`W-${cacheName}`}
               style={[
                 runtimeContext.useGlobalScroll.value ? 'overflow:auto' : 'overflow:hidden',

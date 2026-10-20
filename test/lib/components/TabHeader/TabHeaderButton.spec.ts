@@ -8,7 +8,7 @@ describe('TabHeaderButton accessibility', () => {
     const wrapper = mount(TabHeaderButton, {
       props: {
         title: '向左滚动',
-        iconClass: 'stack-tab__icon-left-arrow'
+        iconClass: 'stack-tab__icon stack-tab__icon--left-arrow'
       }
     })
 

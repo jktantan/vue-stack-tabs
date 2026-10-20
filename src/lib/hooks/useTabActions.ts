@@ -155,7 +155,7 @@ export default function useTabActions(providedRuntimeContext?: StackTabsRuntimeC
     if (typeof document === 'undefined') return undefined
     const pageId = target.pageId ?? (target.tabId ? getTopPage(target.tabId)?.id : undefined)
     if (pageId) return document.getElementById(`W-${pageId}`) ?? undefined
-    return document.querySelector<HTMLElement>('.cache-page-wrapper') ?? undefined
+    return document.querySelector<HTMLElement>('.stack-tab__cache-page-wrapper') ?? undefined
   }
 
   /** iframe 标签在新窗口打开（无法嵌入时降级） */

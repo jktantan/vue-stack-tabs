@@ -41,7 +41,7 @@ export default () => {
   /** 点击菜单外部时关闭菜单。 */
   const handleClickOutside = (ev: MouseEvent) => {
     const target = ev.target as Element
-    if (target.closest?.('.stack-tab__contextmenu')) return
+    if (target.closest?.('.stack-tab__context-menu')) return
     // 同一手势的 click 仍在守卫窗口内，跳过关闭判断。
     if (Date.now() - lastContextMenuAt < BUBBLE_GUARD_MS) return
     hideContextMenu()

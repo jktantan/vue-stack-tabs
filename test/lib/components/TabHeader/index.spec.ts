@@ -107,7 +107,7 @@ const ContextMenuStub = defineComponent({
   emits: ['close'],
   setup(props, { emit }) {
     return () =>
-      h('div', { class: 'stack-tab__contextmenu', 'data-test': 'context-menu' }, [
+      h('div', { class: 'stack-tab__context-menu', 'data-test': 'context-menu' }, [
         h(
           'button',
           {

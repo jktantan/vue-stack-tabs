@@ -42,7 +42,11 @@
     </tab-header-scroll>
     <slot name="rightButton" />
     <tab-header-button
-      :icon-class="maximum ? 'stack-tab__icon-restore' : 'stack-tab__icon-fullscreen'"
+      :icon-class="
+        maximum
+          ? 'stack-tab__icon stack-tab__icon--restore'
+          : 'stack-tab__icon stack-tab__icon--fullscreen'
+      "
       :title="maximum ? t('VueStackTab.restore') : t('VueStackTab.maximum')"
       :aria-label="maximum ? t('VueStackTab.restore') : t('VueStackTab.maximum')"
       @click="maximum = !maximum"

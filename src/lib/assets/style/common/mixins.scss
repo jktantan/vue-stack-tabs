@@ -1,14 +1,55 @@
 @use 'var' as *;
-/*
-icon按钮特效
- */
-@mixin icon_rotate($icon-size, $icon-margin, $icon-url) {
+
+// 绝对定位并铺满父容器
+@mixin absolute-fill {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+// 水平垂直居中
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+// 以 SVG mask 渲染图标，颜色由 background-color 控制
+@mixin mask-icon($url) {
+  mask: url($url) no-repeat center center;
+  mask-size: contain;
+}
+
+// 重置原生 button 的默认样式（padding、color 由使用处按需设置）
+@mixin button-reset {
+  border: 0;
+  font: inherit;
+  text-align: inherit;
+  appearance: none;
+}
+
+// 图标按钮的默认色及 hover/active 反馈
+@mixin icon-button-color {
+  background-color: $stack-tab-text-color;
+  transition: $stack-tab-transition-fast;
+
+  &:hover {
+    background-color: $stack-tab-color-primary;
+  }
+
+  &:active {
+    background-color: $stack-tab-color-primary-activate;
+  }
+}
+
+// icon 按钮特效：hover/active 时叠加 mask.svg
+@mixin icon-rotate($icon-size, $icon-margin, $icon-url) {
   width: $icon-size;
   height: $icon-size;
   margin-left: $icon-margin;
   background-color: $stack-tab-text-color;
-  mask: url($icon-url) no-repeat center center;
-  mask-size: contain;
+  @include mask-icon($icon-url);
 
   &:hover {
     cursor: pointer;
@@ -16,30 +57,28 @@ icon按钮特效
     animation: rotate-center 0.3s ease-in-out both;
     mask:
       url($icon-url),
-      url('./image/mask.svg') no-repeat center center;
+      url('../image/mask.svg') no-repeat center center;
     mask-size: contain;
     mask-composite: xor;
   }
 
   &:active {
-    /*
-    cursor: pointer;
-     */
     background-color: $stack-tab-color-primary-activate;
     mask:
       url($icon-url),
-      url('./image/mask.svg') no-repeat center center;
+      url('../image/mask.svg') no-repeat center center;
     mask-size: contain;
     mask-composite: xor;
   }
 }
 
-@mixin insetShadow() {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  pointer-events: none;
+// 追加一层铺满父容器的内阴影
+@mixin inset-shadow($shadow...) {
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    box-shadow: $shadow;
+  }
 }

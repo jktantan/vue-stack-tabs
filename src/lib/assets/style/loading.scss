@@ -1,0 +1,45 @@
+@use 'common/var' as *;
+@use 'common/mixins' as *;
+
+.stack-tab-loading {
+  // 页面加载遮罩
+  &__mask {
+    @include absolute-fill;
+    @include flex-center;
+    background-color: $stack-tab-loading-mask-color;
+    opacity: $stack-tab-loading-mask-opacity;
+  }
+
+  // 三层圆环同轴旋转
+  &__spin {
+    position: relative;
+    width: $stack-tab-loading-size;
+    aspect-ratio: 1;
+    border: $stack-tab-loading-border-width solid transparent;
+    border-right-color: $stack-tab-loading-color;
+    border-radius: 50%;
+    animation: stack-tab-loading-rotate $stack-tab-loading-duration infinite linear;
+
+    &::before,
+    &::after {
+      content: '';
+      position: absolute;
+      inset: -$stack-tab-loading-border-width;
+      border: $stack-tab-loading-border-width solid transparent;
+      border-right-color: $stack-tab-loading-color;
+      border-radius: 50%;
+      animation: stack-tab-loading-rotate $stack-tab-loading-duration * 2 infinite linear;
+    }
+
+    // 最外层转得最慢，形成错层效果
+    &::after {
+      animation-duration: $stack-tab-loading-duration * 4;
+    }
+  }
+}
+
+@keyframes stack-tab-loading-rotate {
+  to {
+    transform: rotate(1turn);
+  }
+}

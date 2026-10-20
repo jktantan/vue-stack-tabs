@@ -18,7 +18,11 @@ const setIFramePathMock = vi.fn()
 const openTabMock = vi.fn()
 const openInNewWindowMock = vi.fn()
 const stackTabStyles = readFileSync(
-  resolve(process.cwd(), 'src/lib/assets/style/stackTab.scss'),
+  resolve(process.cwd(), 'src/lib/assets/style/stack-tab.scss'),
+  'utf8'
+)
+const stackTabMixinStyles = readFileSync(
+  resolve(process.cwd(), 'src/lib/assets/style/common/mixins.scss'),
   'utf8'
 )
 
@@ -176,8 +180,10 @@ describe('StackTabs iframe security and states', () => {
   })
 
   it('非 iframe tabpanel 全高承载 keep-alive 内容', () => {
-    expect(stackTabStyles).toMatch(/&__keep-alive-panel\s*\{[\s\S]*width: 100%/)
-    expect(stackTabStyles).toMatch(/&__keep-alive-panel\s*\{[\s\S]*height: 100%/)
+    expect(stackTabStyles).toMatch(/&__keep-alive-panel\s*\{[\s\S]*@include absolute-fill;/)
+    expect(stackTabMixinStyles).toMatch(
+      /@mixin absolute-fill\s*\{[\s\S]*position: absolute;[\s\S]*width: 100%;[\s\S]*height: 100%;/
+    )
   })
 
   it('iframe loading 使用 status 语义', () => {
@@ -190,13 +196,12 @@ describe('StackTabs iframe security and states', () => {
   })
 
   it('iframe 错误态样式覆盖 iframe 且保留点击能力', () => {
-    expect(stackTabStyles).toMatch(/&__iframe-error\s*\{[\s\S]*position: absolute/)
-    expect(stackTabStyles).toMatch(/&__iframe-error\s*\{[\s\S]*top: 0/)
-    expect(stackTabStyles).toMatch(/&__iframe-error\s*\{[\s\S]*left: 0/)
-    expect(stackTabStyles).toMatch(/&__iframe-error\s*\{[\s\S]*z-index: 2/)
-    expect(stackTabStyles).toMatch(/&__iframe-error\s*\{[\s\S]*width: 100%/)
-    expect(stackTabStyles).toMatch(/&__iframe-error\s*\{[\s\S]*height: 100%/)
-    expect(stackTabStyles).toMatch(/&__iframe-error\s*\{[\s\S]*pointer-events: auto/)
+    expect(stackTabStyles).toMatch(/&__iframe-error\s*\{[\s\S]*@include absolute-fill;/)
+    expect(stackTabStyles).toMatch(/&__iframe-error\s*\{[\s\S]*z-index: 2;/)
+    expect(stackTabStyles).toMatch(/&__iframe-error\s*\{[\s\S]*pointer-events: auto;/)
+    expect(stackTabMixinStyles).toMatch(
+      /@mixin absolute-fill\s*\{[\s\S]*position: absolute;[\s\S]*width: 100%;[\s\S]*height: 100%;/
+    )
   })
 
   it('加载超时后显示 iframeError slot 并可重试', async () => {

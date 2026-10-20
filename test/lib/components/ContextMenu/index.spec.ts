@@ -213,7 +213,7 @@ describe('ContextMenu accessibility', () => {
     const wrapper = mountMenu([
       {
         title: 'Duplicate',
-        icon: 'stack-tab__icon-pin svg-mask',
+        icon: 'stack-tab__icon stack-tab__icon--pin stack-tab__icon--mask',
         callback: vi.fn(),
         disabled: () => false
       }
@@ -221,7 +221,7 @@ describe('ContextMenu accessibility', () => {
 
     const keys = wrapper.findAll('[data-menu-key]').map((item) => item.attributes('data-menu-key'))
 
-    expect(keys).toEqual(['Duplicate-stack-tab__icon-pin svg-mask'])
+    expect(keys).toEqual(['Duplicate-stack-tab__icon stack-tab__icon--pin stack-tab__icon--mask'])
   })
 
   it('自定义菜单使用稳定 key 并点击后关闭菜单', async () => {
