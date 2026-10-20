@@ -20,9 +20,7 @@ const base = import.meta.env.BASE_URL || '/'
 /** 同源的 iframe 演示页（构建时随 demo 应用一起复制到 public） */
 const iframeChildUrl = `${base}iframe-child.html`
 
-const defaultTabs: ITabData[] = [
-  { id: 'home', title: t('Demo.tabs.home'), path: '/', closable: false }
-]
+const homeTab: ITabData = { id: 'home', title: t('Demo.tabs.home'), path: '/' }
 
 const open = (tab: ITabData) => {
   void openTab(tab).catch((error: unknown) => {
@@ -69,7 +67,7 @@ const refreshActive = () => {
   <div class="demo-app">
     <vue-stack-tabs
       iframe-path="/iframe"
-      :default-tabs="defaultTabs"
+      :home-tab="homeTab"
       :max="12"
       global-scroll
       session-prefix="docs-demo"

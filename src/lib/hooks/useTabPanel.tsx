@@ -44,6 +44,9 @@ const cloneRouteQuery = (route: RouteLocationNormalizedLoaded, tabInfo: ITabBase
   __tab: route.query.__tab ?? encodeTabInfo(tabInfo)
 })
 
+/** homeTab 未显式指定 id 时使用的固定 id，保证刷新前后 __tab 与标签身份一致。 */
+const DEFAULT_HOME_TAB_ID = '__stack_tabs_home__'
+
 /** 规范化路径（nginx 等可能加尾部斜杠） */
 export const normalizePathForCache = (route: RouteLocationNormalizedLoaded): string => {
   const lastMatch = route.matched[route.matched.length - 1]
@@ -114,22 +117,29 @@ export default (providedRuntimeContext?: StackTabsRuntimeContext) => {
   const size = (): number => getTabs().length
 
   /**
-   * 初始化：根据 defaultTabs 创建标签与初始页面，并尝试从 sessionStorage 恢复上次激活的标签
+   * 初始化：先创建固定首页（homeTab），再创建 defaultTabs，并尝试从 sessionStorage 恢复上次激活的标签
    * @param staticTabs - 初始标签配置
+   * @param homeTab - 固定首页；始终位于第一位、不可关闭、不可移动
    */
-  const initialize = (staticTabs: ITabData[]) => {
+  const initialize = (staticTabs: ITabData[], homeTab?: ITabData) => {
     const newDefaults: ITabItem[] = []
     const newTabs: ITabItem[] = []
+    let homeTabId = ''
 
-    for (const item of staticTabs) {
+    /** 由 ITabData 构建运行时标签；homeTab 通过 options 强制固定属性 */
+    const buildTab = (
+      item: ITabData,
+      options: { pinned?: boolean; closable?: boolean } = {}
+    ): ITabItem => {
       // 先用默认值填充非空缺字段，避免在循环里提前求值生成用不到的 UUID。
       const fullItem = defu(item, {
         refreshable: true,
         closable: true,
         iframe: false
       })
-      // id 单独兜底，避免每次循环都无意义地调用 crypto.randomUUID。
-      fullItem.id = item.id ?? crypto.randomUUID()
+      // homeTab 未指定 id 时使用固定 id，避免每次初始化生成新 id 后与 session 恢复标签重复。
+      fullItem.id = item.id ?? (options.pinned ? DEFAULT_HOME_TAB_ID : crypto.randomUUID())
+      if (options.closable !== undefined) fullItem.closable = options.closable
       const tabId = fullItem.id
       const uri = parseUrl(fullItem.path)
       const cacheName = createPageId()
@@ -152,10 +162,33 @@ export default (providedRuntimeContext?: StackTabsRuntimeContext) => {
             ? 'reload'
             : 'postMessage',
         active: false,
-        pages
+        pages,
+        pinned: options.pinned
       }
 
       addCache(cacheName)
+      return tab
+    }
+
+    if (homeTab) {
+      const home = buildTab(homeTab, { pinned: true, closable: false })
+      homeTabId = home.id
+      newDefaults.push(home)
+      newTabs.push({ ...home })
+    }
+
+    for (const item of staticTabs) {
+      // home 已单独创建；相同 id 的配置跳过，避免出现两个固定首页。
+      if (homeTabId && item.id === homeTabId) {
+        if (!import.meta.env.PROD) {
+          console.warn(
+            '[vue-stack-tabs] defaultTabs contains the same id as homeTab; skipped:',
+            item.id
+          )
+        }
+        continue
+      }
+      const tab = buildTab(item)
       newDefaults.push(tab)
       newTabs.push({ ...tab })
     }
@@ -209,15 +242,64 @@ export default (providedRuntimeContext?: StackTabsRuntimeContext) => {
     iframeRefreshMode: tab.iframeRefreshMode
   })
 
+  /** 当前固定首页（homeTab）；未配置时返回 null。 */
+  const getHomeTab = (): ITabItem | null => getTabs().find((tab) => tab.pinned) ?? null
+
+  /**
+   * 无 __tab 且当前路径没有归属标签时，导航到 homeTab 的栈顶页面。
+   * 使用 replace，避免在浏览器历史里留下中间状态。
+   */
+  const redirectToHome = (): boolean => {
+    const home = getHomeTab()
+    const top = home ? getTopPage(home.id) : null
+    if (!home || !top) return false
+
+    const query = {
+      ...cloneLocationQuery(top.query),
+      __tab: encodeTabInfo(toTabBase(home))
+    }
+    void Promise.resolve(
+      router.replace({
+        path: top.path,
+        query,
+        hash: ''
+      })
+    ).catch((error: unknown) => {
+      if (!import.meta.env.PROD) {
+        console.warn('[vue-stack-tabs] Failed to redirect to home tab:', error)
+      }
+    })
+    return true
+  }
+
+  /**
+   * 是否应回落到 homeTab：仅限 URL 没有 __tab，且当前路径没有被任何标签的栈顶承载。
+   * 带 __tab 的地址即使页面不存在也不回落，交给应用自己的 404 路由处理。
+   */
+  const shouldRedirectToHome = (route: RouteLocationNormalizedLoaded): boolean => {
+    if (typeof route.query.__tab === 'string') return false
+
+    const path = normalizePathForCache(route)
+    const activeTab = getActiveTab()
+    if (activeTab && getTopPage(activeTab.id)?.path === path) return false
+    if (findTabByTopPagePath(path)) return false
+
+    const home = getHomeTab()
+    return Boolean(home && getTopPage(home.id))
+  }
+
   /**
    * 从路由解析 tabInfo，若无则创建默认信息，调用方负责把编码信息写入内部 page.query。
    *
    * 首次进入应用时 URL 上通常还没有 __tab：此时优先接管 path 匹配的默认标签（defaultTabs），
-   * 由调用方把 __tab 写回地址，保证「URL 指向默认标签」；确实找不到归属时才新建兜底标签。
+   * 由调用方把 __tab 写回地址，保证「URL 指向默认标签」；确实找不到归属且配置了 homeTab 时
+   * 返回 null，由调用方重定向到首页；未配置 homeTab 时保持原有兜底标签行为。
    */
-  const parseTabInfoFromRoute = (route: RouteLocationNormalizedLoaded): ITabBase => {
-    if (typeof route.query.__tab === 'string') {
-      const tabInfo = decodeTabInfo(route.query.__tab)
+  const parseTabInfoFromRoute = (route: RouteLocationNormalizedLoaded): ITabBase | null => {
+    const encodedTab = route.query.__tab
+    const hasEncodedTab = typeof encodedTab === 'string'
+    if (hasEncodedTab) {
+      const tabInfo = decodeTabInfo(encodedTab)
       if (tabInfo.id) return tabInfo
     }
 
@@ -233,6 +315,10 @@ export default (providedRuntimeContext?: StackTabsRuntimeContext) => {
     // 标签（默认标签或已有标签），避免同一个页面既留下已有标签、又生成一个「未命名」的兜底标签。
     const pathMatchedTab = findTabByTopPagePath(path)
     if (pathMatchedTab) return toTabBase(pathMatchedTab)
+
+    // 无 __tab 且无任何标签承载当前路径：配置了 homeTab 时交给调用方重定向。
+    // 注意：__tab 存在但无效时仍保持原行为（新建兜底标签），不把错误地址变成首页。
+    if (!hasEncodedTab && getHomeTab()) return null
 
     return {
       id: crypto.randomUUID(),
@@ -295,7 +381,13 @@ export default (providedRuntimeContext?: StackTabsRuntimeContext) => {
     | { cacheName: string; tabInfo: ITabBase; targetTab: ITabItem }
     | { empty: true }
     | { recovered: DefineComponent; cacheName: string } => {
-    const tabInfo = parseTabInfoFromRoute(route)
+    const resolvedTabInfo = parseTabInfoFromRoute(route)
+    if (resolvedTabInfo === null) {
+      // 无 __tab 且没有标签承载当前路径：回落到 homeTab。
+      redirectToHome()
+      return { empty: true }
+    }
+    const tabInfo = resolvedTabInfo
     if (isTabMarkedForEviction(tabInfo.id!)) return { empty: true }
 
     const path = normalizePathForCache(route)
@@ -404,7 +496,12 @@ export default (providedRuntimeContext?: StackTabsRuntimeContext) => {
     route: RouteLocationNormalizedLoaded,
     component?: VNode | null
   ): DefineComponent => {
-    if (!component) return getEmptyPlaceholderComponent()
+    if (!component) {
+      // 路由没有匹配到组件时不会进入 updatePageState；仍需处理无 __tab 的未知地址回落到首页。
+      // 带 __tab 的未知页面不做重定向，交给应用自己的 404 路由（或空占位）处理。
+      if (shouldRedirectToHome(route)) redirectToHome()
+      return getEmptyPlaceholderComponent()
+    }
 
     const routeKey = route.fullPath + (route.query.__tab || '')
     if (routeKey === lastRouteKey && lastAddPageResult) {

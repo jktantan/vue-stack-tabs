@@ -8,10 +8,11 @@ import { decodeTabInfo } from '@/lib/utils/tabInfoEncoder'
 import type { ITabItem } from '@/lib/model/TabModel'
 
 const push = vi.fn()
+const replace = vi.fn()
 const emit = vi.fn()
 
 vi.mock('vue-router', () => ({
-  useRouter: () => ({ push, replace: vi.fn() }),
+  useRouter: () => ({ push, replace }),
   isNavigationFailure: (value: unknown) =>
     typeof value === 'object' && value !== null && 'type' in value
 }))
@@ -83,9 +84,11 @@ describe('useTabPanel', () => {
   beforeEach(() => {
     vi.resetModules()
     push.mockReset()
+    replace.mockReset()
     emit.mockReset()
     window.sessionStorage.clear()
     push.mockResolvedValue(undefined)
+    replace.mockResolvedValue(undefined)
   })
 
   it('initialize 忽略 defaultTabs path query 中的保留 __tab，保留普通 query', async () => {
@@ -129,6 +132,83 @@ describe('useTabPanel', () => {
     expect(panel.tabs.value[2]).toBe(firstTab)
     expect(panel.moveTab('tab-1', 2)).toBe(false)
     expect(panel.moveTab('missing', 0)).toBe(false)
+
+    panel.destroy()
+    runtime.cleanup()
+  })
+
+  it('homeTab 位于首位，且强制不可关闭', async () => {
+    const runtime = await withRuntimeContext()
+    const { default: useTabPanel } = await import('@/lib/hooks/useTabPanel')
+    const panel = useTabPanel()
+
+    panel.initialize([], { id: 'home', title: '首页', path: '/' })
+
+    expect(panel.tabs.value[0]).toMatchObject({
+      id: 'home',
+      closable: false,
+      pinned: true,
+      active: false
+    })
+    expect(panel.removeTab('home')).toBe('home')
+
+    panel.destroy()
+    runtime.cleanup()
+  })
+
+  it('无 __tab 且没有标签承载路径时重定向到 home', async () => {
+    const runtime = await withRuntimeContext()
+    const { default: useTabPanel } = await import('@/lib/hooks/useTabPanel')
+    const panel = useTabPanel()
+    panel.initialize([], { id: 'home', title: '首页', path: '/' })
+
+    panel.addPage(mockRoute('/unknown'), {} as never)
+
+    expect(replace).toHaveBeenCalledTimes(1)
+    const target = replace.mock.calls[0]?.[0] as {
+      path: string
+      query?: Record<string, unknown>
+    }
+    expect(target.path).toBe('/')
+    expect(decodeTabInfo(String(target.query?.__tab)).id).toBe('home')
+    expect(panel.tabs.value.map((tab: ITabItem) => tab.id)).toEqual(['home'])
+
+    panel.destroy()
+    runtime.cleanup()
+  })
+
+  it('无 __tab 但路径命中 defaultTabs 时归属该标签，不重定向 home', async () => {
+    const runtime = await withRuntimeContext()
+    const { default: useTabPanel } = await import('@/lib/hooks/useTabPanel')
+    const panel = useTabPanel()
+    panel.initialize([{ id: 'settings', title: '设置', path: '/settings' }], {
+      id: 'home',
+      title: '首页',
+      path: '/'
+    })
+
+    panel.addPage(mockRoute('/settings'), {} as never)
+
+    expect(replace).toHaveBeenCalledTimes(1)
+    const target = replace.mock.calls[0]?.[0] as { path: string }
+    expect(target.path).toBe('/settings')
+    expect(panel.tabs.value.find((tab: ITabItem) => tab.active)?.id).toBe('settings')
+
+    panel.destroy()
+    runtime.cleanup()
+  })
+
+  it('无效 __tab 不重定向 home，仍创建独立兜底标签', async () => {
+    const runtime = await withRuntimeContext()
+    const { default: useTabPanel } = await import('@/lib/hooks/useTabPanel')
+    const panel = useTabPanel()
+    panel.initialize([], { id: 'home', title: '首页', path: '/' })
+
+    panel.addPage({ ...mockRoute('/other'), query: { __tab: 'invalid' } }, {} as never)
+
+    expect(replace).not.toHaveBeenCalled()
+    expect(panel.tabs.value).toHaveLength(2)
+    expect(panel.tabs.value[1]?.title).toBe('VueStackTab.undefined')
 
     panel.destroy()
     runtime.cleanup()

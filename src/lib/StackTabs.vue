@@ -56,6 +56,8 @@ const emit = defineEmits(['onActive', 'onPageLoaded'])
 const props = withDefaults(
   defineProps<{
     defaultTabs?: ITabData[]
+    /** 固定首页：始终位于第一位、不可关闭、不可移动，其他标签也不能排到它前面。 */
+    homeTab?: ITabData
     max?: number
     contextmenu?: boolean | object
     pageTransition?: string
@@ -77,6 +79,7 @@ const props = withDefaults(
   }>(),
   {
     defaultTabs: () => [],
+    homeTab: undefined,
     max: 20,
     contextmenu: true,
     tabTransition: 'stack-tab-zoom',
@@ -226,7 +229,7 @@ if (isRuntimeContextOwner) {
 onBeforeMount(() => {
   if (!isRuntimeContextOwner) return
   setSessionPrefix(props.sessionPrefix)
-  initialize(props.defaultTabs)
+  initialize(props.defaultTabs, props.homeTab)
   window.addEventListener('message', handleMessage)
 })
 onBeforeUnmount(() => {

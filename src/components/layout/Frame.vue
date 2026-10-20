@@ -6,20 +6,17 @@
 <script setup lang="ts">
 import type { ITabData } from '@/lib'
 
-/** 默认打开的标签，首页为不可关闭 */
-const defaultTabs: ITabData[] = [
-  {
-    id: '01HR6764M0NN996S2P510E5642',
-    title: '首页',
-    path: '/demo',
-    closable: false
-  }
-]
+/** 固定首页：不可关闭、不可移动，其他标签不能排到它前面 */
+const homeTab: ITabData = {
+  id: '01HR6764M0NN996S2P510E5642',
+  title: '首页',
+  path: '/demo'
+}
 </script>
 
 <template>
   <vue-stack-tabs
-    :default-tabs="defaultTabs"
+    :home-tab="homeTab"
     iframe-path="/demo/iframe"
     global-scroll
     session-prefix="light"

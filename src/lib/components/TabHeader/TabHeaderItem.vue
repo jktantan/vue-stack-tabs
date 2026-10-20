@@ -6,11 +6,12 @@
     :class="{
       'stack-tab__item--active': item.active,
       'stack-tab__item--closable': item.closable,
+      'stack-tab__item--pinned': item.pinned,
       'stack-tab__item--dragging': dragging,
       'stack-tab__item--drop-before': dropPosition === 'before',
       'stack-tab__item--drop-after': dropPosition === 'after'
     }"
-    :draggable="true"
+    :draggable="!item.pinned"
     @click.self="handleActivate(true)"
     @contextmenu="$emit('contextmenu', $event)"
     @dragstart="handleDragStart"
@@ -99,6 +100,11 @@ const handleClose = () => {
   emit('close', props.item)
 }
 const handleDragStart = (event: DragEvent) => {
+  // pinned 标签（home）固定在左侧，不参与拖拽。
+  if (props.item.pinned) {
+    event.preventDefault()
+    return
+  }
   dragging.value = true
   event.dataTransfer?.setData('text/plain', props.item.id)
   if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move'

@@ -103,6 +103,8 @@ interface TabRecord {
   iframe: boolean
   iframeRefreshMode?: 'postMessage' | 'reload'
   url?: string
+  /** 固定在标签栏最前方，不可拖动，其他标签也不能排到它前面 */
+  pinned?: boolean
 }
 
 interface PageStackAccess {
@@ -258,7 +260,8 @@ const createTabStore = (context: StackTabsRuntimeContext): TabStoreApi => {
     refreshable: tab.refreshable,
     iframe: tab.iframe,
     iframeRefreshMode: tab.iframeRefreshMode,
-    url: tab.url
+    url: tab.url,
+    pinned: tab.pinned
   })
 
   const registerTab = (tab: ITabItem): void => {
@@ -296,19 +299,25 @@ const createTabStore = (context: StackTabsRuntimeContext): TabStoreApi => {
   const moveTab = (id: string, targetIndex: number): boolean => {
     const order = tabOrder.value
     const sourceIndex = order.indexOf(id)
-    if (
-      sourceIndex < 0 ||
-      targetIndex < 0 ||
-      targetIndex >= order.length ||
-      sourceIndex === targetIndex
-    ) {
+    if (sourceIndex < 0 || targetIndex < 0 || sourceIndex === targetIndex) {
       return false
     }
+
+    // pinned 标签（home）固定在最前方：自身不可移动，其他标签也不得插到它前面。
+    const sourceRecord = tabsById.get(id)
+    if (!sourceRecord || sourceRecord.pinned) return false
+
+    let firstUnpinnedIndex = 0
+    for (let index = 0; index < order.length; index++) {
+      if (tabsById.get(order[index] as string)?.pinned) firstUnpinnedIndex = index + 1
+    }
+    const safeTargetIndex = Math.max(targetIndex, firstUnpinnedIndex)
+    if (safeTargetIndex >= order.length || safeTargetIndex === sourceIndex) return false
 
     const reordered = [...order]
     const [tabId] = reordered.splice(sourceIndex, 1)
     if (!tabId) return false
-    reordered.splice(targetIndex, 0, tabId)
+    reordered.splice(safeTargetIndex, 0, tabId)
     tabOrder.value = reordered
     syncTabsView()
     return true
@@ -506,7 +515,8 @@ const createTabStore = (context: StackTabsRuntimeContext): TabStoreApi => {
         iframeRefreshMode: record.iframeRefreshMode,
         url: record.url,
         active: activeTabId.value === id,
-        pages: new PageStackView(id, pageAccess)
+        pages: new PageStackView(id, pageAccess),
+        pinned: record.pinned
       }
       tabViews.set(id, view)
     } else {
@@ -515,6 +525,7 @@ const createTabStore = (context: StackTabsRuntimeContext): TabStoreApi => {
       view.refreshable = record.refreshable
       view.iframe = record.iframe
       view.active = activeTabId.value === id
+      view.pinned = record.pinned
       if (record.iframeRefreshMode === undefined) {
         delete view.iframeRefreshMode
       } else {

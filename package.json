@@ -1,6 +1,6 @@
 {
   "name": "vue-stack-tabs",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "private": false,
   "type": "module",
   "description": "Vue 3 multi-tab manager built on Vue Router with iframe-like tab isolation: per-tab component scope, stack-based forward/backward navigation, keep-alive page caching, scroll position memory, i18n and a Nuxt 3/4 module.",

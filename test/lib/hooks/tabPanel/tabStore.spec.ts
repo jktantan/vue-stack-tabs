@@ -13,14 +13,19 @@ const createPage = (id: string, tabId: string, path = `/${id}`): ITabPage => ({
   query: { __tab: `${id}-encoded` }
 })
 
-const createTab = (id: string, pages: ITabPage[] = [createPage(`${id}-p1`, id)]): ITabItem => ({
+const createTab = (
+  id: string,
+  pages: ITabPage[] = [createPage(`${id}-p1`, id)],
+  options: { pinned?: boolean } = {}
+): ITabItem => ({
   id,
   title: id,
   closable: true,
   refreshable: true,
   iframe: false,
   active: false,
-  pages: new Stack(pages)
+  pages: new Stack(pages),
+  pinned: options.pinned
 })
 
 describe('tabStore', () => {
@@ -89,6 +94,19 @@ describe('tabStore', () => {
     expect(store.getTabs()[2]).toBe(first)
     expect(store.moveTab('missing', 0)).toBe(false)
     expect(store.moveTab('t1', 2)).toBe(false)
+  })
+
+  it('pinned 标签不可移动，其他标签不能插到它前面', () => {
+    store.addTab(createTab('home', undefined, { pinned: true }))
+    store.addTab(createTab('t1'))
+    store.addTab(createTab('t2'))
+
+    expect(store.moveTab('home', 2)).toBe(false)
+    expect(store.moveTab('t2', 0)).toBe(true)
+    expect(store.getTabs().map((tab) => tab.id)).toEqual(['home', 't2', 't1'])
+
+    expect(store.moveTab('t1', 0)).toBe(true)
+    expect(store.getTabs().map((tab) => tab.id)).toEqual(['home', 't1', 't2'])
   })
 
   it('removeTab 级联标记页面缓存并返回相邻 active 标签', () => {

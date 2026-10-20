@@ -153,6 +153,7 @@ const handleTabContextMenu = (e: MouseEvent, item: ITabItem, index: number, max:
 
 /** 原生拖放只在释放鼠标时更新顺序，避免拖动经过标签时反复变更响应式列表。 */
 const handleTabDragStart = (item: ITabItem) => {
+  if (item.pinned) return
   draggingTabId.value = item.id
 }
 
@@ -165,9 +166,11 @@ const handleTabDragOver = (item: ITabItem, event: DragEvent) => {
   if (!tabElement) return
 
   const { left, width } = tabElement.getBoundingClientRect()
+  const position = event.clientX < left + width / 2 ? 'before' : 'after'
   dropIndicator.value = {
     tabId: item.id,
-    position: event.clientX < left + width / 2 ? 'before' : 'after'
+    // pinned 标签固定在左侧，拖到它前半区时改为插到它后面。
+    position: item.pinned && position === 'before' ? 'after' : position
   }
   if (event.dataTransfer) event.dataTransfer.dropEffect = 'move'
 }
@@ -185,6 +188,13 @@ const handleTabDrop = (target: ITabItem) => {
   let destinationIndex = targetIndex
   if (indicator.position === 'before' && sourceIndex < targetIndex) destinationIndex--
   if (indicator.position === 'after' && sourceIndex > targetIndex) destinationIndex++
+
+  // home 等 pinned 标签固定在左侧，任何标签都不能插到它前面（store 层还会再兜底）。
+  let firstUnpinnedIndex = 0
+  tabs.value.forEach((tab, index) => {
+    if (tab.pinned) firstUnpinnedIndex = index + 1
+  })
+  destinationIndex = Math.max(destinationIndex, firstUnpinnedIndex)
   moveTab(sourceId, destinationIndex)
 }
 

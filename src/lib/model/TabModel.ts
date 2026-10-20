@@ -64,6 +64,11 @@ export interface ITabItem extends ITabBase {
   url?: string
   active: boolean
   pages: Stack<ITabPage>
+  /**
+   * 固定在标签栏最前方的内部标记（目前仅 homeTab 使用）。
+   * pinned 标签不可被拖动，其他标签也不能排到它前面；仅存在于运行时，不写入 __tab。
+   */
+  pinned?: boolean
 }
 
 /** 标签内的单个页面（对应 keep-alive 的一个缓存实例） */
