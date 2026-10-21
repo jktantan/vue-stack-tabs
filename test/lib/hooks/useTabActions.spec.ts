@@ -16,10 +16,6 @@ const runtimeContext = {
   iframePath: { value: '/iframe' }
 }
 
-vi.mock('throttle-debounce', () => ({
-  throttle: (_delay: number, fn: (...args: unknown[]) => unknown) => fn
-}))
-
 vi.mock('vue-router', () => ({
   useRouter: () => ({ push, replace: vi.fn() }),
   isNavigationFailure: (value: unknown) =>

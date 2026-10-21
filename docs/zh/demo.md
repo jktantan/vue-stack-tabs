@@ -31,4 +31,4 @@
 | iframe 标签与通信      | iframe 标签内的按钮                              | `IFrame`、`postOpenTab`         |
 | 页签级加载遮罩         | 控制台「打开 Loading 演示」，点「模拟 2 秒加载」 | `useTabLoading`                 |
 | 刷新单个 / 全部标签    | 控制台的「刷新当前 / 刷新全部」                  | `refreshTab`、`refreshAllTabs`  |
-| 会话恢复               | 刷新演示页，之前打开的标签会恢复                 | `sessionPrefix`、sessionStorage |
+| 会话恢复               | 刷新演示页，恢复上次激活的标签及其页面栈         | `sessionPrefix`、sessionStorage |

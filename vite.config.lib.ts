@@ -37,7 +37,7 @@ export default defineConfig(({ mode }) => ({
       cssFileName: 'style'
     },
     rollupOptions: {
-      external: ['vue', 'element-plus', 'vue-router'],
+      external: ['vue', 'element-plus', 'vue-router', 'defu', 'mitt', 'vue-i18n-lite'],
       output: {
         exports: 'named',
         globals: {

@@ -137,10 +137,17 @@ export function useIframeManager(options: UseIframeManagerOptions) {
     }
   }
 
-  /** 同步 iframe 激活和移除状态，避免用多个 watcher 重复遍历 iframe 列表。 */
+  /**
+   * 同步 iframe 激活和移除状态。
+   * 只监听 id:active 签名，普通标签的标题/页面栈变化不会触发遍历。
+   */
+  const iframeActivationSignature = computed(() =>
+    iframeTabs.value.map((frame) => `${frame.id}:${frame.active ? 1 : 0}`).join('|')
+  )
   watch(
-    () => iframeTabs.value.map((frame) => ({ id: frame.id, active: frame.active })),
-    (frames) => {
+    iframeActivationSignature,
+    () => {
+      const frames = iframeTabs.value
       for (const f of frames) {
         if (!f.active) continue
         iframeEverActivated[f.id] = true

@@ -4,6 +4,7 @@ import {
   isAllowedTabUrl,
   isInvalidIframeUrl,
   isSameQueryIgnoringReserved,
+  normalizePathname,
   parseUrl,
   toSafeTabUrl
 } from '@/lib/utils/urlParser'
@@ -80,26 +81,51 @@ describe('isCrossOriginUrl', () => {
     expect(isCrossOriginUrl('')).toBe(false)
     expect(isCrossOriginUrl('javascript:void(0)')).toBe(false)
   })
+
+  it('协议相对 URL 按实际 origin 判断，不再误判为同源', async () => {
+    const { isCrossOriginUrl } = await import('@/lib/utils/urlParser')
+    expect(isCrossOriginUrl('//example.com/path')).toBe(true)
+    expect(isCrossOriginUrl('//localhost/path')).toBe(false)
+  })
 })
 
 describe('parseUrl', () => {
   it('解析纯 path', () => {
-    expect(parseUrl('/dashboard')).toEqual({ path: '/dashboard', query: {} })
+    expect(parseUrl('/dashboard')).toEqual({ path: '/dashboard', query: {}, hash: '' })
   })
 
   it('解析 path 带 query', () => {
     expect(parseUrl('/page?a=1&b=2')).toEqual({
       path: '/page',
-      query: { a: '1', b: '2' }
+      query: { a: '1', b: '2' },
+      hash: ''
     })
   })
 
   it('解析单个 query 参数', () => {
-    expect(parseUrl('/x?id=123')).toEqual({ path: '/x', query: { id: '123' } })
+    expect(parseUrl('/x?id=123')).toEqual({ path: '/x', query: { id: '123' }, hash: '' })
   })
 
   it('保留空 query value，避免丢失 Vue Router query 语义', () => {
-    expect(parseUrl('/p?key=')).toEqual({ path: '/p', query: { key: '' } })
+    expect(parseUrl('/p?key=')).toEqual({ path: '/p', query: { key: '' }, hash: '' })
+  })
+
+  it('拆分 hash，避免污染 query', () => {
+    expect(parseUrl('/page?x=1#section')).toEqual({
+      path: '/page',
+      query: { x: '1' },
+      hash: '#section'
+    })
+    expect(parseUrl('/page#section')).toEqual({ path: '/page', query: {}, hash: '#section' })
+  })
+})
+
+describe('normalizePathname', () => {
+  it('去掉尾部斜杠，保留根路径', () => {
+    expect(normalizePathname('/list/')).toBe('/list')
+    expect(normalizePathname('/list///')).toBe('/list')
+    expect(normalizePathname('/')).toBe('/')
+    expect(normalizePathname('/list')).toBe('/list')
   })
 })
 

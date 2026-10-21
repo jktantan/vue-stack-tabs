@@ -127,11 +127,24 @@ describe('useTabRouter', () => {
     router.forward({ path: '/detail-next', query: targetQuery })
 
     const pushedPage = currentTab.pages.peek()
-    expect(pushedPage?.query).toEqual({ filter: 'open' })
+    expect(pushedPage?.query).toEqual({ filter: 'open', __tab: 'encoded-tab' })
     expect(pushedPage?.query).not.toBe(targetQuery)
 
     targetQuery.filter = 'closed'
     expect(pushedPage?.query?.filter).toBe('open')
+  })
+
+  it('forward 忽略业务 query 中的 __tab，强制归属当前标签', async () => {
+    const { default: useTabRouter } = await import('@/lib/hooks/useTabRouter')
+    const router = useTabRouter()
+
+    router.forward({ path: '/next', query: { __tab: 'other-tab', foo: '1' } })
+
+    expect(push).toHaveBeenCalledWith({
+      path: '/next',
+      query: { foo: '1', __tab: 'encoded-tab' }
+    })
+    expect(currentTab.pages.peek()?.query).toEqual({ foo: '1', __tab: 'encoded-tab' })
   })
 
   it('forward optimistic page 会浅拷贝 to.query 中的数组值', async () => {

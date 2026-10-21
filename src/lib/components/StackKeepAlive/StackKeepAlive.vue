@@ -27,7 +27,7 @@ const emit = defineEmits<{
   loaded: []
 }>()
 
-const { caches } = useTabPanel()
+const { caches, getPageRefreshVersion } = useTabPanel()
 
 /** 页面组件加载完成时向父组件转发 */
 const emitLoaded = () => {
@@ -38,7 +38,7 @@ const emitLoaded = () => {
 <template>
   <router-view v-slot="{ Component, route }">
     <StackCacheRenderer
-      v-slot="{ wrappedComponent, activeCacheKey, activePageRefreshVersion, component }"
+      v-slot="{ wrappedComponent, activeCacheKey, component }"
       :route="route"
       :component="Component"
     >
@@ -46,8 +46,10 @@ const emitLoaded = () => {
         <keep-alive :include="caches">
           <component
             :is="wrappedComponent"
-            :key="`${activeCacheKey}-${activePageRefreshVersion}`"
+            :key="activeCacheKey"
             :vnode="component"
+            :refresh-version="getPageRefreshVersion(activeCacheKey)"
+            :transition-name="transitionName"
             @on-loaded="emitLoaded"
           />
         </keep-alive>

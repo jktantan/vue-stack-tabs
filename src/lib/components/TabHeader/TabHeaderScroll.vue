@@ -229,7 +229,8 @@ onMounted(() => {
     ensureActiveTabInView()
   })
   tabListResizeObserver = new ResizeObserver(() => {
-    if (!hasScroller.value) ensureActiveTabInView()
+    // 内容溢出（存在滚动条）时才需要在标签增删后纠正滚动位置。
+    if (hasScroller.value) ensureActiveTabInView()
     updateScrollState()
   })
 
@@ -238,6 +239,7 @@ onMounted(() => {
   if (tabNav) tabListResizeObserver.observe(tabNav)
 })
 onUnmounted(() => {
+  handleScrollbarDragEnd()
   scrollContainerResizeObserver?.disconnect()
   tabListResizeObserver?.disconnect()
   scrollContainerResizeObserver = null

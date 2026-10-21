@@ -5,7 +5,7 @@
  */
 import type { Ref } from 'vue'
 import type { ITabItem, ITabPage } from '../../model/TabModel'
-import type { PagePatch } from './tabStore'
+import type { PagePatch, PageUpdate } from './tabStore'
 
 export interface TabPanelRefreshApi {
   refreshTab: (id: string) => void
@@ -15,8 +15,10 @@ export interface TabPanelRefreshApi {
 export interface CreateTabPanelRefreshOptions {
   getTabs: () => readonly ITabItem[]
   getTopPage: (tabId: string) => ITabPage | null
-  /** 修改页面字段（刷新版本 / 页面 id）并触发 tabs 更新 */
+  /** 修改页面字段（刷新版本 / 页面 id） */
   updatePage: (tabId: string, pageId: string, patch: PagePatch) => boolean
+  /** 批量修改页面字段，refreshAllTabs 最后统一触发一次 tabs 更新 */
+  updatePages: (updates: readonly PageUpdate[]) => void
   iframeRefreshKeys: Ref<Record<string, number>>
   createPageId: () => string
   addCache: (cacheName: string) => void
@@ -35,6 +37,7 @@ export const createTabPanelRefresh = (
     getTabs,
     getTopPage,
     updatePage,
+    updatePages,
     iframeRefreshKeys,
     createPageId,
     addCache,
@@ -54,21 +57,34 @@ export const createTabPanelRefresh = (
     refreshIframeByPostMessage(tab.id)
   }
 
-  const refreshPage = (tab: ITabItem, cacheNamesToEvict?: string[], cacheNamesToAdd?: string[]) => {
+  const refreshPage = (
+    tab: ITabItem,
+    cacheNamesToEvict?: string[],
+    cacheNamesToAdd?: string[],
+    pageUpdates?: PageUpdate[]
+  ) => {
     const currentPage = getTopPage(tab.id)
     if (!currentPage) return
 
     if (tab.active) {
-      // updatePage 内部会触发 tabs 更新，activePageRefreshVersion 随之重新求值。
-      updatePage(tab.id, currentPage.id, {
-        refreshVersion: (currentPage.refreshVersion ?? 0) + 1
-      })
+      const patch = { refreshVersion: (currentPage.refreshVersion ?? 0) + 1 }
+      if (pageUpdates) {
+        pageUpdates.push({ tabId: tab.id, pageId: currentPage.id, patch })
+      } else {
+        // 只有 refreshVersion 变化：页面对象是响应式的，不需要重建 tabs 数组。
+        updatePage(tab.id, currentPage.id, patch)
+      }
       return
     }
 
     const oldCacheName = currentPage.id
     const nextPageId = createPageId()
-    updatePage(tab.id, oldCacheName, { id: nextPageId, refreshVersion: 0 })
+    const patch = { id: nextPageId, refreshVersion: 0 }
+    if (pageUpdates) {
+      pageUpdates.push({ tabId: tab.id, pageId: oldCacheName, patch })
+    } else {
+      updatePage(tab.id, oldCacheName, patch)
+    }
     if (cacheNamesToEvict && cacheNamesToAdd) {
       cacheNamesToEvict.push(oldCacheName)
       cacheNamesToAdd.push(nextPageId)
@@ -91,6 +107,7 @@ export const createTabPanelRefresh = (
   const refreshAllTabs = () => {
     const cacheNamesToEvict: string[] = []
     const cacheNamesToAdd: string[] = []
+    const pageUpdates: PageUpdate[] = []
     const iframeKeysUpdate = { ...iframeRefreshKeys.value }
     let iframeKeysChanged = false
 
@@ -105,10 +122,11 @@ export const createTabPanelRefresh = (
         }
         continue
       }
-      refreshPage(tab, cacheNamesToEvict, cacheNamesToAdd)
+      refreshPage(tab, cacheNamesToEvict, cacheNamesToAdd, pageUpdates)
     }
 
     if (iframeKeysChanged) iframeRefreshKeys.value = iframeKeysUpdate
+    updatePages(pageUpdates)
     replacePageCaches(cacheNamesToEvict, cacheNamesToAdd)
   }
 

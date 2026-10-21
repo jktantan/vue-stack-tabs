@@ -2,7 +2,7 @@ import { isNavigationFailure, useRouter } from 'vue-router'
 import type { LocationQueryRaw } from 'vue-router'
 import { defu } from 'defu'
 import useTabPanel from './useTabPanel'
-import { encodeTabInfo } from '../utils/tabInfoEncoder'
+import { createId, encodeTabInfo } from '../utils/tabInfoEncoder'
 import {
   parseUrl,
   isCrossOriginUrl,
@@ -31,6 +31,7 @@ export default function useTabActions(providedRuntimeContext?: StackTabsRuntimeC
   const runtimeContext = providedRuntimeContext ?? resolveStackTabsRuntimeContext()
   const {
     active,
+    updateTabTitle,
     hasTab,
     refreshKey,
     reset,
@@ -61,7 +62,7 @@ export default function useTabActions(providedRuntimeContext?: StackTabsRuntimeC
       defaults.iframeRefreshMode = (tab.iframeRefreshMode ?? 'postMessage') as IframeRefreshMode
     }
     const info = defu(tab, defaults)
-    if (!info.id) info.id = crypto.randomUUID()
+    if (!info.id) info.id = createId()
     return info
   }
 
@@ -111,10 +112,12 @@ export default function useTabActions(providedRuntimeContext?: StackTabsRuntimeC
     const tabQuery = omitStackTabsReservedQuery(tab.query)
     let query = defu(tabQuery, { __tab }) as LocationQueryRaw
     let path: string
+    let hash: string | undefined
 
     if (!tab.iframe) {
       const url = parseUrl(tab.path)
       path = url.path
+      hash = url.hash || undefined
       query = defu(omitStackTabsReservedQuery(url.query), query, { __tab }) as LocationQueryRaw
       query = {
         ...query,
@@ -132,7 +135,7 @@ export default function useTabActions(providedRuntimeContext?: StackTabsRuntimeC
     if (!isAllowedTabUrl(tab.path)) return Promise.reject(new Error('Invalid tab URL'))
     return runNavigationTransaction({
       apply: () => undefined,
-      navigate: () => router.push({ path, query }),
+      navigate: () => router.push({ path, query, hash }),
       rollback: () => undefined,
       isFailureResult: isNavigationFailure,
       rejectFailureResult: true
@@ -181,6 +184,7 @@ export default function useTabActions(providedRuntimeContext?: StackTabsRuntimeC
     // 激活与重置
     activeTab: active,
     moveTab,
+    updateTabTitle,
     reset,
 
     // 数据与配置

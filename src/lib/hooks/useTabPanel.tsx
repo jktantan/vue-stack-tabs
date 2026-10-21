@@ -16,7 +16,7 @@ import { computed, ref } from 'vue'
 import type { DefineComponent, VNode } from 'vue'
 import { isNavigationFailure, useRouter } from 'vue-router'
 import type { RouteLocationNormalizedLoaded } from 'vue-router'
-import { encodeTabInfo, createPageId, decodeTabInfo } from '../utils/tabInfoEncoder'
+import { encodeTabInfo, createId, createPageId, decodeTabInfo } from '../utils/tabInfoEncoder'
 import { defu } from 'defu'
 import { Stack } from '../model/TabModel'
 import {
@@ -25,7 +25,9 @@ import {
   omitStackTabsReservedQuery,
   toSafeTabUrl,
   decodeSafeTabUrl,
-  cloneLocationQuery
+  cloneLocationQuery,
+  isSameQueryIgnoringReserved,
+  normalizePathname
 } from '../utils/urlParser'
 import { TabEventType, useTabEmitter } from './useTabEventBus'
 import { runNavigationTransaction } from './tabPanel/navigationTransaction'
@@ -55,9 +57,8 @@ export const normalizePathForCache = (route: RouteLocationNormalizedLoaded): str
   return matchPath === path ? path : route.path
 }
 
-export default (providedRuntimeContext?: StackTabsRuntimeContext) => {
+const createTabPanelApi = (runtimeContext: StackTabsRuntimeContext) => {
   const router = useRouter()
-  const runtimeContext = providedRuntimeContext ?? resolveStackTabsRuntimeContext()
   const emitter = useTabEmitter(runtimeContext)
   const { t } = useI18n()
   const { tabs, defaultTabs, caches, refreshKey, iframeRefreshKeys, isInitialized } = runtimeContext
@@ -71,10 +72,12 @@ export default (providedRuntimeContext?: StackTabsRuntimeContext) => {
     canAddTab,
     getPages,
     getTopPage,
+    getPageRefreshVersion,
     getPageSnapshot,
     addTab,
     addTabs,
     activateTab,
+    updateTabTitle: updateTabTitleInStore,
     moveTab,
     removeTab: removeTabFromStore,
     removeTabs: removeTabsFromStore,
@@ -83,6 +86,7 @@ export default (providedRuntimeContext?: StackTabsRuntimeContext) => {
     replacePages,
     clearPages,
     updatePage,
+    updatePages,
     consumeBackParams,
     markCacheForEviction,
     markTabPagesForEvictionOnly,
@@ -122,6 +126,13 @@ export default (providedRuntimeContext?: StackTabsRuntimeContext) => {
    * @param homeTab - 固定首页；始终位于第一位、不可关闭、不可移动
    */
   const initialize = (staticTabs: ITabData[], homeTab?: ITabData) => {
+    // 重复调用会累加 defaultTabs 并重复注册标签；初始化后直接忽略。
+    if (isInitialized.value) {
+      if (!import.meta.env.PROD) {
+        console.warn('[vue-stack-tabs] initialize() called more than once; ignored.')
+      }
+      return
+    }
     const newDefaults: ITabItem[] = []
     const newTabs: ITabItem[] = []
     let homeTabId = ''
@@ -138,7 +149,7 @@ export default (providedRuntimeContext?: StackTabsRuntimeContext) => {
         iframe: false
       })
       // homeTab 未指定 id 时使用固定 id，避免每次初始化生成新 id 后与 session 恢复标签重复。
-      fullItem.id = item.id ?? (options.pinned ? DEFAULT_HOME_TAB_ID : crypto.randomUUID())
+      fullItem.id = item.id ?? (options.pinned ? DEFAULT_HOME_TAB_ID : createId())
       if (options.closable !== undefined) fullItem.closable = options.closable
       const tabId = fullItem.id
       const uri = parseUrl(fullItem.path)
@@ -146,7 +157,7 @@ export default (providedRuntimeContext?: StackTabsRuntimeContext) => {
       const page: ITabPage = {
         id: cacheName,
         tabId,
-        path: uri.path,
+        path: normalizePathname(uri.path),
         query: defu(omitStackTabsReservedQuery(uri.query), { __tab: encodeTabInfo(fullItem) })
       }
       const pages = new Stack<ITabPage>()
@@ -242,6 +253,37 @@ export default (providedRuntimeContext?: StackTabsRuntimeContext) => {
     iframeRefreshMode: tab.iframeRefreshMode
   })
 
+  /**
+   * 动态更新标签标题。
+   *
+   * 同步 TabRecord、对外视图与 session；激活标签还会把新的 __tab 写回当前 URL，
+   * 避免刷新或分享链接后标题回退。
+   */
+  const updateTabTitle = (tabId: string, title: string): boolean => {
+    if (!updateTabTitleInStore(tabId, title)) return false
+    const tab = getTab(tabId)
+    if (!tab) return false
+
+    if (tab.active) {
+      saveActiveTabToSession(tab)
+      const top = getTopPage(tabId)
+      if (top) {
+        void Promise.resolve(
+          router.replace({
+            path: top.path,
+            query: { ...cloneLocationQuery(top.query), __tab: encodeTabInfo(toTabBase(tab)) },
+            hash: router.currentRoute.value.hash
+          })
+        ).catch((error: unknown) => {
+          if (!import.meta.env.PROD) {
+            console.warn('[vue-stack-tabs] Failed to sync tab title to URL:', error)
+          }
+        })
+      }
+    }
+    return true
+  }
+
   /** 当前固定首页（homeTab）；未配置时返回 null。 */
   const getHomeTab = (): ITabItem | null => getTabs().find((tab) => tab.pinned) ?? null
 
@@ -321,7 +363,7 @@ export default (providedRuntimeContext?: StackTabsRuntimeContext) => {
     if (!hasEncodedTab && getHomeTab()) return null
 
     return {
-      id: crypto.randomUUID(),
+      id: createId(),
       title: t('VueStackTab.undefined'),
       closable: true,
       refreshable: true,
@@ -354,7 +396,7 @@ export default (providedRuntimeContext?: StackTabsRuntimeContext) => {
         url: decodeSafeTabUrl(src),
         active: true,
         pages
-      } as unknown as ITabItem
+      }
       activateTab('')
       addTab(targetTab)
       emitter.emit(TabEventType.TAB_ACTIVE, { id: tabInfo.id!, isRoute: false })
@@ -391,6 +433,10 @@ export default (providedRuntimeContext?: StackTabsRuntimeContext) => {
     if (isTabMarkedForEviction(tabInfo.id!)) return { empty: true }
 
     const path = normalizePathForCache(route)
+    const routeQuery = cloneRouteQuery(route, tabInfo)
+    /** path 与业务 query 都一致才算同一个页面（忽略 __tab 等保留参数） */
+    const isSameLocation = (candidate: ITabPage): boolean =>
+      candidate.path === path && isSameQueryIgnoringReserved(routeQuery, candidate.query || {})
 
     let targetTab: ITabItem | null = tabInfo.id ? (getTab(tabInfo.id) as ITabItem | null) : null
     let cacheName: string
@@ -400,14 +446,23 @@ export default (providedRuntimeContext?: StackTabsRuntimeContext) => {
       const top = getTopPage(targetTab.id)!
       if (!top) throw new Error('[vue-stack-tabs] Stack is not empty but peek() returned undefined')
 
-      if (top.path === path) {
+      if (isSameLocation(top)) {
         cacheName = top.id
+      } else if (top.path === path) {
+        // 同 path、不同 query：按产品语义作为新页面入栈，backward 才能按 query 精确回退。
+        cacheName = createPageId()
+        page = {
+          id: cacheName,
+          tabId: tabInfo.id!,
+          path,
+          query: cloneLocationQuery(routeQuery)
+        }
       } else {
         const pagesList = getPages(targetTab.id)
         let foundIndex = -1
         for (let i = pagesList.length - 2; i >= 0; i--) {
           const pastPage = pagesList[i]
-          if (pastPage && pastPage.path === path) {
+          if (pastPage && isSameLocation(pastPage)) {
             foundIndex = i
             break
           }
@@ -431,8 +486,8 @@ export default (providedRuntimeContext?: StackTabsRuntimeContext) => {
             page = {
               id: cacheName,
               tabId: tabInfo.id!,
-              path: route.path,
-              query: cloneRouteQuery(route, tabInfo)
+              path,
+              query: cloneLocationQuery(routeQuery)
             }
           }
         } else {
@@ -440,8 +495,8 @@ export default (providedRuntimeContext?: StackTabsRuntimeContext) => {
           page = {
             id: cacheName,
             tabId: tabInfo.id!,
-            path: route.path,
-            query: cloneRouteQuery(route, tabInfo)
+            path,
+            query: cloneLocationQuery(routeQuery)
           }
         }
       }
@@ -450,8 +505,8 @@ export default (providedRuntimeContext?: StackTabsRuntimeContext) => {
       page = {
         id: cacheName,
         tabId: tabInfo.id!,
-        path: route.path,
-        query: cloneRouteQuery(route, tabInfo)
+        path,
+        query: cloneLocationQuery(routeQuery)
       }
     }
 
@@ -614,6 +669,7 @@ export default (providedRuntimeContext?: StackTabsRuntimeContext) => {
     getTabs,
     getTopPage,
     updatePage,
+    updatePages,
     iframeRefreshKeys,
     createPageId,
     addCache,
@@ -703,6 +759,7 @@ export default (providedRuntimeContext?: StackTabsRuntimeContext) => {
     initialize,
     size,
     active,
+    updateTabTitle,
     getCacheName: createCacheName,
     destroy,
     reset,
@@ -712,6 +769,7 @@ export default (providedRuntimeContext?: StackTabsRuntimeContext) => {
     getActiveTab,
     getTopPage,
     getPages,
+    getPageRefreshVersion,
     getPageSnapshot,
     moveTab,
     addTab,
@@ -720,6 +778,7 @@ export default (providedRuntimeContext?: StackTabsRuntimeContext) => {
     replacePages,
     clearPages,
     updatePage,
+    updatePages,
     removeTab,
     removeAllTabs,
     removeLeftTabs,
@@ -747,4 +806,25 @@ export default (providedRuntimeContext?: StackTabsRuntimeContext) => {
       runtimeContext.sessionPrefix.value = value
     }
   }
+}
+
+type TabPanelApi = ReturnType<typeof createTabPanelApi>
+
+const panelApiByContext = new WeakMap<StackTabsRuntimeContext, TabPanelApi>()
+
+/**
+ * 同一个运行时上下文复用同一套 panel API。
+ *
+ * StackTabs、StackKeepAlive、StackCacheRenderer、ContextMenu 与页面内的 useTabRouter
+ * 都会调用本 hook；首次调用在 setup 上下文中完成 useRouter/useI18n 注入，
+ * 后续调用直接返回缓存，避免重复创建 scroll/session/refresh 闭包与局部状态。
+ */
+export default (providedRuntimeContext?: StackTabsRuntimeContext): TabPanelApi => {
+  const runtimeContext = providedRuntimeContext ?? resolveStackTabsRuntimeContext()
+  const existing = panelApiByContext.get(runtimeContext)
+  if (existing) return existing
+
+  const panelApi = createTabPanelApi(runtimeContext)
+  panelApiByContext.set(runtimeContext, panelApi)
+  return panelApi
 }

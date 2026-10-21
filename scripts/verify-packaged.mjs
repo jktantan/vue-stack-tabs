@@ -195,6 +195,11 @@ async function verifyPackageExportsFromTarball(tarballPath) {
     linkPeerDependency(tempProjectDir, 'vue')
     linkPeerDependency(tempProjectDir, 'vue-router')
     linkPeerDependency(tempProjectDir, 'element-plus')
+    // 运行时依赖已设为 external，tarball smoke 需要能解析它们；
+    // 真实消费者由 npm/pnpm 自动安装 dependencies。
+    linkRuntimeDependency(tempProjectDir, 'defu')
+    linkRuntimeDependency(tempProjectDir, 'mitt')
+    linkRuntimeDependency(tempProjectDir, 'vue-i18n-lite')
     writeIframeBridgeTypeSmokeProject(tempProjectDir)
     writeNuxtSmokeStubs(tempProjectDir)
 
@@ -230,6 +235,16 @@ async function verifyPackageExportsFromTarball(tarballPath) {
 function linkPeerDependency(tempProjectDir, packageName) {
   const packageJsonPath = require.resolve(`${packageName}/package.json`)
   const sourcePath = pathDirname(packageJsonPath)
+  const targetPath = join(tempProjectDir, 'node_modules', packageName)
+
+  fs.mkdirSync(pathDirname(targetPath), { recursive: true })
+  fs.symlinkSync(sourcePath, targetPath, 'junction')
+}
+
+/** 链接本项目 node_modules 中的运行时依赖（external 后 tarball 不再内联它们）。 */
+function linkRuntimeDependency(tempProjectDir, packageName) {
+  const sourcePath = join(root, 'node_modules', packageName)
+  if (!fs.existsSync(sourcePath)) throw new Error(`运行时依赖未安装：${packageName}`)
   const targetPath = join(tempProjectDir, 'node_modules', packageName)
 
   fs.mkdirSync(pathDirname(targetPath), { recursive: true })

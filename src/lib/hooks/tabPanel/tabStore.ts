@@ -12,7 +12,7 @@
  * 注意：本模块不依赖 vue-router，也不触发业务事件；路由事务与事件由 useTabPanel /
  * useTabRouter 等上层编排。
  */
-import { reactive, ref } from 'vue'
+import { markRaw, reactive, ref } from 'vue'
 import type { DefineComponent } from 'vue'
 import type { ITabItem, ITabPage } from '../../model/TabModel'
 import { Stack } from '../../model/TabModel'
@@ -25,6 +25,12 @@ export interface RemoveTabResult {
   removed: ITabItem | null
   /** 关闭后应激活的相邻标签；没有可激活标签时为空字符串 */
   nextActiveId: string
+}
+
+export interface PageUpdate {
+  tabId: string
+  pageId: string
+  patch: PagePatch
 }
 
 /** updatePage 允许修改的字段；页面身份与刷新版本必须通过 store 写入 */
@@ -46,6 +52,8 @@ export interface TabStoreApi extends TabPanelEvictionApi {
   canAddTab: () => boolean
   getPages: (tabId: string) => readonly ITabPage[]
   getTopPage: (tabId: string) => ITabPage | null
+  /** 读取任意页面的刷新版本；渲染层据此只重建对应页面 */
+  getPageRefreshVersion: (pageId: string) => number
   /** 返回深拷贝的页面栈快照，可直接用于 rollback */
   getPageSnapshot: (tabId: string) => ITabPage[]
 
@@ -54,6 +62,8 @@ export interface TabStoreApi extends TabPanelEvictionApi {
   addTabs: (tabs: readonly ITabItem[]) => void
   /** 唯一 active 写入口 */
   activateTab: (id: string) => ITabItem | null
+  /** 动态更新标签标题；返回 false 表示标签不存在 */
+  updateTabTitle: (id: string, title: string) => boolean
   moveTab: (id: string, targetIndex: number) => boolean
   removeTab: (id: string) => RemoveTabResult
   removeTabs: (shouldRemove: (tab: ITabItem, index: number) => boolean) => ITabItem[]
@@ -65,8 +75,10 @@ export interface TabStoreApi extends TabPanelEvictionApi {
   /** 用给定页面替换整个栈（内部深拷贝页面） */
   replacePages: (tabId: string, pages: readonly ITabPage[]) => void
   clearPages: (tabId: string) => void
-  /** 修改页面字段（id / refreshVersion / _backParams），并触发 tabs 更新 */
+  /** 修改页面字段（id / refreshVersion / _backParams）；仅 id 变化时重建 tabs 数组 */
   updatePage: (tabId: string, pageId: string, patch: PagePatch) => boolean
+  /** 批量修改页面字段，最后最多重建一次 tabs 数组（供 refreshAllTabs 使用） */
+  updatePages: (updates: readonly PageUpdate[]) => void
   /** 取出并清除栈顶页面的 _backParams；pageId 不是当前栈顶时返回 null */
   consumeBackParams: (tabId: string, pageId: string) => Record<string, unknown> | null
 
@@ -110,6 +122,8 @@ interface TabRecord {
 interface PageStackAccess {
   getPages: (tabId: string) => readonly ITabPage[]
   getTopPage: (tabId: string) => ITabPage | null
+  /** 读取任意页面的刷新版本；渲染层据此只重建对应页面 */
+  getPageRefreshVersion: (pageId: string) => number
   appendPage: (tabId: string, page: ITabPage) => void
   popPages: (tabId: string, steps: number) => ITabPage[]
   clearPages: (tabId: string) => void
@@ -213,6 +227,7 @@ const createTabStore = (context: StackTabsRuntimeContext): TabStoreApi => {
   // ---- 查询 ----
   const getTabs = (): readonly ITabItem[] => tabs.value
 
+  // 返回 tabs.value 中的对象（深度代理后的视图），保持调用方的对象身份比较语义。
   const getTab = (id: string): ITabItem | null => tabs.value.find((tab) => tab.id === id) ?? null
 
   const getActiveTab = (): ITabItem | null => tabs.value.find((tab) => tab.active) ?? null
@@ -236,9 +251,13 @@ const createTabStore = (context: StackTabsRuntimeContext): TabStoreApi => {
     return pagesById.get(ids[ids.length - 1] as string) ?? null
   }
 
+  const getPageRefreshVersion = (pageId: string): number =>
+    pagesById.get(pageId)?.refreshVersion ?? 0
+
   const findTabByTopPagePath = (path: string): ITabItem | null => {
+    // 直接遍历 tabViews，避免原先「getTopPage + getTab(find)」的 O(n²) 组合。
     for (const id of tabOrder.value) {
-      if (getTopPage(id)?.path === path) return getTab(id)
+      if (getTopPage(id)?.path === path) return tabViews.get(id) ?? null
     }
     return null
   }
@@ -294,6 +313,15 @@ const createTabStore = (context: StackTabsRuntimeContext): TabStoreApi => {
     activeTabId.value = tabsById.has(id) ? id : ''
     syncTabsView()
     return getTab(id)
+  }
+
+  const updateTabTitle = (id: string, title: string): boolean => {
+    const record = tabsById.get(id)
+    if (!record) return false
+    if (record.title === title) return true
+    record.title = title
+    syncTabsView()
+    return true
   }
 
   const moveTab = (id: string, targetIndex: number): boolean => {
@@ -434,12 +462,17 @@ const createTabStore = (context: StackTabsRuntimeContext): TabStoreApi => {
     syncTabsView()
   }
 
-  const updatePage = (tabId: string, pageId: string, patch: PagePatch): boolean => {
+  const applyPagePatch = (
+    tabId: string,
+    pageId: string,
+    patch: PagePatch
+  ): 'missing' | 'conflict' | 'same-id' | 'new-id' => {
     const ids = pageIdsByTabId.get(tabId)
-    if (!ids || !ids.includes(pageId)) return false
+    if (!ids || !ids.includes(pageId)) return 'missing'
 
     const page = pagesById.get(pageId)
-    if (!page) return false
+    if (!page) return 'missing'
+    if (patch.id && patch.id !== pageId && pagesById.has(patch.id)) return 'conflict'
 
     Object.assign(page, patch)
     if (patch.id && patch.id !== pageId) {
@@ -449,9 +482,30 @@ const createTabStore = (context: StackTabsRuntimeContext): TabStoreApi => {
         tabId,
         ids.map((id) => (id === pageId ? (patch.id as string) : id))
       )
+      return 'new-id'
     }
-    syncTabsView()
+    return 'same-id'
+  }
+
+  /**
+   * 刷新版本、_backParams 都是 page 上的响应式字段，读取方会自行更新；
+   * 只有页面 id 变化才需要重建 tabs 视图，避免刷新一个标签就 diff 整个标签栏。
+   */
+  const updatePage = (tabId: string, pageId: string, patch: PagePatch): boolean => {
+    const result = applyPagePatch(tabId, pageId, patch)
+    if (result === 'missing' || result === 'conflict') return false
+    if (result === 'new-id') syncTabsView()
     return true
+  }
+
+  const updatePages = (updates: readonly PageUpdate[]): void => {
+    let needsSync = false
+    for (const update of updates) {
+      if (applyPagePatch(update.tabId, update.pageId, update.patch) === 'new-id') {
+        needsSync = true
+      }
+    }
+    if (needsSync) syncTabsView()
   }
 
   const consumeBackParams = (tabId: string, pageId: string): Record<string, unknown> | null => {
@@ -495,6 +549,7 @@ const createTabStore = (context: StackTabsRuntimeContext): TabStoreApi => {
   const pageAccess: PageStackAccess = {
     getPages,
     getTopPage,
+    getPageRefreshVersion,
     appendPage,
     popPages,
     clearPages
@@ -515,7 +570,8 @@ const createTabStore = (context: StackTabsRuntimeContext): TabStoreApi => {
         iframeRefreshMode: record.iframeRefreshMode,
         url: record.url,
         active: activeTabId.value === id,
-        pages: new PageStackView(id, pageAccess),
+        // pages 的读写都转发给 store，本身不需要被 ref 深度代理。
+        pages: markRaw(new PageStackView(id, pageAccess)),
         pinned: record.pinned
       }
       tabViews.set(id, view)
@@ -559,10 +615,12 @@ const createTabStore = (context: StackTabsRuntimeContext): TabStoreApi => {
     canAddTab,
     getPages,
     getTopPage,
+    getPageRefreshVersion,
     getPageSnapshot,
     addTab,
     addTabs,
     activateTab,
+    updateTabTitle,
     moveTab,
     removeTab,
     removeTabs,
@@ -571,6 +629,7 @@ const createTabStore = (context: StackTabsRuntimeContext): TabStoreApi => {
     replacePages,
     clearPages,
     updatePage,
+    updatePages,
     consumeBackParams,
     isTabMarkedForEviction: (id) => tabIdsToEvict.has(id),
     isCacheMarkedForEviction: (id) => cacheIdsToEvict.has(id),

@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { defineComponent, h, nextTick } from 'vue'
+import { defineComponent, h, nextTick, onUnmounted } from 'vue'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import StackTabs from '@/lib/StackTabs.vue'
 import { encodeTabInfo } from '@/lib/utils/tabInfoEncoder'
@@ -21,6 +21,19 @@ const TabTwo = defineComponent({
   name: 'RefreshReproTwo',
   setup() {
     return () => h('p', 'two')
+  }
+})
+
+let countingCreated = 0
+let countingUnmounted = 0
+const CountingPage = defineComponent({
+  name: 'RefreshCountingPage',
+  setup() {
+    countingCreated++
+    onUnmounted(() => {
+      countingUnmounted++
+    })
+    return () => h('p', 'counting')
   }
 })
 
@@ -101,6 +114,41 @@ describe('StackTabs refresh cache reproduction', () => {
     await nextTick()
 
     expect(wrapper.get<HTMLInputElement>('[data-test="tab-one-input"]').element.value).toBe('first')
+  })
+
+  it('refreshing the active tab does not accumulate keep-alive page instances', async () => {
+    countingCreated = 0
+    countingUnmounted = 0
+    const countTab = { id: 'count', title: 'Count', path: '/count' }
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [{ path: '/count', component: CountingPage }]
+    })
+    await router.push({ path: '/count', query: { __tab: encodeTabInfo(countTab) } })
+    await router.isReady()
+
+    const wrapper = mount(StackTabs, {
+      props: {
+        iframePath: '/iframe',
+        defaultTabs: [countTab],
+        pageTransition: '',
+        pageTransitionBack: ''
+      },
+      global: { plugins: [router] }
+    })
+    await nextTick()
+    await nextTick()
+
+    for (let index = 0; index < 3; index++) {
+      await wrapper.get('[role="tab"][data-tab-id="count"]').trigger('contextmenu')
+      await nextTick()
+      await wrapper.get('[role="menuitem"]').trigger('click')
+      await nextTick()
+    }
+
+    expect(countingCreated).toBe(4)
+    // 旧实例必须被卸载；修复前这里是 0，实例会随刷新持续累积。
+    expect(countingUnmounted).toBe(3)
   })
 
   it('keeps tab one state when refreshing tab two', async () => {

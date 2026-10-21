@@ -1,4 +1,3 @@
-import { defu } from 'defu'
 import { getCurrentInstance } from 'vue'
 import type { ComponentInternalInstance } from 'vue'
 import type { LocationQueryRaw, RouteLocationPathRaw } from 'vue-router'
@@ -9,7 +8,9 @@ import {
   parseUrl,
   cloneLocationQuery,
   clonePage,
-  isSameQueryIgnoringReserved
+  isSameQueryIgnoringReserved,
+  normalizePathname,
+  omitStackTabsReservedQuery
 } from '../utils/urlParser'
 import { TabEventType, useTabEmitter } from './useTabEventBus'
 
@@ -84,10 +85,11 @@ export default function useTabRouter() {
   const forward = (to: RouteLocationPathRaw) => {
     const tab = getTab(tabId)
     const targetQuery = (to.query || {}) as LocationQueryRaw
+    const targetPath = normalizePathname(to.path)
 
     if (tab) {
       const top = getTopPage(tab.id)
-      if (top && top.path === to.path) {
+      if (top && top.path === targetPath) {
         if (isSameQueryIgnoringReserved(targetQuery, top.query || {})) {
           if (!tab.active) {
             activateTab(tab.id)
@@ -97,9 +99,10 @@ export default function useTabRouter() {
       }
     }
 
-    // __tab 是 StackTabs 解析路由归属标签的关键，优先沿用目标 query 已有的值，
-    // 避免被 to.query 中非字符串的同名 key 或缺失值覆盖。
-    const query = defu(to.query, { __tab: tabInfo })
+    // __tab 是 StackTabs 解析路由归属标签的关键：强制使用当前标签的编码，
+    // 业务 query 传入同名 key 时也不能把导航带到其它标签。
+    const query: LocationQueryRaw = { ...omitStackTabsReservedQuery(targetQuery) }
+    if (typeof tabInfo === 'string' && tabInfo) query.__tab = tabInfo
     const transactionVersion = ++navigationVersion
     emitter.emit(TabEventType.FORWARD)
 
@@ -112,8 +115,8 @@ export default function useTabRouter() {
           appendPage(tab.id, {
             id: optimisticPageId,
             tabId: tab.id,
-            path: to.path,
-            query: cloneLocationQuery(targetQuery)
+            path: targetPath,
+            query: cloneLocationQuery(query)
           })
         }
         return snapshot
@@ -156,13 +159,14 @@ export default function useTabRouter() {
     } else {
       const parsed = parseUrl(to)
       const targetQuery = parsed.query || {}
+      const targetPath = normalizePathname(parsed.path)
       let found = false
 
       for (let i = pages.length - 2; i >= 0; i--) {
         steps++
         const page = pages[i]
         if (
-          page?.path === parsed.path &&
+          page?.path === targetPath &&
           isSameQueryIgnoringReserved(targetQuery, page?.query || {})
         ) {
           found = true
@@ -210,8 +214,11 @@ export default function useTabRouter() {
 
     emitter.emit(TabEventType.BACKWARD)
 
-    // 栈顶 query 已带 __tab 时优先沿用，避免被默认 tabInfo 覆盖导致解析时识别错乱。
-    const targetQueryWithTab = defu(target.query || {}, { __tab: tabInfo })
+    // 与 forward 一致：目标页固定归属当前标签，保留其余业务 query。
+    const targetQueryWithTab: LocationQueryRaw = {
+      ...omitStackTabsReservedQuery(target.query || {})
+    }
+    if (typeof tabInfo === 'string' && tabInfo) targetQueryWithTab.__tab = tabInfo
     const transactionVersion = ++navigationVersion
 
     runNavigationTransaction({

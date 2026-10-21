@@ -171,6 +171,25 @@ if (isRuntimeContextOwner) {
   setGlobalScroll(props.globalScroll)
   setMaxSize(props.max)
   applyStackTabsLocale(changeLocale, props.i18n)
+
+  // 这些 props 在 setup 时写入运行时上下文；后续变化需要同步，
+  // 否则调用方动态调整 max / 滚动模式 / session 前缀不会生效。
+  watch(
+    () => props.max,
+    (value) => setMaxSize(value)
+  )
+  watch(
+    () => props.globalScroll,
+    (value) => setGlobalScroll(value)
+  )
+  watch(
+    () => props.sessionPrefix,
+    (value) => setSessionPrefix(value)
+  )
+  watch(
+    () => props.i18n,
+    (value) => applyStackTabsLocale(changeLocale, value)
+  )
 }
 
 const onTabActive = (id: string) => {

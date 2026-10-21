@@ -13,6 +13,7 @@ const {
   refreshAllTabs,
   activeTab,
   moveTab,
+  updateTabTitle,
   reset,
   tabs,
   setIFramePath,
@@ -56,12 +57,13 @@ Close left/right/others are available via the right-click context menu.
 
 ## Other
 
-| Method                            | Description                                                                                                               |
-| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| `activeTab(id, isRoute?)`         | Activate tab; pass `isRoute=false` to switch without navigating                                                           |
-| `moveTab(id, targetIndex)`        | Move a tab to an index; the tab header also supports mouse drag-and-drop reordering                                       |
-| `reset()`                         | Reset all                                                                                                                 |
-| `tabs`                            | Tab list (read-only)                                                                                                      |
-| `setIFramePath(path)`             | Set iframe path (internal)                                                                                                |
-| `getWrapper({ tabId?, pageId? })` | Get a content DOM node. Omit parameters for legacy first-node behavior; use `tabId` or `pageId` when multiple tabs exist. |
-| `openInNewWindow(id)`             | Open iframe tab in new window (fallback)                                                                                  |
+| Method                            | Description                                                                                                                |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `activeTab(id, isRoute?)`         | Activate tab; pass `isRoute=false` to switch without navigating                                                            |
+| `moveTab(id, targetIndex)`        | Move a tab to an index; the tab header also supports mouse drag-and-drop reordering                                        |
+| `updateTabTitle(id, title)`       | Update a tab title at runtime (also refreshes session and the active tab's `__tab`); returns false when the tab is missing |
+| `reset()`                         | Reset all                                                                                                                  |
+| `tabs`                            | Tab list (read-only)                                                                                                       |
+| `setIFramePath(path)`             | Set iframe path (internal)                                                                                                 |
+| `getWrapper({ tabId?, pageId? })` | Get a content DOM node. Omit parameters for legacy first-node behavior; use `tabId` or `pageId` when multiple tabs exist.  |
+| `openInNewWindow(id)`             | Open iframe tab in new window (fallback)                                                                                   |

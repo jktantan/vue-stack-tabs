@@ -68,28 +68,42 @@ export function decodeSafeTabUrl(encodedUrl: unknown): string {
 }
 
 /**
- * 判断 URL 是否为跨域（相对路径或同源视为同域）
+ * 判断 URL 是否为跨域（相对路径或同源视为同域）。
+ *
+ * 统一用 `new URL(url, origin)` 解析，协议相对 URL（`//host/path`）也会按实际
+ * origin 判定，避免被误判为同源。`about:blank` 与相对路径视为同源。
  * @param url - 待检查的 URL
  */
 export function isCrossOriginUrl(url: string): boolean {
-  if (!url || !/^https?:\/\//i.test(url)) return false
+  if (!url) return false
+  const base = getUrlBase()
   try {
-    const cur = typeof window !== 'undefined' ? window.location : { origin: 'http://localhost' }
-    const u = new URL(url, cur.origin)
-    return u.origin !== cur.origin
+    const parsed = new URL(url, base)
+    // 非 http(s) 不是「跨域」，而是非法 URL；由 isAllowedTabUrl 负责拒绝。
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return false
+    return parsed.origin !== new URL(base).origin
   } catch {
     return true
   }
 }
 
 /**
- * 解析 URL 字符串为 path 和 query
- * @param uri 完整 URL 或 path?query 字符串
+ * 解析 URL 字符串为 path、query 和 hash。
+ *
+ * hash 会先从 query 中剥离，避免 `/page?x=1#section` 被解析成 `query.x = '1#section'`。
+ * @param uri 完整 URL 或 path?query#hash 字符串
  */
-export function parseUrl(uri: string): { path: string; query: LocationQueryRaw } {
-  const [pathPart = '', queryPart] = uri.split('?')
+export function parseUrl(uri: string): {
+  path: string
+  query: LocationQueryRaw
+  hash: string
+} {
+  const hashIndex = uri.indexOf('#')
+  const hash = hashIndex >= 0 ? uri.slice(hashIndex) : ''
+  const withoutHash = hashIndex >= 0 ? uri.slice(0, hashIndex) : uri
+  const [pathPart = '', queryPart] = withoutHash.split('?')
   if (queryPart === undefined) {
-    return { path: pathPart, query: {} }
+    return { path: pathPart, query: {}, hash }
   }
 
   const params = new URLSearchParams(queryPart)
@@ -102,7 +116,17 @@ export function parseUrl(uri: string): { path: string; query: LocationQueryRaw }
     }
     query[key] = Array.isArray(existing) ? [...existing, value] : [existing, value]
   }
-  return { path: pathPart, query }
+  return { path: pathPart, query, hash }
+}
+
+/**
+ * 规范化 pathname：去掉末尾多余斜杠（根路径 `/` 保留）。
+ * 页面栈比较与写入统一使用，避免 `/list` 与 `/list/` 被当成两个页面。
+ */
+export function normalizePathname(path: string): string {
+  if (!path || path === '/') return path
+  const normalized = path.replace(/\/+$/, '')
+  return normalized || '/'
 }
 
 /** 浅克隆 LocationQueryRaw，避免引用共享导致的副作用 */

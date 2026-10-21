@@ -4,7 +4,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { RouteLocationNormalizedLoaded } from 'vue-router'
 import type { DefineComponent } from 'vue'
-import { decodeTabInfo } from '@/lib/utils/tabInfoEncoder'
+import { decodeTabInfo, encodeTabInfo } from '@/lib/utils/tabInfoEncoder'
 import type { ITabItem } from '@/lib/model/TabModel'
 
 const push = vi.fn()
@@ -111,6 +111,99 @@ describe('useTabPanel', () => {
       id: 'default-tab',
       title: '默认页'
     })
+
+    panel.destroy()
+    runtime.cleanup()
+  })
+
+  it('同 path 不同 query 会作为新页面入栈', async () => {
+    const runtime = await withRuntimeContext()
+    const { default: useTabPanel } = await import('@/lib/hooks/useTabPanel')
+    const panel = useTabPanel()
+    const __tab = encodeTabInfo({
+      id: 'list',
+      title: '列表',
+      closable: true,
+      refreshable: true,
+      iframe: false
+    })
+    panel.initialize([{ id: 'list', title: '列表', path: '/list?page=1' }])
+
+    panel.addPage(
+      { ...mockRoute('/list'), fullPath: '/list?page=1', query: { page: '1', __tab } },
+      {} as never
+    )
+    expect(panel.getPages('list')).toHaveLength(1)
+
+    panel.addPage(
+      { ...mockRoute('/list'), fullPath: '/list?page=2', query: { page: '2', __tab } },
+      {} as never
+    )
+
+    const pages = panel.getPages('list')
+    expect(pages).toHaveLength(2)
+    expect(pages[0]?.query?.page).toBe('1')
+    expect(pages[1]?.query?.page).toBe('2')
+
+    panel.destroy()
+    runtime.cleanup()
+  })
+
+  it('尾斜杠与无尾斜杠视为同一页面，不重复入栈', async () => {
+    const runtime = await withRuntimeContext()
+    const { default: useTabPanel } = await import('@/lib/hooks/useTabPanel')
+    const panel = useTabPanel()
+    const __tab = encodeTabInfo({
+      id: 'list',
+      title: '列表',
+      closable: true,
+      refreshable: true,
+      iframe: false
+    })
+    panel.initialize([{ id: 'list', title: '列表', path: '/list/' }])
+
+    expect(panel.getTopPage('list')?.path).toBe('/list')
+    panel.addPage({ ...mockRoute('/list'), query: { __tab } }, {} as never)
+
+    expect(panel.getPages('list')).toHaveLength(1)
+
+    panel.destroy()
+    runtime.cleanup()
+  })
+
+  it('同一运行时上下文复用同一套 panel API', async () => {
+    const runtime = await withRuntimeContext()
+    const { default: useTabPanel } = await import('@/lib/hooks/useTabPanel')
+    const first = useTabPanel(runtime.context)
+    const second = useTabPanel(runtime.context)
+
+    expect(second).toBe(first)
+
+    runtime.cleanup()
+  })
+
+  it('initialize 重复调用不会重复注册标签', async () => {
+    const runtime = await withRuntimeContext()
+    const { default: useTabPanel } = await import('@/lib/hooks/useTabPanel')
+    const panel = useTabPanel()
+    panel.initialize([{ id: 'first', title: '第一页', path: '/first' }])
+    panel.initialize([{ id: 'second', title: '第二页', path: '/second' }])
+
+    expect(panel.tabs.value.map((tab: ITabItem) => tab.id)).toEqual(['first'])
+
+    panel.destroy()
+    runtime.cleanup()
+  })
+
+  it('updateTabTitle 更新标签标题，标签不存在时返回 false', async () => {
+    const runtime = await withRuntimeContext()
+    const { default: useTabPanel } = await import('@/lib/hooks/useTabPanel')
+    const panel = useTabPanel()
+    panel.initialize([{ id: 'dynamic', title: '旧标题', path: '/dynamic' }])
+
+    expect(panel.updateTabTitle('dynamic', '新标题')).toBe(true)
+    expect(panel.tabs.value[0]?.title).toBe('新标题')
+    expect(panel.updateTabTitle('missing', 'x')).toBe(false)
 
     panel.destroy()
     runtime.cleanup()

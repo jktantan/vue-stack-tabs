@@ -60,7 +60,7 @@ features:
         <path d="m8 16 4 4 4-4"/>
       </svg>
     title: 状态与滚动都会保留
-    details: 表单输入、组件状态与滚动位置随标签切换保留；浏览器刷新后还能通过会话恢复把打开的标签找回来。
+    details: 表单输入、组件状态与滚动位置随标签切换保留；浏览器刷新后还能通过会话恢复找回上次激活的标签及其页面栈。
   - icon: |
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
         <path d="m12 4 9 16H3z"/>

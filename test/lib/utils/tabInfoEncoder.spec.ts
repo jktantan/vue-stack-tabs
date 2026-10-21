@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest'
-import { encodeTabInfo, decodeTabInfo, createPageId } from '@/lib/utils/tabInfoEncoder'
+import { describe, it, expect, vi } from 'vitest'
+import { encodeTabInfo, decodeTabInfo, createPageId, createId } from '@/lib/utils/tabInfoEncoder'
 import type { ITabBase } from '@/lib/model/TabModel'
 
 describe('tabInfoEncoder', () => {
@@ -110,11 +110,57 @@ describe('tabInfoEncoder', () => {
     })
   })
 
-  it('createPageId 每次生成唯一 ULID', () => {
+  it('createPageId 每次生成唯一 id', () => {
     const id1 = createPageId()
     const id2 = createPageId()
     expect(id1).toBeTruthy()
     expect(id2).toBeTruthy()
     expect(id1).not.toBe(id2)
+  })
+
+  it('编码结果使用 URL-safe 字符且不含 base64 填充', () => {
+    const encoded = encodeTabInfo({
+      id: 'id/with+special=',
+      title: '中文/标题+?',
+      iframe: false,
+      closable: true,
+      refreshable: true
+    })
+
+    expect(encoded).not.toMatch(/[+/=]/)
+    expect(decodeTabInfo(encoded)).toMatchObject({ id: 'id/with+special=', title: '中文/标题+?' })
+  })
+
+  it('非法 legacy __tab 不再伪造出任意标签 id', () => {
+    expect(decodeTabInfo(btoa('invalid'))).toMatchObject({ id: '', title: '' })
+  })
+
+  it('legacy 字段标记不合法时返回默认值', () => {
+    const toLegacy = (value: string) => btoa(unescape(encodeURIComponent(value)))
+    expect(decodeTabInfo(toLegacy('legacy-id|标题|X|Y|Y'))).toMatchObject({ id: '', title: '' })
+    expect(decodeTabInfo(toLegacy('legacy-id|标题|Y|Y'))).toMatchObject({ id: '', title: '' })
+  })
+
+  it('标题超长时截断，避免 __tab 超出解码上限导致 id 丢失', () => {
+    const decoded = decodeTabInfo(encodeTabInfo({ id: 'tab-1', title: 'x'.repeat(1000) }))
+    expect(decoded.id).toBe('tab-1')
+    expect(decoded.title.length).toBe(256)
+  })
+
+  it('crypto.randomUUID 不存在时 createId 回退为 UUID v4 格式', () => {
+    const originalCrypto = globalThis.crypto
+    vi.stubGlobal('crypto', {
+      getRandomValues: (bytes: Uint8Array) => {
+        for (let index = 0; index < bytes.length; index++) bytes[index] = index
+        return bytes
+      }
+    })
+    try {
+      expect(createId()).toMatch(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
+      )
+    } finally {
+      vi.stubGlobal('crypto', originalCrypto)
+    }
   })
 })

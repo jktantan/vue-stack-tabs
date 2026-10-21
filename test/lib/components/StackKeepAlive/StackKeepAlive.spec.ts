@@ -20,6 +20,8 @@ vi.mock('@/lib/hooks/useTabPanel', () => ({
     refreshKey,
     activeCacheKey,
     activePageRefreshVersion,
+    getPageRefreshVersion: (pageId: string) =>
+      pageId === activeCacheKey.value ? activePageRefreshVersion.value : 0,
     addPage: addPageMock
   })
 }))

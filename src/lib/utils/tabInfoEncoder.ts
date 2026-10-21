@@ -1,4 +1,5 @@
 import type { ITabBase } from '../model/TabModel'
+import { isRecord } from './typeGuards'
 
 interface EncodedTabInfoV1 {
   version: 1
@@ -14,20 +15,42 @@ interface EncodedTabInfoV1 {
  * 标签信息编解码器
  *
  * 职责：将标签元数据编码为 URL query 可用的短字符串，用于 __tab 参数。
- * 当前格式为 JSON + Base64，兼容旧版 id|title|iframe|closable|refreshable|mode 编码。
+ * 当前格式为 JSON + Base64URL；解码同时兼容标准 Base64（历史链接）与
+ * 旧版 id|title|iframe|closable|refreshable|mode 编码。
  */
 
 const MAX_DECODED_TAB_INFO_LENGTH = 2048
 const MAX_ENCODED_TAB_INFO_LENGTH = 4096
+/** URL 中 __tab 的 title 上限，避免超长标题把 payload 顶到解码上限导致 id 丢失。 */
+export const MAX_TAB_TITLE_LENGTH = 256
+/** legacy 格式中 id 的合理上限，用于拒绝任意字符串伪装成标签 id。 */
+const MAX_LEGACY_TAB_ID_LENGTH = 128
 
 /**
- * 把任意 UTF-8 字符串安全地编码为 base64（避免中文/特殊字符直接 btoa 抛错）。
- * 使用 encodeURIComponent + unescape 是经典跨浏览器方案，比手动管理 TextEncoder 更简洁。
+ * 把 UTF-8 字符串编码为 Base64URL（无填充、`+`→`-`、`/`→`_`）。
+ * 使用 TextEncoder 取代已废弃的 escape/unescape，同时让结果可直接放进 URL。
  */
-const encodeBase64 = (value: string): string => btoa(unescape(encodeURIComponent(value)))
+const encodeBase64Url = (value: string): string => {
+  const bytes = new TextEncoder().encode(value)
+  let binary = ''
+  for (const byte of bytes) binary += String.fromCharCode(byte)
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+}
 
-/** encodeBase64 的逆操作，非合法 base64 时抛错，由调用方 try/catch。 */
-const decodeBase64 = (encoded: string): string => decodeURIComponent(escape(atob(encoded)))
+/**
+ * 解码 Base64URL / 标准 Base64。
+ * 兼容旧链接：先还原 URL-safe 字符与填充，再按 UTF-8 解码。
+ */
+const decodeBase64 = (encoded: string): string => {
+  const normalized = encoded.replace(/-/g, '+').replace(/_/g, '/')
+  const padded = normalized + '='.repeat((4 - (normalized.length % 4)) % 4)
+  const binary = atob(padded)
+  const bytes = new Uint8Array(binary.length)
+  for (let index = 0; index < binary.length; index++) {
+    bytes[index] = binary.charCodeAt(index)
+  }
+  return new TextDecoder().decode(bytes)
+}
 
 const DEFAULT_TAB_INFO: ITabBase = {
   id: '',
@@ -38,7 +61,14 @@ const DEFAULT_TAB_INFO: ITabBase = {
   iframeRefreshMode: 'postMessage'
 }
 
-import { isRecord } from './typeGuards'
+/** 检测控制字符，避免 legacy id 携带不可见字符。 */
+const hasControlCharacter = (value: string): boolean => {
+  for (const char of value) {
+    const code = char.charCodeAt(0)
+    if (code <= 31 || code === 127) return true
+  }
+  return false
+}
 
 const toTabInfo = (payload: unknown): ITabBase => {
   if (!isRecord(payload)) return { ...DEFAULT_TAB_INFO }
@@ -54,16 +84,36 @@ const toTabInfo = (payload: unknown): ITabBase => {
   }
 }
 
+/**
+ * 旧版分隔符格式：id|title|iframe|closable|refreshable[|mode]。
+ *
+ * 严格校验字段数量与 Y/N 标记：非法字符串（例如 `?__tab=invalid`）不能再被解析成
+ * 任意 id 的标签。格式不合法时返回默认值，由路由层走兜底标签逻辑。
+ */
 const decodeLegacyTabInfo = (tabString: string): ITabBase => {
   const tabValues: string[] = tabString.split('|')
-  const refreshMode = tabValues[5] === 'R' ? ('reload' as const) : ('postMessage' as const)
+  if (tabValues.length < 5 || tabValues.length > 6) return { ...DEFAULT_TAB_INFO }
+
+  const [id = '', title = '', iframe, closable, refreshable, mode] = tabValues
+  const isFlag = (value: string | undefined): value is 'Y' | 'N' => value === 'Y' || value === 'N'
+  const hasValidId =
+    id.length > 0 &&
+    id.length <= MAX_LEGACY_TAB_ID_LENGTH &&
+    id.trim() === id &&
+    !hasControlCharacter(id)
+
+  if (!hasValidId || !isFlag(iframe) || !isFlag(closable) || !isFlag(refreshable)) {
+    return { ...DEFAULT_TAB_INFO }
+  }
+  if (mode !== undefined && mode !== '' && mode !== 'R') return { ...DEFAULT_TAB_INFO }
+
   return {
-    id: tabValues[0] ?? '',
-    title: tabValues[1] ?? '',
-    iframe: tabValues[2] === 'Y',
-    closable: tabValues[3] === 'Y',
-    refreshable: tabValues[4] === 'Y',
-    iframeRefreshMode: refreshMode
+    id,
+    title,
+    iframe: iframe === 'Y',
+    closable: closable === 'Y',
+    refreshable: refreshable === 'Y',
+    iframeRefreshMode: mode === 'R' ? 'reload' : 'postMessage'
   }
 }
 
@@ -71,13 +121,13 @@ export const encodeTabInfo = (tabData: ITabBase): string => {
   const payload: EncodedTabInfoV1 = {
     version: 1,
     id: tabData.id,
-    title: tabData.title,
+    title: tabData.title.slice(0, MAX_TAB_TITLE_LENGTH),
     iframe: tabData.iframe,
     closable: tabData.closable,
     refreshable: tabData.refreshable,
     iframeRefreshMode: tabData.iframeRefreshMode === 'reload' ? 'reload' : 'postMessage'
   }
-  return encodeBase64(JSON.stringify(payload))
+  return encodeBase64Url(JSON.stringify(payload))
 }
 
 export const decodeTabInfo = (encoded: string): ITabBase => {
@@ -102,4 +152,38 @@ export const decodeTabInfo = (encoded: string): ITabBase => {
   }
 }
 
-export const createPageId = (): string => crypto.randomUUID()
+/**
+ * 生成运行时 id。
+ *
+ * `crypto.randomUUID` 仅在安全上下文（https / localhost）可用；内网 http 部署时
+ * 回退到 `crypto.getRandomValues`（非安全上下文同样可用），最后才退回 Math.random，
+ * 避免在受限环境下直接抛 TypeError 导致整个组件不可用。
+ */
+export const createId = (): string => {
+  const cryptoObject = globalThis.crypto
+
+  if (typeof cryptoObject?.randomUUID === 'function') {
+    return cryptoObject.randomUUID()
+  }
+
+  const bytes = new Uint8Array(16)
+  if (typeof cryptoObject?.getRandomValues === 'function') {
+    cryptoObject.getRandomValues(bytes)
+  } else {
+    for (let index = 0; index < bytes.length; index++) {
+      bytes[index] = Math.floor(Math.random() * 256)
+    }
+  }
+
+  // RFC 4122 version 4 + variant bits
+  bytes[6] = (bytes[6]! & 0x0f) | 0x40
+  bytes[8] = (bytes[8]! & 0x3f) | 0x80
+
+  const hex: string[] = []
+  for (const byte of bytes) hex.push(byte.toString(16).padStart(2, '0'))
+  return `${hex.slice(0, 4).join('')}-${hex.slice(4, 6).join('')}-${hex
+    .slice(6, 8)
+    .join('')}-${hex.slice(8, 10).join('')}-${hex.slice(10, 16).join('')}`
+}
+
+export const createPageId = (): string => createId()

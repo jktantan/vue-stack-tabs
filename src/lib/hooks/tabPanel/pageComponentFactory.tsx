@@ -5,6 +5,7 @@
  * 使 useTabPanel 只负责领域状态与路由协调。
  */
 import {
+  Transition,
   cloneVNode,
   defineComponent,
   onActivated,
@@ -57,13 +58,50 @@ export const createPageComponentFactory = (options: PageComponentFactoryOptions)
       return existing
     }
 
-    const cacheComponent = defineComponent<{ vnode?: VNode }>({
+    /**
+     * 页面壳组件：作为 Transition 的直接子节点，承接刷新时的 key 变化，
+     * 避免直接修改 router-view 页面 vnode 的 key 破坏 keep-alive 的实例复用。
+     */
+    const PageShell = defineComponent({
+      name: `${cacheName}-shell`,
+      props: {
+        vnode: {
+          type: Object as PropType<VNode | null>,
+          required: false,
+          default: null
+        }
+      },
+      setup(props) {
+        return () => props.vnode
+      }
+    })
+
+    const cacheComponent = defineComponent<{
+      vnode?: VNode
+      refreshVersion?: number
+      transitionName?: string
+    }>({
       name: cacheName,
       props: {
         vnode: {
           type: Object as PropType<VNode>,
           required: false,
           default: undefined
+        },
+        /**
+         * 页面级刷新版本。外层 keep-alive 的 key 保持稳定（避免旧实例滞留缓存），
+         * 刷新时只让内部页面 vnode 的 key 变化，从而重建页面组件而保留包装层与滚动位置。
+         */
+        refreshVersion: {
+          type: Number,
+          required: false,
+          default: 0
+        },
+        /** 页面转场名，与 StackKeepAlive 外层 Transition 保持一致 */
+        transitionName: {
+          type: String,
+          required: false,
+          default: ''
         }
       },
       emits: ['onLoaded'],
@@ -72,7 +110,23 @@ export const createPageComponentFactory = (options: PageComponentFactoryOptions)
         const lastVnode = shallowRef<VNode | null | undefined>(null)
         const lastCloned = shallowRef<VNode | null>(null)
         const lastBackParams = shallowRef<Record<string, unknown> | null>(null)
+        const lastRefreshVersion = shallowRef<number>(0)
         const pageRoot = ref<HTMLElement | null>(null)
+        /**
+         * 转场期间临时把 wrapper 的 overflow 锁为 hidden。
+         * 内部 Transition 的 translateX 作用于页面根元素，若 wrapper 是 overflow:auto，
+         * 位移会让内容短暂溢出并闪出滚动条。
+         */
+        const isTransitioning = ref(false)
+        let transitionCount = 0
+        const beginTransition = () => {
+          transitionCount++
+          isTransitioning.value = true
+        }
+        const endTransition = () => {
+          transitionCount = Math.max(0, transitionCount - 1)
+          if (transitionCount === 0) isTransitioning.value = false
+        }
 
         const checkAndConsumeBackParams = () => {
           localBackParams.value = consumeBackParams(tabInfo.id!, cacheName)
@@ -99,16 +153,23 @@ export const createPageComponentFactory = (options: PageComponentFactoryOptions)
         return () => {
           const vnode = props.vnode
           const backParams = localBackParams.value
-          if (vnode !== lastVnode.value || backParams !== lastBackParams.value) {
-            lastCloned.value = vnode
+          const refreshVersion = props.refreshVersion ?? 0
+          if (
+            vnode !== lastVnode.value ||
+            backParams !== lastBackParams.value ||
+            refreshVersion !== lastRefreshVersion.value
+          ) {
+            const cloned = vnode
               ? cloneVNode(vnode, {
                   tId: tabInfo.id,
                   pId: cacheName,
                   ...(backParams ? { _back: backParams } : {})
                 })
               : null
+            lastCloned.value = cloned
             lastVnode.value = vnode
             lastBackParams.value = backParams
+            lastRefreshVersion.value = refreshVersion
           }
           return (
             <div
@@ -116,11 +177,26 @@ export const createPageComponentFactory = (options: PageComponentFactoryOptions)
               class="stack-tab__cache-page-wrapper"
               id={`W-${cacheName}`}
               style={[
-                runtimeContext.useGlobalScroll.value ? 'overflow:auto' : 'overflow:hidden',
+                runtimeContext.useGlobalScroll.value && !isTransitioning.value
+                  ? 'overflow:auto'
+                  : 'overflow:hidden',
                 'height: 100%'
               ]}
             >
-              {lastCloned.value}
+              {lastCloned.value ? (
+                <Transition
+                  name={props.transitionName}
+                  mode="out-in"
+                  onBeforeEnter={beginTransition}
+                  onAfterEnter={endTransition}
+                  onEnterCancelled={endTransition}
+                  onBeforeLeave={beginTransition}
+                  onAfterLeave={endTransition}
+                  onLeaveCancelled={endTransition}
+                >
+                  <PageShell key={`${cacheName}-${refreshVersion}`} vnode={lastCloned.value} />
+                </Transition>
+              ) : null}
               <PageLoading tabId={tabInfo.id!} />
             </div>
           )

@@ -13,7 +13,7 @@
     :style="{
       left: `${menuPosition.left}px`,
       top: `${menuPosition.top}px`,
-      'z-index': menuZIndex()
+      'z-index': menuZIndexValue
     }"
     @keydown="handleMenuKeydown"
   >
@@ -115,13 +115,8 @@ const menuPosition = reactive({ left: props.left, top: props.top })
 const { closeTab, closeAllTabs, refreshTab, refreshAllTabs, openInNewWindow } = useTabActions()
 const { removeLeftTabs, removeRightTabs, removeOtherTabs } = useTabPanel()
 
-/**
- * 菜单挂载时 z-index 必须重新计算（DOM 层叠已变化），先用 invalidateZIndexCache 失效再读取。
- */
-const menuZIndex = () => {
-  invalidateZIndexCache('.stack-tab,.stack-tab *')
-  return getMaxZIndex('.stack-tab,.stack-tab *')
-}
+/** 菜单挂载时计算一次 z-index；菜单打开期间层叠关系不会变化。 */
+const menuZIndexValue = ref(0)
 
 const focusActiveTabFallback = () => {
   const activeTab = document.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]')
@@ -204,11 +199,19 @@ const handleMenuKeydown = (event: KeyboardEvent) => {
 const getCustomMenuKey = (item: IContextMenu): string =>
   item.key ?? `${item.title}-${item.icon ?? ''}`
 
-/** 挂载后修正菜单位置，避免超出右边界 */
+/** 挂载后计算 z-index 并修正右/下边界，避免菜单溢出视口 */
 onMounted(() => {
-  const menuWidth = menuElementRef.value?.clientWidth ?? 0
+  invalidateZIndexCache('.stack-tab,.stack-tab *')
+  menuZIndexValue.value = getMaxZIndex('.stack-tab,.stack-tab *')
+
+  const menuElement = menuElementRef.value
+  const menuWidth = menuElement?.clientWidth ?? 0
+  const menuHeight = menuElement?.clientHeight ?? 0
   if (menuPosition.left + menuWidth > window.innerWidth) {
     menuPosition.left = window.innerWidth - menuWidth - 5
+  }
+  if (menuPosition.top + menuHeight > window.innerHeight) {
+    menuPosition.top = Math.max(0, window.innerHeight - menuHeight - 5)
   }
   focusMenuItem(0)
 })

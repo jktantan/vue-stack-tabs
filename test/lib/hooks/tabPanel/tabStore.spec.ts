@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { computed } from 'vue'
+import { computed, isReactive, watch } from 'vue'
 import { Stack } from '@/lib/model/TabModel'
 import type { ITabItem, ITabPage } from '@/lib/model/TabModel'
 import { createStackTabsRuntimeContext } from '@/lib/hooks/stackTabsContext'
@@ -65,6 +65,52 @@ describe('tabStore', () => {
     expect(store.popPages('t1', 5).map((page) => page.id)).toEqual(['t1-p1'])
     expect(store.getTopPage('t1')).toBeNull()
     expect(store.popPages('t1', 1)).toEqual([])
+  })
+
+  it('updatePage 只改刷新版本时不重建 tabs 数组', () => {
+    store.addTab(createTab('t1'))
+    const before = store.getTabs()
+
+    expect(store.updatePage('t1', 't1-p1', { refreshVersion: 1 })).toBe(true)
+
+    expect(store.getTopPage('t1')?.refreshVersion).toBe(1)
+    expect(store.getTabs()).toBe(before)
+  })
+
+  it('updatePage 修改页面 id 时同步视图并维护页面栈映射', () => {
+    store.addTab(createTab('t1'))
+    const before = store.getTabs()
+
+    expect(store.updatePage('t1', 't1-p1', { id: 't1-new' })).toBe(true)
+
+    expect(store.getTopPage('t1')?.id).toBe('t1-new')
+    expect(store.getTabs()).not.toBe(before)
+  })
+
+  it('updatePages 批量更新页面 id 时只同步一次 tabs', () => {
+    store.addTab(createTab('t1'))
+    store.addTab(createTab('t2'))
+    let syncCount = 0
+    watch(
+      () => store.getTabs(),
+      () => syncCount++,
+      { flush: 'sync' }
+    )
+
+    store.updatePages([
+      { tabId: 't1', pageId: 't1-p1', patch: { id: 't1-new', refreshVersion: 0 } },
+      { tabId: 't2', pageId: 't2-p1', patch: { id: 't2-new', refreshVersion: 0 } }
+    ])
+
+    expect(store.getTopPage('t1')?.id).toBe('t1-new')
+    expect(store.getTopPage('t2')?.id).toBe('t2-new')
+    expect(syncCount).toBe(1)
+  })
+
+  it('tabs 视图不会深度代理 PageStackView', () => {
+    store.addTab(createTab('t1'))
+
+    expect(isReactive(store.getTabs()[0]!.pages)).toBe(false)
   })
 
   it('activateTab 保证同时只有一个 active 标签', () => {

@@ -118,35 +118,39 @@
 
 以下为最近一次代码走查整理的优化项，按优先级排序。标注「已实测」的条目通过临时 Vitest 用例复现，临时文件已删除，未改动现有测试与源码。
 
+> **2026-10-21 更新**：10.1–10.20 已完成（10.18 的 CI 体积阈值因仓库暂无 CI 配置未做）；P3 除「事件总线承担控制流」保留外均已完成。
+
 ### 优先级索引
 
-| 优先级 | 问题                                                     | 位置                                                         | 状态   |
-| ------ | -------------------------------------------------------- | ------------------------------------------------------------ | ------ |
-| P0     | 刷新激活标签持续累积 keep-alive 实例（内存泄漏，已实测） | `StackKeepAlive.vue` / `tabPanel/refresh.ts`                 | 待处理 |
-| P0     | 同 path 不同 query 不更新页面栈记录（已实测）            | `useTabPanel.tsx`                                            | 待处理 |
-| P0     | `forward` 的 `__tab` 仍可被业务 query 覆盖               | `useTabRouter.ts`                                            | 待处理 |
-| P0     | 动态标签标题没有可靠写入口                               | `tabStore.ts` / `useTabPanel.tsx` / `tabInfoEncoder.ts`      | 待处理 |
-| P0     | `crypto.randomUUID()` 在非安全上下文抛错                 | `tabInfoEncoder.ts` / `useTabActions.ts` / `useTabPanel.tsx` | 待处理 |
-| P1     | `parseUrl` 不拆分 hash                                   | `utils/urlParser.ts`                                         | 待处理 |
-| P1     | 旧版 `__tab` 解码过于宽松，可伪造标签 id                 | `utils/tabInfoEncoder.ts`                                    | 待处理 |
-| P1     | `isCrossOriginUrl` 误判协议相对 URL                      | `utils/urlParser.ts`                                         | 待处理 |
-| P1     | 尾斜杠导致同一页面重复入栈                               | `useTabPanel.tsx`                                            | 待处理 |
-| P1     | 组件 props 只有初始化时生效                              | `StackTabs.vue`                                              | 待处理 |
-| P1     | `initialize` 不防重入                                    | `useTabPanel.tsx`                                            | 待处理 |
-| P2     | `useTabPanel` 被高频调用，每次重建子模块                 | `useTabPanel.tsx`                                            | 待处理 |
-| P2     | `syncTabsView` 每次写操作都替换整个 `tabs` 数组          | `tabPanel/tabStore.ts`                                       | 待处理 |
-| P2     | `findTabByTopPagePath` 实际是 O(n²)                      | `tabPanel/tabStore.ts`                                       | 待处理 |
-| P2     | `ContextMenu` 在模板中调用 `menuZIndex()`                | `ContextMenu/index.vue`                                      | 待处理 |
-| P2     | `tabs` 深度代理 `PageStackView` 类实例                   | `tabPanel/tabStore.ts` / `tabPanel/state.ts`                 | 待处理 |
-| P2     | `useIframeManager` 的 watch 每次 tabs 变化都触发         | `useIframeManager.ts`                                        | 待处理 |
-| P2     | 未使用依赖 / 运行时依赖被内联进 bundle                   | `package.json` / `vite.config.lib.ts`                        | 待处理 |
-| P2     | `encodeBase64` 使用废弃 API 且非 URL-safe                | `utils/tabInfoEncoder.ts`                                    | 待处理 |
-| P2     | Session 只保存激活标签                                   | `tabPanel/session.ts`                                        | 待处理 |
-| P3     | 事件总线承担控制流、类型断言、右键菜单边界等             | 见下文                                                       | 待处理 |
+| 优先级 | 问题                                                     | 位置                                                         | 状态                          |
+| ------ | -------------------------------------------------------- | ------------------------------------------------------------ | ----------------------------- |
+| P0     | 刷新激活标签持续累积 keep-alive 实例（内存泄漏，已实测） | `StackKeepAlive.vue` / `tabPanel/refresh.ts`                 | ✅ 已完成                     |
+| P0     | 同 path 不同 query 不更新页面栈记录（已实测）            | `useTabPanel.tsx`                                            | ✅ 已完成                     |
+| P0     | `forward` 的 `__tab` 仍可被业务 query 覆盖               | `useTabRouter.ts`                                            | ✅ 已完成                     |
+| P0     | 动态标签标题没有可靠写入口                               | `tabStore.ts` / `useTabPanel.tsx` / `tabInfoEncoder.ts`      | ✅ 已完成                     |
+| P0     | `crypto.randomUUID()` 在非安全上下文抛错                 | `tabInfoEncoder.ts` / `useTabActions.ts` / `useTabPanel.tsx` | ✅ 已完成                     |
+| P1     | `parseUrl` 不拆分 hash                                   | `utils/urlParser.ts`                                         | ✅ 已完成                     |
+| P1     | 旧版 `__tab` 解码过于宽松，可伪造标签 id                 | `utils/tabInfoEncoder.ts`                                    | ✅ 已完成                     |
+| P1     | `isCrossOriginUrl` 误判协议相对 URL                      | `utils/urlParser.ts`                                         | ✅ 已完成                     |
+| P1     | 尾斜杠导致同一页面重复入栈                               | `useTabPanel.tsx`                                            | ✅ 已完成                     |
+| P1     | 组件 props 只有初始化时生效                              | `StackTabs.vue`                                              | ✅ 已完成                     |
+| P1     | `initialize` 不防重入                                    | `useTabPanel.tsx`                                            | ✅ 已完成                     |
+| P2     | `useTabPanel` 被高频调用，每次重建子模块                 | `useTabPanel.tsx`                                            | ✅ 已完成                     |
+| P2     | `syncTabsView` 每次写操作都替换整个 `tabs` 数组          | `tabPanel/tabStore.ts`                                       | ✅ 已完成                     |
+| P2     | `findTabByTopPagePath` 实际是 O(n²)                      | `tabPanel/tabStore.ts`                                       | ✅ 已完成                     |
+| P2     | `ContextMenu` 在模板中调用 `menuZIndex()`                | `ContextMenu/index.vue`                                      | ✅ 已完成                     |
+| P2     | `tabs` 深度代理 `PageStackView` 类实例                   | `tabPanel/tabStore.ts` / `tabPanel/state.ts`                 | ✅ 已完成                     |
+| P2     | `useIframeManager` 的 watch 每次 tabs 变化都触发         | `useIframeManager.ts`                                        | ✅ 已完成                     |
+| P2     | 未使用依赖 / 运行时依赖被内联进 bundle                   | `package.json` / `vite.config.lib.ts`                        | ✅ 已完成                     |
+| P2     | `encodeBase64` 使用废弃 API 且非 URL-safe                | `utils/tabInfoEncoder.ts`                                    | ✅ 已完成                     |
+| P2     | Session 只保存激活标签                                   | `tabPanel/session.ts`                                        | ✅ 已完成                     |
+| P3     | 事件总线承担控制流、类型断言、右键菜单边界等             | 见下文                                                       | ✅ 已完成（事件总线重构保留） |
 
 ### P0 — 正确性 / 内存
 
-#### 10.1 刷新激活标签持续累积 keep-alive 实例
+#### 10.1 刷新激活标签持续累积 keep-alive 实例 ✅
+
+**状态**：已完成。外层 keep-alive key 保持稳定，刷新版本由内部 `PageShell` + `Transition` 承接：页面重建时播放原有转场，旧实例正常卸载，包装层与滚动位置保留；新增实例计数回归测试（created=4 / unmounted=3）。
 
 **文件**：`src/lib/components/StackKeepAlive/StackKeepAlive.vue:46-52`、`src/lib/hooks/tabPanel/refresh.ts:61-66`
 
@@ -156,7 +160,9 @@
 
 **建议**：不要在外层 keep-alive 上换 key。保持包装组件实例稳定，把 `refreshVersion` 传给内部页面 vnode，在 `pageComponentFactory` 的 `cloneVNode` 上加内部 key，让重建发生在包装组件内部；或刷新时轮换 `cacheName` 并同步 `caches`。前者改动更小，也能保留滚动位置与包装层状态。修复后补一个实例计数回归测试。
 
-#### 10.2 同 path 不同 query 不更新页面栈记录
+#### 10.2 同 path 不同 query 不更新页面栈记录 ✅
+
+**状态**：已完成。按确认的产品策略，同 path、不同 query 追加新 page；`updatePageState` 与 `backward` 统一按 path + 业务 query 匹配。
 
 **文件**：`src/lib/hooks/useTabPanel.tsx:403-405`
 
@@ -174,7 +180,9 @@ if (top.path === path) {
 
 **建议**：抽出 `isSamePageLocation()`，与 `useTabRouter` 的 `isSameQueryIgnoringReserved` 复用。同 path、query 不同时至少更新栈顶 `page.query`；如果产品语义要求每次 query 变化都入栈，则 append 新 page。需要先明确「复用还是入栈」的产品策略。
 
-#### 10.3 `forward` 的 `__tab` 仍可被业务 query 覆盖
+#### 10.3 `forward` 的 `__tab` 仍可被业务 query 覆盖 ✅
+
+**状态**：已完成。`forward` / `backward` 先移除保留参数，再强制写入当前标签的 `__tab`；新增归属回归测试。
 
 **文件**：`src/lib/hooks/useTabRouter.ts:102`
 
@@ -194,7 +202,9 @@ const query = { ...omitStackTabsReservedQuery(to.query), __tab: tabInfo }
 
 补一个「业务 query 含 `__tab` 时仍归属当前标签」的回归测试。
 
-#### 10.4 动态标签标题没有可靠写入口
+#### 10.4 动态标签标题没有可靠写入口 ✅
+
+**状态**：已完成。新增 `useTabActions().updateTabTitle(id, title)`，同步 TabRecord、视图、session 与激活标签 URL 中的 `__tab`。
 
 **文件**：`src/lib/hooks/tabPanel/tabStore.ts:522-540`、`src/lib/hooks/useTabPanel.tsx:236-243`、`src/lib/utils/tabInfoEncoder.ts:70-80`
 
@@ -208,7 +218,9 @@ view.title = record.title
 
 **建议**：提供 `updateTabTitle(tabId, title)`，更新 `TabRecord`、`syncTabsView` 并触发 session 保存；或明确文档化 `title` 只读、动态标题通过路由 meta 派生。`__tab` 建议只编码 id/flags，不再把 title 当作身份数据。
 
-#### 10.5 `crypto.randomUUID()` 在非安全上下文抛错
+#### 10.5 `crypto.randomUUID()` 在非安全上下文抛错 ✅
+
+**状态**：已完成。新增 `createId()`：优先 `randomUUID`，回退 `getRandomValues`，最后 `Math.random`；补充缺失场景单测。
 
 **文件**：`src/lib/utils/tabInfoEncoder.ts:105`、`src/lib/hooks/useTabActions.ts:64`、`src/lib/hooks/useTabPanel.tsx:141,324`
 
@@ -218,7 +230,9 @@ view.title = record.title
 
 ### P1 — 兼容性 / 行为一致性
 
-#### 10.6 `parseUrl` 不拆分 hash
+#### 10.6 `parseUrl` 不拆分 hash ✅
+
+**状态**：已完成。`parseUrl` 返回 `hash` 并从 query 中剥离，`navigateToTab` 将 hash 透传给 `router.push`。
 
 **文件**：`src/lib/utils/urlParser.ts:89-106`
 
@@ -226,7 +240,9 @@ view.title = record.title
 
 **建议**：先剥离 `#`，返回值增加可选的 `hash`；`navigateToTab` 把 hash 传给 `router.push`。
 
-#### 10.7 旧版 `__tab` 解码过于宽松
+#### 10.7 旧版 `__tab` 解码过于宽松 ✅
+
+**状态**：已完成。legacy 分支严格校验字段数量、id 长度与控制字符、Y/N 标记及刷新模式，非法值返回默认信息。
 
 **文件**：`src/lib/utils/tabInfoEncoder.ts:57-68,96`
 
@@ -234,7 +250,9 @@ view.title = record.title
 
 **建议**：legacy 分支要求 `split('|').length >= 5` 且字段格式合法；不满足时返回 `DEFAULT_TAB_INFO`。也可以给 legacy 增加显式版本前缀。
 
-#### 10.8 `isCrossOriginUrl` 误判协议相对 URL
+#### 10.8 `isCrossOriginUrl` 误判协议相对 URL ✅
+
+**状态**：已完成。统一用 `new URL(url, origin)` 比较 origin，协议相对 URL 正确判为跨域；补回归测试。
 
 **文件**：`src/lib/utils/urlParser.ts:74-83`
 
@@ -242,7 +260,9 @@ view.title = record.title
 
 **建议**：统一用 `new URL(url, origin)` 比较 `origin`；仅对相对路径、`about:blank` 返回同源。
 
-#### 10.9 尾斜杠导致同一页面重复入栈
+#### 10.9 尾斜杠导致同一页面重复入栈 ✅
+
+**状态**：已完成。新增 `normalizePathname`，`initialize` 写入与 `updatePageState` / `forward` / `backward` 比较统一使用规范化 path。
 
 **文件**：`src/lib/hooks/useTabPanel.tsx:393-405,449-455`
 
@@ -250,7 +270,9 @@ view.title = record.title
 
 **建议**：写入 `page.path` 时也使用 normalized path；`initialize` 的 `parseUrl` 结果同样规范化。补一个尾斜杠往返测试。
 
-#### 10.10 组件 props 只有初始化时生效
+#### 10.10 组件 props 只有初始化时生效 ✅
+
+**状态**：已完成。`max` / `globalScroll` / `sessionPrefix` / `i18n` 增加 watch 同步；`defaultTabs` 在文档中明确「仅初始化生效」。
 
 **文件**：`src/lib/StackTabs.vue:169-174`
 
@@ -258,7 +280,9 @@ view.title = record.title
 
 **建议**：对 `max` / `globalScroll` / `sessionPrefix` / `i18n` 加 `watch` 同步；`defaultTabs` 在文档中明确「仅初始化生效」。
 
-#### 10.11 `initialize` 不防重入
+#### 10.11 `initialize` 不防重入 ✅
+
+**状态**：已完成。`isInitialized` 作为守卫，重复调用直接忽略并输出开发期警告。
 
 **文件**：`src/lib/hooks/useTabPanel.tsx:196-218`
 
@@ -268,7 +292,9 @@ view.title = record.title
 
 ### P2 — 性能 / 工程化
 
-#### 10.12 `useTabPanel` 被高频调用
+#### 10.12 `useTabPanel` 被高频调用 ✅
+
+**状态**：已完成。以 `StackTabsRuntimeContext` 为 key 用 `WeakMap` 缓存 panel API，首次调用仍完成 `useRouter` / `useI18n` 注入。
 
 **文件**：`src/lib/hooks/useTabPanel.tsx:58-115`
 
@@ -276,7 +302,9 @@ view.title = record.title
 
 **建议**：以 `StackTabsRuntimeContext` 为 key 用 `WeakMap` 缓存 panel API；首次调用仍需在 setup 上下文中获取 `useRouter` / `useI18n`。
 
-#### 10.13 `syncTabsView` 每次写操作都替换整个 `tabs` 数组
+#### 10.13 `syncTabsView` 每次写操作都替换整个 `tabs` 数组 ✅
+
+**状态**：已完成。`updatePage` 仅在页面 id 变化时重建 `tabs`；`refreshAllTabs` 通过 `updatePages` 批量合并为一次同步。
 
 **文件**：`src/lib/hooks/tabPanel/tabStore.ts:543-550`
 
@@ -284,7 +312,9 @@ view.title = record.title
 
 **建议**：刷新版本使用独立的细粒度 `ref`；批量操作（`refreshAllTabs`）合并为一次 `syncTabsView`。
 
-#### 10.14 `findTabByTopPagePath` 实际是 O(n²)
+#### 10.14 `findTabByTopPagePath` 实际是 O(n²) ✅
+
+**状态**：已完成。改为直接遍历 `tabViews`，降为 O(n)；`getTab` 保持读取 `tabs.value` 以维持对象身份语义。
 
 **文件**：`src/lib/hooks/tabPanel/tabStore.ts:239-244,216-218`
 
@@ -292,7 +322,9 @@ view.title = record.title
 
 **建议**：`getTab` 改为 `tabViews` Map 查询（配合 `markRaw` / `shallowReactive` 保持响应式），或 `findTabByTopPagePath` 直接遍历 record。
 
-#### 10.15 `ContextMenu` 在模板中调用 `menuZIndex()`
+#### 10.15 `ContextMenu` 在模板中调用 `menuZIndex()` ✅
+
+**状态**：已完成。z-index 在 `onMounted` 计算一次存入 ref；同一次挂载内不再重复扫描 DOM。
 
 **文件**：`src/lib/components/ContextMenu/index.vue:16,121-124`
 
@@ -304,7 +336,9 @@ view.title = record.title
 
 **建议**：`onMounted` 计算一次存 `ref`；菜单打开期间层叠关系不会变，无需重复扫描。
 
-#### 10.16 `tabs` 深度代理 `PageStackView` 类实例
+#### 10.16 `tabs` 深度代理 `PageStackView` 类实例 ✅
+
+**状态**：已完成。`pages` 使用 `markRaw(new PageStackView(...))`，读写仍转发 store。
 
 **文件**：`src/lib/hooks/tabPanel/tabStore.ts:507-520`、`src/lib/hooks/tabPanel/state.ts:36`
 
@@ -312,7 +346,9 @@ view.title = record.title
 
 **建议**：`pages: markRaw(new PageStackView(...))`，页面栈变化继续通过 `tabs.value` 替换或显式信号通知；或用 `shallowReactive` view。
 
-#### 10.17 `useIframeManager` 的 watch 每次 tabs 变化都触发
+#### 10.17 `useIframeManager` 的 watch 每次 tabs 变化都触发 ✅
+
+**状态**：已完成。watch 改为 `id:active` 拼接的稳定签名，普通标签变化不再触发 iframe 遍历。
 
 **文件**：`src/lib/hooks/useIframeManager.ts:141-169`
 
@@ -322,7 +358,9 @@ watch(() => iframeTabs.value.map((frame) => ({ id: frame.id, active: frame.activ
 
 每次返回新数组，普通标签的任意变化（标题、页面入栈、刷新）都会执行回调并遍历 iframe。建议 watch 一个稳定签名（如 `id:active` 拼接字符串），或手动比较前后值。
 
-#### 10.18 未使用依赖 / 运行时依赖被内联进 bundle
+#### 10.18 未使用依赖 / 运行时依赖被内联进 bundle ✅
+
+**状态**：已完成。`defu` / `mitt` / `vue-i18n-lite` 设为 `external` 并保留在 `dependencies`；移除 `throttle-debounce` 及其类型依赖并同步 lockfile。`nostics`（vue-router 开发期依赖）与 `@floating-ui/*`、`@popperjs/core`（element-plus 预构建依赖）保留在 devDependencies，否则 Vite dev server 无法解析间接依赖。打包验证脚本已适配 external 依赖。CI 体积阈值未添加（仓库暂无 CI 配置）。
 
 **文件**：`package.json`、`vite.config.lib.ts:36-46`
 
@@ -331,7 +369,9 @@ watch(() => iframeTabs.value.map((frame) => ({ id: frame.id, active: frame.activ
 - `dist/vue-stack-tabs.es.js` 只 import `vue` / `vue-router`，说明 `defu`、`mitt`、`vue-i18n-lite` 被内联进 61KB bundle，但它们又列在 `dependencies`。建议将运行时依赖设为 `external`，或移到 `devDependencies` 并 external，避免安装体积与多份副本。
 - 建议在 CI 增加 bundle 体积阈值。
 
-#### 10.19 `encodeBase64` 使用废弃 API 且非 URL-safe
+#### 10.19 `encodeBase64` 使用废弃 API 且非 URL-safe ✅
+
+**状态**：已完成。改用 `TextEncoder` + Base64URL，解码兼容旧 Base64；编码前截断超长 title；按 minor 发布。
 
 **文件**：`src/lib/utils/tabInfoEncoder.ts:27-30,70-103`
 
@@ -341,7 +381,9 @@ watch(() => iframeTabs.value.map((frame) => ({ id: frame.id, active: frame.activ
 
 **建议**：改用 `TextEncoder` + base64url；`decode` 兼容旧 base64；编码前截断 title 或只编码 id/flags。
 
-#### 10.20 Session 只保存激活标签
+#### 10.20 Session 只保存激活标签 ✅
+
+**状态**：已完成。统一文档口径为「恢复上次激活的标签及其页面栈」；完整会话恢复未实现（属于产品范围决策）。
 
 **文件**：`src/lib/hooks/tabPanel/session.ts:75-81`
 
@@ -351,12 +393,12 @@ watch(() => iframeTabs.value.map((frame) => ({ id: frame.id, active: frame.activ
 
 ### P3 — 可维护性 / 体验
 
-- **事件总线承担控制流**：`TabHeaderItem` 订阅 `TAB_ACTIVE`，`removeTab` / `findOrCreateTargetTab` emit 后由 item 触发 `handleActivate`（`TabHeaderItem.vue:86-94`、`useTabPanel.tsx:551-570`）。`removeTab` 已经返回 `nextActiveId`，上层可以直接 `active(nextActiveId)`，比事件链更易追踪。
-- **类型断言与运行时防护**：`findOrCreateTargetTab` 直接构造对象并 `as unknown as ITabItem`（`useTabPanel.tsx:347-357`）；建议工厂函数 + 重复 page id、空栈、`updatePage` 改 id 冲突的防护。
-- **`TabHeaderScroll`**：`tabListResizeObserver` 中 `if (!hasScroller.value) ensureActiveTabInView()` 逻辑疑似反了（`TabHeaderScroll.vue:231-234`），内容溢出时反而不会在标签增删后纠正滚动位置；拖拽中卸载组件时没有移除 document 上的 `mousemove` / `mouseup`（`:240-245`）。
-- **`ContextMenu` 只修正右边界，不修正下边界**（`ContextMenu/index.vue:208-214`），菜单在视口底部会溢出。
-- **iframe 安全默认值**：默认 `allow-scripts allow-same-origin`（`StackTabs.vue:96`）对同源 iframe 可逃逸 sandbox；建议文档明确「仅用于跨域第三方页面」，或拆分默认值。
-- **测试缺口**：建议补四类回归测试：
+- **事件总线承担控制流（保留）**：`TabHeaderItem` 订阅 `TAB_ACTIVE`，`removeTab` / `findOrCreateTargetTab` emit 后由 item 触发 `handleActivate`（`TabHeaderItem.vue:86-94`、`useTabPanel.tsx:551-570`）。`removeTab` 已经返回 `nextActiveId`，上层可以直接 `active(nextActiveId)`，比事件链更易追踪。
+- **类型断言与运行时防护 ✅**：已去除 `as unknown as ITabItem`，`updatePage` 增加目标 id 冲突防护。原问题：`findOrCreateTargetTab` 直接构造对象并断言（`useTabPanel.tsx:347-357`），缺少重复 page id、空栈、`updatePage` 改 id 冲突的防护。
+- **`TabHeaderScroll` ✅**：已修复溢出判断（`if (hasScroller.value)`），卸载时调用 `handleScrollbarDragEnd()` 清理 document 事件。原问题：`tabListResizeObserver` 中 `if (!hasScroller.value) ensureActiveTabInView()` 逻辑疑似反了（`TabHeaderScroll.vue:231-234`），内容溢出时反而不会在标签增删后纠正滚动位置；拖拽中卸载组件时没有移除 document 上的 `mousemove` / `mouseup`（`:240-245`）。
+- **`ContextMenu` 只修正右边界，不修正下边界 ✅**：`onMounted` 已同时修正右/下边界。原问题（`ContextMenu/index.vue:208-214`），菜单在视口底部会溢出。
+- **iframe 安全默认值 ✅**：文档已补充「默认包含 `allow-same-origin`，同源页面应移除」的说明。默认 `allow-scripts allow-same-origin`（`StackTabs.vue:96`）对同源 iframe 可逃逸 sandbox；建议文档明确「仅用于跨域第三方页面」，或拆分默认值。
+- **测试缺口 ✅**：四类回归测试已补齐：
   1. 刷新激活标签后 keep-alive 实例数量；
   2. 同 path 不同 query 的页面栈行为；
   3. 业务 query 含 `__tab` 时 forward 的归属；
@@ -369,3 +411,5 @@ watch(() => iframeTabs.value.map((frame) => ({ id: frame.id, active: frame.activ
 3. **10.4 / 10.5**（标题写入口、UUID fallback）；API 完整性与部署兼容性。
 4. **10.6 ~ 10.9**（hash、legacy `__tab`、协议相对 URL、尾斜杠）；都是小而明确的修复。
 5. **10.13 / 10.15 / 10.18**（tabs 全量替换、z-index 扫描、依赖清理）；低风险、收益直接。
+
+> 以上 1–5 已于 2026-10-21 完成。验证结果：`type-check`、251 个单测、ESLint（0 error）、`lib:build`、`verify-packaged` 全部通过。
