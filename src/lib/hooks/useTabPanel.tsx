@@ -61,7 +61,7 @@ const createTabPanelApi = (runtimeContext: StackTabsRuntimeContext) => {
   const router = useRouter()
   const emitter = useTabEmitter(runtimeContext)
   const { t } = useI18n()
-  const { tabs, defaultTabs, caches, refreshKey, iframeRefreshKeys, isInitialized } = runtimeContext
+  const { tabs, caches, refreshKey, iframeRefreshKeys, isInitialized } = runtimeContext
   const store = getTabStore(runtimeContext)
   const {
     getTabs,
@@ -126,14 +126,13 @@ const createTabPanelApi = (runtimeContext: StackTabsRuntimeContext) => {
    * @param homeTab - 固定首页；始终位于第一位、不可关闭、不可移动
    */
   const initialize = (staticTabs: ITabData[], homeTab?: ITabData) => {
-    // 重复调用会累加 defaultTabs 并重复注册标签；初始化后直接忽略。
+    // 重复调用会重复注册标签；初始化后直接忽略。
     if (isInitialized.value) {
       if (!import.meta.env.PROD) {
         console.warn('[vue-stack-tabs] initialize() called more than once; ignored.')
       }
       return
     }
-    const newDefaults: ITabItem[] = []
     const newTabs: ITabItem[] = []
     let homeTabId = ''
 
@@ -196,7 +195,6 @@ const createTabPanelApi = (runtimeContext: StackTabsRuntimeContext) => {
     if (homeTab) {
       const home = buildTab(homeTab, { pinned: true, closable: false })
       homeTabId = home.id
-      newDefaults.push(home)
       newTabs.push({ ...home })
     }
 
@@ -212,11 +210,9 @@ const createTabPanelApi = (runtimeContext: StackTabsRuntimeContext) => {
         continue
       }
       const tab = buildTab(item)
-      newDefaults.push(tab)
       newTabs.push({ ...tab })
     }
 
-    defaultTabs.value = [...defaultTabs.value, ...newDefaults]
     addTabs(newTabs)
 
     // SSR 环境无 sessionStorage，直接跳过恢复。
@@ -754,7 +750,6 @@ const createTabPanelApi = (runtimeContext: StackTabsRuntimeContext) => {
 
   const destroy = () => {
     resetStore()
-    defaultTabs.value = []
     iframeRefreshKeys.value = {}
     runtimeContext.scrollPositionsByPageId.clear()
     runtimeContext.isInitialized.value = false

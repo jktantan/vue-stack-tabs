@@ -44,15 +44,6 @@ export function isAllowedTabUrl(url: string): boolean {
   }
 }
 
-/**
- * 判断是否为不允许嵌入 iframe 的 URL
- * @param url - 待检查的 URL 字符串
- * @returns 非 allowlist URL 返回 true
- */
-export function isInvalidIframeUrl(url: string): boolean {
-  return !isAllowedTabUrl(url)
-}
-
 /** 非法 URL 降级为 about:blank，避免进入 iframe/window.open 等 URL sink */
 export function toSafeTabUrl(url: string): string {
   return isAllowedTabUrl(url) ? url : 'about:blank'

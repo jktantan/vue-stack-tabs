@@ -22,7 +22,7 @@ interface EncodedTabInfoV1 {
 const MAX_DECODED_TAB_INFO_LENGTH = 2048
 const MAX_ENCODED_TAB_INFO_LENGTH = 4096
 /** URL 中 __tab 的 title 上限，避免超长标题把 payload 顶到解码上限导致 id 丢失。 */
-export const MAX_TAB_TITLE_LENGTH = 256
+const MAX_TAB_TITLE_LENGTH = 256
 /** legacy 格式中 id 的合理上限，用于拒绝任意字符串伪装成标签 id。 */
 const MAX_LEGACY_TAB_ID_LENGTH = 128
 

@@ -29,7 +29,6 @@ describe('stackTabsContext', () => {
     })
 
     expect(context.tabs.value).toEqual([])
-    expect(context.defaultTabs.value).toEqual([])
     expect(context.caches.value).toEqual([])
     expect(context.components.size).toBe(0)
     expect(context.cacheIdsToEvict.size).toBe(0)

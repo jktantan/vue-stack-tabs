@@ -17,21 +17,11 @@ export enum TabScrollMode {
   BOTH = 'both'
 }
 
-/** 标签栏滚动条拖拽时的临时状态 */
-export interface DragData {
-  thumbLeft: number
-  startScrollLeft: number
-  startThumbLeft: number
-  startPageX: number
-}
-/** 滚动条滑块计算所需的数据 */
+/** 滚动条滑块计算所需的数据（滚动过程中保持非响应式） */
 export interface ScrollData {
   clientWidth: number
   scrollWidth: number
   scrollLeft: number
-}
-export type ScrollEvents = {
-  ScrollUpdate: void
 }
 
 /** 打开标签时传入的完整数据（含 path、query） */

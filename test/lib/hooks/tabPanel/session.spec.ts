@@ -68,6 +68,44 @@ describe('tabPanel session', () => {
     expect(window.sessionStorage.getItem(session.getSessionKey())).toContain('"id":"two"')
   })
 
+  it('内容未变化时不会重复写入 sessionStorage', async () => {
+    const writes: string[] = []
+    const originalStorage = window.sessionStorage
+    Object.defineProperty(window, 'sessionStorage', {
+      configurable: true,
+      value: {
+        getItem: () => null,
+        setItem: (_key: string, value: string) => writes.push(value),
+        removeItem: () => undefined,
+        clear: () => undefined
+      }
+    })
+
+    try {
+      const tab = {
+        id: 'same',
+        title: 'Same',
+        closable: true,
+        refreshable: true,
+        iframe: false,
+        active: true,
+        pages: new Stack([{ id: 'same-page', tabId: 'same', path: '/same' }])
+      }
+
+      session.saveActiveTabToSession(tab)
+      await new Promise<void>((resolve) => queueMicrotask(resolve))
+      session.saveActiveTabToSession(tab)
+      await new Promise<void>((resolve) => queueMicrotask(resolve))
+
+      expect(writes).toHaveLength(1)
+    } finally {
+      Object.defineProperty(window, 'sessionStorage', {
+        configurable: true,
+        value: originalStorage
+      })
+    }
+  })
+
   it('回滚恢复会使已排队的旧写入失效', async () => {
     const previous = JSON.stringify({ id: 'previous' })
     session.saveActiveTabToSession({

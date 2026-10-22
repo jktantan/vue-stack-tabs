@@ -12,8 +12,6 @@ export interface TabPanelScrollApi {
   saveScroller: (pageCacheId: string) => void
   removeScroller: (pageCacheId: string) => void
   addPageScroller: (pageCacheId: string, ...selectorIds: string[]) => void
-  /** 主动失效某页面的滚动元素缓存，例如外部强制刷新缓存页时 */
-  invalidateAutoScrollCache: (pageCacheId: string) => void
 }
 
 const resolveScrollElement = (selector: string): HTMLElement | null =>
@@ -158,19 +156,10 @@ export const createTabPanelScroll = (context: StackTabsRuntimeContext): TabPanel
     }
   }
 
-  const invalidateAutoScrollCache = (pageCacheId: string): void => {
-    const cache = autoScrollCaches.get(pageCacheId)
-    if (!cache) return
-    cache.elements = []
-    cache.observer?.disconnect()
-    autoScrollCaches.delete(pageCacheId)
-  }
-
   return {
     restoreScroller,
     saveScroller,
     removeScroller,
-    addPageScroller,
-    invalidateAutoScrollCache
+    addPageScroller
   }
 }

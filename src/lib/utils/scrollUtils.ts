@@ -71,24 +71,6 @@ export function scrollIntoView({
   }
 }
 
-/** 获取系统滚动条宽度（用于布局计算） */
-export const getScrollbarWidth = (function () {
-  let width: number | null = null
-
-  return function () {
-    if (width !== null) return width
-
-    const div = document.createElement('div')
-
-    div.style.cssText = 'width: 100px; height: 100px;overflow-y: scroll'
-    document.body.appendChild(div)
-    width = div.offsetWidth - div.clientWidth
-    div.parentElement?.removeChild(div)
-
-    return width
-  }
-})()
-
 const Z_INDEX_CEILING = 89999
 
 /**

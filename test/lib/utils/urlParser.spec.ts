@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import {
   decodeSafeTabUrl,
   isAllowedTabUrl,
-  isInvalidIframeUrl,
   isSameQueryIgnoringReserved,
   normalizePathname,
   parseUrl,
@@ -44,14 +43,6 @@ describe('tab URL allowlist', () => {
     expect(isAllowedTabUrl('about:blank')).toBe(true)
     expect(isAllowedTabUrl('about:blank#payload')).toBe(false)
     expect(isAllowedTabUrl('about:srcdoc')).toBe(false)
-  })
-
-  it('isInvalidIframeUrl 与 allowlist 保持一致，非法 URL 返回 true', () => {
-    expect(isInvalidIframeUrl('javascript:void(0)')).toBe(true)
-    expect(isInvalidIframeUrl('data:text/html,test')).toBe(true)
-    expect(isInvalidIframeUrl('file:///etc/passwd')).toBe(true)
-    expect(isInvalidIframeUrl('/path')).toBe(false)
-    expect(isInvalidIframeUrl('https://example.com')).toBe(false)
   })
 
   it('toSafeTabUrl 对非法 URL 返回 about:blank', () => {

@@ -15,7 +15,6 @@ export interface ScrollPosition {
 
 export interface TabPanelRuntimeState {
   tabs: Ref<ITabItem[]>
-  defaultTabs: Ref<ITabItem[]>
   caches: ShallowRef<string[]>
   components: Map<string, DefineComponent>
   cacheIdsToEvict: Set<string>
@@ -34,7 +33,6 @@ export const SESSION_TAB_NAME = 'stacktab-active-tab'
 
 export const createTabPanelRuntimeState = (): TabPanelRuntimeState => ({
   tabs: ref<ITabItem[]>([]) as Ref<ITabItem[]>,
-  defaultTabs: ref<ITabItem[]>([]) as Ref<ITabItem[]>,
   caches: shallowRef<string[]>([]),
   components: new Map<string, DefineComponent>(),
   cacheIdsToEvict: new Set<string>(),

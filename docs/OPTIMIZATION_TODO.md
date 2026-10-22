@@ -360,7 +360,7 @@ watch(() => iframeTabs.value.map((frame) => ({ id: frame.id, active: frame.activ
 
 #### 10.18 未使用依赖 / 运行时依赖被内联进 bundle ✅
 
-**状态**：已完成。`defu` / `mitt` / `vue-i18n-lite` 设为 `external` 并保留在 `dependencies`；移除 `throttle-debounce` 及其类型依赖并同步 lockfile。`nostics`（vue-router 开发期依赖）与 `@floating-ui/*`、`@popperjs/core`（element-plus 预构建依赖）保留在 devDependencies，否则 Vite dev server 无法解析间接依赖。打包验证脚本已适配 external 依赖。CI 体积阈值未添加（仓库暂无 CI 配置）。
+**状态**：已完成。`defu` / `mitt` / `vue-i18n-lite` 设为 `external` 并保留在 `dependencies`；移除 `throttle-debounce` 及其类型依赖并同步 lockfile。`nostics`（vue-router 开发期依赖）与 `@floating-ui/*`、`@popperjs/core`（element-plus 预构建依赖）保留在 devDependencies，否则 Vite dev server 无法解析间接依赖。打包验证脚本已适配 external 依赖。CI 体积阈值未添加（已新增 `.github/workflows/ci.yml` 质量门禁，但未设置包体积阈值）。
 
 **文件**：`package.json`、`vite.config.lib.ts:36-46`
 
@@ -502,7 +502,7 @@ addComponent({
 
 同时：插件内避免顶层 `useI18n()`（locale 已通过 plugin options 传入），或导出显式的 `setLocale`；在 `scripts/verify-packaged.mjs` 增加断言：`plugin.mjs` 不含 `inject() can only be used inside setup`、体积 < 5 kB、`module.mjs` 的 `filePath` 指向的文件存在。
 
-### 11.4 P2 — 低风险一致性 / 健壮性 / 微性能
+### 11.4 P2 — 低风险一致性 / 健壮性 / 微性能 ✅
 
 1. **`isSameQueryIgnoringReserved` 存在 key 集合比较缺陷 + 可提速**：`src/lib/utils/urlParser.ts:156-188`。旧实现只比较 key 数量再逐 key 取值，`{ a: '' }` 与 `{ b: '' }` 会被判为相等。改为“先统计非保留 key 数量 + 逐 key 用 `hasOwnProperty` 比较”，实测 0.30 µs → 0.16 µs；对相同 key 集合做了 20,000 组随机 fuzz，与旧实现语义完全一致。现有用例（数组 vs 逗号字符串）继续通过。
 2. **`PageStackView.at/size/isEmpty` 每次重建数组**：`tabStore.ts:158-172`。给 `PageStackAccess` 增加 `getPageCount` / `getPageAt`（直接读 `pageIdsByTabId` + `pagesById`），实测 4–8 倍提速；`at(-1)` 仍保持数组下标语义（返回 `undefined`）。
@@ -521,14 +521,14 @@ addComponent({
 15. **`saveScroller` 对 auto key 做了两遍遍历**：`tabPanel/scroll.ts:109-135`。第一轮写入 `AUTO_SCROLLER_PREFIX` key，第二轮又把它们重新解析一遍；第二轮可只遍历非 auto selector。
 16. **`markTabPagesForEviction` 双重数组拷贝**：`tabPanel/evict.ts:42-49`。`PageStackView.list()` 先 `getPages()` 再 `[...pages]`，只为取 id；可改用 `readonlyList()`，或让 store 侧直接用 `getPageIds()` 标记。
 
-### 11.5 P3 — 清理与可维护性
+### 11.5 P3 — 清理与可维护性（部分完成）
 
-- **未使用 / 仅测试引用**：`scrollUtils.getScrollbarWidth`（零运行时引用）、`createTabPanelScroll` 的 `invalidateAutoScrollCache`（未从 `useTabPanel` 暴露、无调用方）、`TabModel.DragData` / `ScrollEvents`（无引用）、`urlParser.isInvalidIframeUrl`（仅测试引用）、`MAX_TAB_TITLE_LENGTH` 导出、运行时状态 `defaultTabs`（`state.ts:18,37` + `useTabPanel.tsx:64,207`，只写不读）。建议删除或标注 `@internal`。
-- **`useTabPanel.tsx` 834 行**：`initialize`（≈100 行）、`updatePageState`（≈120 行）、`addPage` / tab 操作包装可以按现有 `tabPanel/` 分层拆出 `initialize.ts` / `routerAdapter.ts`，与 AGENTS 的“内部子模块”约定一致。
-- **事件总线承担控制流（历史遗留）**：`removeTab` 已返回 `nextActiveId`，上层可直接 `active(nextActiveId)`，比 `TAB_ACTIVE` 事件链更易追踪（10.x P3 已记录，仍未处理）。
-- **模板里的多余断言**：`components/TabHeader/index.vue:26-32` 多处 `item as unknown as ITabItem`；`tabs` 已经是 `Ref<ITabItem[]>`，去掉后 `vue-tsc` 仍可通过。
-- **`session` 写入去重**：每次激活/导航都会 `JSON.stringify` 整个激活标签（含页面栈），可在 `flushPendingWrite` 前与上次字符串比较，内容相同时跳过 `setItem`。
-- **CI 质量门**：仓库暂无 CI；建议至少加 `type-check + test + lint`，以及产物预算（主包 gzip、`dist/nuxt/runtime/plugin.mjs` 体积 / external 断言）。
+- **未使用 / 仅测试引用 ✅**：已删除 `scrollUtils.getScrollbarWidth`、`invalidateAutoScrollCache`、`TabModel.DragData` / `ScrollEvents`、`urlParser.isInvalidIframeUrl`，`MAX_TAB_TITLE_LENGTH` 改为内部常量，只写不读的运行时 `defaultTabs` 状态一并移除。
+- **`useTabPanel.tsx` 834 行（暂缓）**：拆分 `initialize` / `updatePageState` 需要把 store、session、scroll、事件依赖逐项注入，属于纯结构调整且行为风险高于收益；本轮保持现状，后续修改该文件时再增量拆分。
+- **事件总线承担控制流（保留）**：`removeTab` 已返回 `nextActiveId`，上层可直接 `active(nextActiveId)`，比 `TAB_ACTIVE` 事件链更易追踪；为避免行为回归，本轮未改动（10.x P3 已记录）。
+- **模板里的多余断言 ✅**：已移除 `TabHeader` 模板中的 `item as ITabItem` / `as unknown as ITabItem`，仅保留 `contextMenuData.item` 的必要断言。
+- **`session` 写入去重 ✅**：`flushPendingWrite` 与上次成功写入的 JSON 比较，内容相同时跳过 `setItem`；恢复/清理时同步维护基线。
+- **CI 质量门 ✅**：新增 `.github/workflows/ci.yml`（`type-check` / `test` / `lint:check` / `format:check` / `lib:build` / `verify-packaged`）；包体积阈值仍未设置，建议后续补充。
 
 ### 11.6 建议补充的回归测试
 
@@ -545,3 +545,12 @@ addComponent({
 2. 再做 **11.3.2**（Nuxt external + filePath + 冒烟断言）：影响 Nuxt 使用方，属于打包正确性问题。
 3. 然后按 **11.4** 逐项清理；其中 1/2/3/4/7 都有已验证的小改动，1/2/7 还需补少量单测。
 4. 最后处理 **11.5** 死代码与结构调整，避免一次性大改。
+
+### 11.8 实施记录（2026-10-22）
+
+- **11.3.1 / 11.3.2**：已完成。提交 `a9fdec1`（页面栈写入不重建 tabs）、`d772309`（Nuxt external / 组件入口 / 插件 inject）。
+- **11.4**：16 项全部完成，提交 `1cc1388`；新增或更新用例覆盖 query 比较、`PageStackView` 访问、z-index、renew 同地址、默认 iframe 标签、解码缓存。
+- **11.5**：死代码清理、模板断言、session 写入去重、CI 质量门已完成；`useTabPanel` 拆分与事件总线控制流按上述理由暂缓。
+- **验证**：`pnpm run type-check`、`pnpm run test`（269 passed）、`pnpm run lint:check`（0 error）、`pnpm run lib:build`、`node scripts/verify-packaged.mjs`、`pnpm exec node scripts/verify-prepack.mjs` 全部通过。
+
+> 注：本地 `pnpm run format:check` 会因未纳入版本控制的 `docs/articles/` 报错；所有已跟踪文件均通过 Prettier。

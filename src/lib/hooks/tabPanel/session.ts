@@ -32,19 +32,23 @@ export const createTabPanelSession = (context: StackTabsRuntimeContext): TabPane
   let pendingWrite: { tab: ITabItem; version: number } | null = null
   let writeVersion = 0
   let writeScheduled = false
+  /** 最近一次成功写入的内容；与待写入内容相同时跳过 setItem。 */
+  let lastPersistedJson: string | null = null
 
   /**
    * 写入 sessionStorage，捕获隐私模式（QuotaExceededError）等异常，
    * 避免在受限浏览器环境下抛出未处理错误。SSR 环境无 window 时直接跳过。
    */
-  const safeSetItem = (key: string, value: string): void => {
-    if (typeof window === 'undefined') return
+  const safeSetItem = (key: string, value: string): boolean => {
+    if (typeof window === 'undefined') return false
     try {
       window.sessionStorage.setItem(key, value)
+      return true
     } catch (error) {
       if (!import.meta.env.PROD) {
         console.warn('[vue-stack-tabs] Failed to write sessionStorage:', error)
       }
+      return false
     }
   }
 
@@ -64,7 +68,9 @@ export const createTabPanelSession = (context: StackTabsRuntimeContext): TabPane
     const write = pendingWrite
     pendingWrite = null
     if (!write || write.version !== writeVersion) return
-    safeSetItem(getSessionKey(), JSON.stringify(write.tab))
+    const serialized = JSON.stringify(write.tab)
+    if (serialized === lastPersistedJson) return
+    if (safeSetItem(getSessionKey(), serialized)) lastPersistedJson = serialized
   }
 
   const invalidatePendingWrite = () => {
@@ -83,6 +89,7 @@ export const createTabPanelSession = (context: StackTabsRuntimeContext): TabPane
   const clearSession = (): void => {
     invalidatePendingWrite()
     safeRemoveItem(getSessionKey())
+    lastPersistedJson = null
   }
 
   const restoreActiveTabSession = (storedJson: string | null): void => {
@@ -91,7 +98,7 @@ export const createTabPanelSession = (context: StackTabsRuntimeContext): TabPane
       return
     }
     invalidatePendingWrite()
-    safeSetItem(getSessionKey(), storedJson)
+    if (safeSetItem(getSessionKey(), storedJson)) lastPersistedJson = storedJson
   }
 
   const restoreTabFromSession = (storedJson: string | null): ITabItem | null => {

@@ -23,7 +23,6 @@ export const STACK_TABS_DUPLICATE_INSTANCE_MESSAGE =
 
 export interface StackTabsRuntimeContext {
   tabs: Ref<ITabItem[]>
-  defaultTabs: Ref<ITabItem[]>
   caches: ShallowRef<string[]>
   components: Map<string, DefineComponent>
   cacheIdsToEvict: Set<string>

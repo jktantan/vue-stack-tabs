@@ -23,13 +23,10 @@
           <tab-header-item
             v-for="(item, index) in tabs"
             :key="item.id"
-            :item="item as ITabItem"
+            :item="item"
             :drop-position="dropIndicator?.tabId === item.id ? dropIndicator.position : undefined"
-            @contextmenu="
-              (e: MouseEvent) =>
-                handleTabContextMenu(e, item as unknown as ITabItem, index, tabs.length)
-            "
-            @click.middle.prevent="handleCloseTab(item as ITabItem)"
+            @contextmenu="(e: MouseEvent) => handleTabContextMenu(e, item, index, tabs.length)"
+            @click.middle.prevent="handleCloseTab(item)"
             @close="handleCloseTab"
             @active="handleActivateTab"
             @dragstart="handleTabDragStart"
@@ -261,7 +258,7 @@ const handleTabListDragOver = (event: DragEvent) => {
 const handleTabListDrop = (event: DragEvent) => {
   if (isTabItemDragEvent(event)) return
   const lastTab = tabs.value[tabs.value.length - 1]
-  if (lastTab) handleTabDrop(lastTab as ITabItem)
+  if (lastTab) handleTabDrop(lastTab)
 }
 
 /** 标签列表 transition 的 props，支持 string 或对象 */
@@ -290,7 +287,7 @@ const focusTabById = (tabId: string) => {
 const activateTabByIndex = (index: number) => {
   const item = tabs.value[index]
   if (!item) return
-  handleActivateTab(item as ITabItem, undefined, true)
+  handleActivateTab(item, undefined, true)
   focusTabById(String(item.id))
 }
 
