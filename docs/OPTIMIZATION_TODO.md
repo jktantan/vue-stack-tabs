@@ -558,3 +558,17 @@ addComponent({
 - **验证**：`pnpm run type-check`、`pnpm run test`（269 passed）、`pnpm run lint:check`（0 error）、`pnpm run lib:build`、`node scripts/verify-packaged.mjs`、`pnpm exec node scripts/verify-prepack.mjs` 全部通过。
 
 > 注：本地 `pnpm run format:check` 会因未纳入版本控制的 `docs/articles/` 报错；所有已跟踪文件均通过 Prettier。
+
+### 11.9 回归修复：多根节点页面刷新空白（2026-10-22）
+
+**现象**：demo 首页点击「跳转测试」进入 `/demo/test2` 后，右键刷新标签，内容区变空白；停留在单根节点页面时刷新正常。
+
+**原因**：`pageComponentFactory` 的内层 `<Transition mode="out-in">` 直接包裹 `PageShell`，而 `PageShell` 直接返回页面 vnode。`test2.vue` 是多根节点页面（Fragment），Vue 无法对 Fragment 执行离场动画；真实浏览器中 `out-in` 等不到 leave 结束，新页面不会挂载，表现为空白。happy-dom 因 transition 时长为 0 未暴露该问题，只有真实 Chrome 复现。
+
+**修复**：不给页面套额外元素，也不跳过动画。把刷新动画从 `PageShell` 移到缓存 wrapper（真实元素）上：按 Vue Transition 的类名约定手动执行「离场 → 提升 `renderedRefreshVersion` 重建页面 → 入场」。动画主体与页面根节点数量无关，Fragment 页面保持原有多根 DOM；由于动画作用于 wrapper 本身，页面内容不再相对滚动容器位移，因此不需要临时隐藏 overflow（否则滚动条消失会导致内容宽度跳动），长页面刷新时 `clientWidth` 与 `scrollTop` 保持不变；`prefers-reduced-motion` 时直接切换。
+
+**补充**：该修复同时恢复了 10.1 之前的刷新动画效果（旧内容滑出 → 新内容滑入），且 keep-alive 外层 key 保持稳定，不会重新引入实例累积。新增「前进到多根节点页面后刷新」「wrapper 动画类完整走完并清理」「阴影类稳定性」三条回归测试。
+
+**阴影联动修复**：动画改为 transform wrapper 后，wrapper 上 `::after` 的绝对定位包含块会随 transform 变化，导致顶部阴影错位/消失。现将阴影类挂到不参与 transform 的 `.stack-tab__keep-alive-panel`（新增 `useScrollShadow.classTarget` 选项），滚动监听仍绑定 wrapper；同时在 `onMounted` / `onActivated` 重新 `sync()`，顺带修复「新打开标签页阴影不生效」的问题。`onDeactivated` 时清理阴影类，避免缓存页之间串色。
+
+**验证**：真实 Chrome（headless + CDP）执行 首页 → 跳转测试 → 右键刷新，刷新后 `test2` 内容保留、离场/入场动画完整；长页面（`/demo/scroll`）滚到 800px 后刷新，动画全程 overflow=auto、`clientWidth` 与 `scrollTop` 保持 511/800 不变；`pnpm run test`、`type-check`、`lint:check`、`lib:build`、`verify-packaged`、`verify-prepack` 均通过。
