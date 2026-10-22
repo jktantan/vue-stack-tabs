@@ -310,8 +310,12 @@ const createTabStore = (context: StackTabsRuntimeContext): TabStoreApi => {
   }
 
   const activateTab = (id: string): ITabItem | null => {
-    activeTabId.value = tabsById.has(id) ? id : ''
-    syncTabsView()
+    const nextId = tabsById.has(id) ? id : ''
+    // 重复激活同一标签（页面内导航经常走到这里）无需重建 tabs 数组。
+    if (nextId !== activeTabId.value) {
+      activeTabId.value = nextId
+      syncTabsView()
+    }
     return getTab(id)
   }
 
@@ -416,12 +420,13 @@ const createTabStore = (context: StackTabsRuntimeContext): TabStoreApi => {
   }
 
   // ---- 页面栈写入 ----
+  // 页面栈只修改 pageIdsByTabId / pagesById（两者都是响应式 Map），
+  // 不重建 tabs 数组：标签栏、iframe 与刷新版本计算都无需因入栈/出栈重新求值。
   const appendPage = (tabId: string, page: ITabPage): void => {
     if (!tabsById.has(tabId)) return
     const ids = pageIdsByTabId.get(tabId) ?? []
     pageIdsByTabId.set(tabId, [...ids, page.id])
     pagesById.set(page.id, page)
-    syncTabsView()
   }
 
   const popPages = (tabId: string, steps: number): ITabPage[] => {
@@ -437,7 +442,6 @@ const createTabStore = (context: StackTabsRuntimeContext): TabStoreApi => {
       pagesById.delete(pageId)
     }
     pageIdsByTabId.set(tabId, ids)
-    syncTabsView()
     return popped
   }
 
@@ -452,14 +456,12 @@ const createTabStore = (context: StackTabsRuntimeContext): TabStoreApi => {
       nextPageIds.push(cloned.id)
     }
     pageIdsByTabId.set(tabId, nextPageIds)
-    syncTabsView()
   }
 
   const clearPages = (tabId: string): void => {
     if (!tabsById.has(tabId)) return
     for (const pageId of getPageIds(tabId)) pagesById.delete(pageId)
     pageIdsByTabId.set(tabId, [])
-    syncTabsView()
   }
 
   const applyPagePatch = (
@@ -512,8 +514,8 @@ const createTabStore = (context: StackTabsRuntimeContext): TabStoreApi => {
     const top = getTopPage(tabId)
     if (!top || top.id !== pageId || !top._backParams) return null
     const backParams = { ...top._backParams }
+    // _backParams 是页面对象上的响应式字段，删除后读取方会自行更新。
     delete top._backParams
-    syncTabsView()
     return backParams
   }
 

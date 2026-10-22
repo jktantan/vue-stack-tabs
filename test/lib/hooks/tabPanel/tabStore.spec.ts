@@ -107,6 +107,58 @@ describe('tabStore', () => {
     expect(syncCount).toBe(1)
   })
 
+  it('页面栈写入不会重建 tabs 数组', () => {
+    store.addTab(createTab('t1'))
+    const before = store.getTabs()
+    let syncCount = 0
+    watch(
+      () => store.getTabs(),
+      () => syncCount++,
+      { flush: 'sync' }
+    )
+
+    store.appendPage('t1', createPage('t1-p2', 't1'))
+    expect(store.getTopPage('t1')?.id).toBe('t1-p2')
+    expect(store.getTabs()).toBe(before)
+
+    store.updatePage('t1', 't1-p2', { _backParams: { from: 'detail' } })
+    expect(store.consumeBackParams('t1', 't1-p2')).toEqual({ from: 'detail' })
+    expect(store.getTabs()).toBe(before)
+
+    expect(store.popPages('t1', 1).map((page) => page.id)).toEqual(['t1-p2'])
+    expect(store.getTabs()).toBe(before)
+
+    store.replacePages('t1', [createPage('t1-p3', 't1')])
+    expect(store.getTopPage('t1')?.id).toBe('t1-p3')
+    expect(store.getTabs()).toBe(before)
+
+    store.clearPages('t1')
+    expect(store.getPages('t1')).toEqual([])
+    expect(store.getTabs()).toBe(before)
+    expect(syncCount).toBe(0)
+  })
+
+  it('重复激活同一标签不会重建 tabs 数组，切换到其它标签仍会重建', () => {
+    store.addTab(createTab('t1'))
+    store.addTab(createTab('t2'))
+    store.activateTab('t1')
+    const before = store.getTabs()
+    let syncCount = 0
+    watch(
+      () => store.getTabs(),
+      () => syncCount++,
+      { flush: 'sync' }
+    )
+
+    expect(store.activateTab('t1')?.id).toBe('t1')
+    expect(store.getTabs()).toBe(before)
+    expect(syncCount).toBe(0)
+
+    store.activateTab('t2')
+    expect(store.getTabs()).not.toBe(before)
+    expect(syncCount).toBe(1)
+  })
+
   it('tabs 视图不会深度代理 PageStackView', () => {
     store.addTab(createTab('t1'))
 
