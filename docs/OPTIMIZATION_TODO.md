@@ -413,3 +413,135 @@ watch(() => iframeTabs.value.map((frame) => ({ id: frame.id, active: frame.activ
 5. **10.13 / 10.15 / 10.18**（tabs 全量替换、z-index 扫描、依赖清理）；低风险、收益直接。
 
 > 以上 1–5 已于 2026-10-21 完成。验证结果：`type-check`、251 个单测、ESLint（0 error）、`lib:build`、`verify-packaged` 全部通过。
+
+---
+
+## 11. 2026-10-22 第二轮复查（渲染耦合 / Nuxt 产物 / 一致性）
+
+> 复查方式：通读 `src/lib` 全部源码 + 静态调用链分析；关键结论用临时 Vitest 探针（node / happy-dom）实测，探针文件已删除，**本轮未改动任何源码**。
+> 基线：`pnpm run test` 257 passed、`pnpm run type-check` 通过、`pnpm run lib:build` 通过。
+> 产物：`vue-stack-tabs.es.js` 64.96 kB（gzip 21.87 kB）、`style.css` 46.47 kB（gzip 7.07 kB）。
+
+### 11.1 结论
+
+第五轮之后已经没有“结构性”性能问题，剩余空间集中在四类：
+
+1. **渲染耦合**：页面栈写入仍会全量重建 `tabs` 数组（10.13 只覆盖了 `updatePage` / `refreshAllTabs`，`appendPage` / `popPages` / `replacePages` / `clearPages` / `consumeBackParams` 仍会同步整个标签栏）。
+2. **打包产物**：`vite.config.nuxt.ts` 未 external `vue` / `vue-i18n-lite`，Nuxt 插件被打成 50 kB（含 Vue 运行时）；`addComponent.filePath` 指向不存在的 `dist/index.ts`。
+3. **重复编解码**：每次激活标签都执行一次 `encodeTabInfo`（≈1.94 µs），结果通常被 `defu` 丢弃；每次路由解析都 `decodeTabInfo`（≈0.96 µs）。
+4. **一致性 / 清理**：若干 props 动态更新缺口、未捕获的 `router.replace`、未使用导出与状态等。
+
+### 11.2 实测数据（临时探针，非基准测试）
+
+| 探针                                | 现状                       | 建议方案后              | 备注                                             |
+| ----------------------------------- | -------------------------- | ----------------------- | ------------------------------------------------ |
+| 同一标签连续前进 2 次（挂载组件）   | `tabs` 数组被替换 **4 次** | **0 次**（已验证）      | 每次 `appendPage` + `activateTab` 各触发一次     |
+| `appendPage` ×200（20 标签 ×10 页） | 4.9 ms                     | 1.2 ms（已验证）        | 移除页面栈写入里的 `syncTabsView()`              |
+| `PageStackView.at(9)` ×100k         | 1.64 µs/次                 | 0.53 µs/次（已验证）    | 每次 `at()` 都重建整个页面数组                   |
+| `PageStackView.size()` ×100k        | 1.60 µs/次                 | 0.19 µs/次（已验证）    | 同上                                             |
+| `isSameQueryIgnoringReserved` ×200k | 0.30 µs/次                 | 0.16 µs/次（已验证）    | 同时修复 key 集合比较缺陷                        |
+| `encodeTabInfo` ×100k               | 1.94 µs/次                 | 0（复用栈顶 `__tab`）   | 每次 `active()` 都编码，但 `defu` 优先保留已有值 |
+| `decodeTabInfo` ×50k                | 0.96 µs/次                 | 可加单条 memo（收益小） | 同一 `__tab` 在一次会话中通常反复出现            |
+
+测试环境：Vitest 4（node 环境跑 store / 纯函数探针，happy-dom 跑挂载探针），数字用于横向对比，不代表浏览器真实帧耗时。
+
+### 11.3 P1 — 建议优先处理
+
+#### 11.3.1 页面栈写入不应重建 `tabs` 数组（已验证）
+
+**文件**：`src/lib/hooks/tabPanel/tabStore.ts:419-463,511-518,312-316`
+
+**现状**：`appendPage`、`popPages`、`replacePages`、`clearPages`、`consumeBackParams` 末尾都调用 `syncTabsView()`；`activateTab` 即使激活的已经是当前标签也会重建。一次标签内的前进/后退会产生 1–2 次全量 `tabs.value` 替换，使 `TabHeader` 的 `v-for`、`activePageRefreshVersion`、iframe computed 等全部重新求值。
+
+**实测**：挂载 `StackTabs` 后做 2 次同标签前进，`tabs` 数组被替换 4 次；按下面方案改造后为 0 次，页面栈正确增长到 3 层，257 个既有单测 + `type-check` 全部通过。
+
+**建议**：
+
+```ts
+// appendPage / popPages / replacePages / clearPages：只更新 pageIdsByTabId / pagesById，
+// 不再调用 syncTabsView()。页面本身位于 reactive Map 中，消费方仍能收到更新。
+// consumeBackParams：delete top._backParams 已是响应式写，同样不需要 syncTabsView()。
+
+const activateTab = (id: string): ITabItem | null => {
+  const nextId = tabsById.has(id) ? id : ''
+  if (nextId !== activeTabId.value) {
+    activeTabId.value = nextId
+    syncTabsView()
+  }
+  return getTab(id)
+}
+```
+
+**风险**：`tabs` 数组的**对象身份**不再随入栈变化。外部若用 `watch(tabs, …)` 观察页面栈（此前依赖数组替换触发），需要改为读取 `tab.pages` / store API；建议在 release notes 中注明。库内部无此依赖（已 grep 全部 `.pages` 调用点）。
+
+#### 11.3.2 Nuxt 产物：插件内联 Vue 运行时，组件入口指向不存在的文件（高风险）
+
+**文件**：`vite.config.nuxt.ts:16-30`、`src/lib/nuxt/module.ts:34-38`、`src/lib/nuxt/runtime/plugin.ts:19-22`
+
+**现状（基于本次 `lib:build` 产物）**：
+
+- `dist/nuxt/runtime/plugin.mjs` **50,046 B**，而源码只有约 25 行；文件中没有 `from "vue"`，却包含 `inject() can only be used inside setup` 字符串 → **Vue 运行时与 `vue-i18n-lite` 被内联**（external 列表只有 `nuxt/kit` / `vue-stack-tabs` / `#app` / `nuxt/app`）。
+- `dist/nuxt/module.mjs` 中 `addComponent({ filePath: resolve('../index.ts') })` 编译后是 `o("../index.ts")`，即 `dist/index.ts`；但 `dist/` 下只有 `index.d.ts`，**没有 `index.ts`**。
+- 内联的 `vue-i18n-lite` 会创建自己的 `Symbol('i18n')`，与库（external 后由使用方解析）的实例 key 不一致；`plugin.ts` 顶层的 `const { changeLocale } = useI18n()` 很可能拿到 `undefined`（且内联 Vue 的 `inject` 读不到 Nuxt app context），生产环境存在启动即抛错的风险。请以真实 Nuxt 应用冒烟确认。
+
+**建议**：
+
+```ts
+// vite.config.nuxt.ts
+external: ['nuxt/kit', 'nuxt/app', '#app', 'vue', 'vue-router', 'vue-i18n-lite', 'vue-stack-tabs']
+```
+
+```ts
+// src/lib/nuxt/module.ts
+addComponent({
+  name: 'VueStackTabs',
+  export: 'VueStackTabs',
+  filePath: resolve('../vue-stack-tabs.es.js') // 指向真实构建产物
+})
+```
+
+同时：插件内避免顶层 `useI18n()`（locale 已通过 plugin options 传入），或导出显式的 `setLocale`；在 `scripts/verify-packaged.mjs` 增加断言：`plugin.mjs` 不含 `inject() can only be used inside setup`、体积 < 5 kB、`module.mjs` 的 `filePath` 指向的文件存在。
+
+### 11.4 P2 — 低风险一致性 / 健壮性 / 微性能
+
+1. **`isSameQueryIgnoringReserved` 存在 key 集合比较缺陷 + 可提速**：`src/lib/utils/urlParser.ts:156-188`。旧实现只比较 key 数量再逐 key 取值，`{ a: '' }` 与 `{ b: '' }` 会被判为相等。改为“先统计非保留 key 数量 + 逐 key 用 `hasOwnProperty` 比较”，实测 0.30 µs → 0.16 µs；对相同 key 集合做了 20,000 组随机 fuzz，与旧实现语义完全一致。现有用例（数组 vs 逗号字符串）继续通过。
+2. **`PageStackView.at/size/isEmpty` 每次重建数组**：`tabStore.ts:158-172`。给 `PageStackAccess` 增加 `getPageCount` / `getPageAt`（直接读 `pageIdsByTabId` + `pagesById`），实测 4–8 倍提速；`at(-1)` 仍保持数组下标语义（返回 `undefined`）。
+3. **`PageLoading` 在模板里调用 `loadingZIndex()`**：`components/PageLoading.vue:14,25-31`。每次重渲染都会 `invalidateZIndexCache` + 全 DOM `querySelectorAll` + `getComputedStyle`。改为 `watch(isLoading)` 在显示时计算一次存入 ref（已验证单测通过）。
+4. **`useIframeManager` 的 `refreshKeys` watch 使用 `deep: true`**：`useIframeManager.ts:179-192`。所有写入点都是“整对象替换”（`refresh.ts:51,128`、`useIframeManager.ts:115,172`、`useTabPanel.tsx:745`），去掉 deep 可避免每次刷新遍历所有 key。
+5. **`updatePageState` 重复读取栈顶 + 不可达 throw**：`useTabPanel.tsx:445-447`。先 `getTopPage(targetTab.id)` 判空、随后再读一次并抛错；合并为一次读取。
+6. **`routeKey` 重复拼接 `__tab`**：`useTabPanel.tsx:561`。`route.fullPath` 已包含完整 query（含 `__tab`）与 hash，`routeKey` 直接取 `route.fullPath` 即可，避免每次导航多分配一段长字符串。
+7. **`active()` 每次激活都重新编码 `__tab`**：`useTabPanel.tsx:711-719`。`defu(top.query, { __tab })` 会优先保留栈顶已有的 `__tab`，新编码通常被丢弃。改为先克隆 `top.query`，仅当缺少有效 `__tab` 时再 `encodeTabInfo(toTabBase(target))`；顺带补上 `iframeRefreshMode`（当前内联对象漏传，reload 模式标签在兜底分支会被写成 postMessage）。
+8. **`StackCacheRenderer` 向 slot 传递未被消费的响应式数据**：`StackCacheRenderer.vue:25-31,56-64`。`StackKeepAlive` 只解构 `wrappedComponent / activeCacheKey / component`，`refreshKey` 与 `activePageRefreshVersion` 是无效依赖，会让刷新/页面变化多触发一次 renderer 重渲染。
+9. **`updatePageState` 中 `void router.replace(...)` 未 catch**：`useTabPanel.tsx:527-533`。路由守卫抛错时可能产生 unhandled rejection；与 `updateTabTitle` / `redirectToHome` 的 `.catch` 写法对齐。
+10. **props 动态更新缺口**：`pageTransition` / `pageTransitionBack` 在 `StackTabs.vue:202-209` 被复制进 `pageSwitch` ref，之后修改不生效；`iframeLoadTimeout` 在 `StackTabs.vue:230-235` 被 `useIframeManager` 捕获一次，之后修改不生效。按 10.10 的模式补 `watch`，或文档明确“仅初始化生效”。
+11. **`renew` 到当前地址时会 reject**：`useTabActions.ts:110-143`。`navigateToTab` 使用 `rejectFailureResult: true`，对已存在的激活标签 `openTab(tab, true)` 会因 vue-router 的重复导航 `NavigationFailure` 而 reject（实测），并触发 `renewTab` 回滚。语义上“续签当前标签”应算成功；建议对重复导航降级为 resolved，或先比较目标 URL。
+12. **`default-tabs` 的 iframe 标签不工作**：`useTabPanel.tsx:141-182`。`buildTab` 只写 `__tab`，没有写 `__src` / `url`，也未设置 iframe 路由，实测 `<iframe src="about:blank">`。建议支持（复用 `openTab` 的 `__src` 逻辑）或在开发期给出明确警告并补充文档。
+13. **`TabHeader` 生产环境仍会打印 warn**：`components/TabHeader/index.vue:362`，其他告警均有 `import.meta.env.PROD` 守卫。
+14. **`decodeTabInfo` 可加单条 memo**：`utils/tabInfoEncoder.ts:133-153`。同一 `__tab` 在一次导航/会话中重复解码，缓存最后一次 `encoded → ITabBase` 可省掉 base64 + `TextDecoder` + `JSON.parse`；收益小，可按需做。
+15. **`saveScroller` 对 auto key 做了两遍遍历**：`tabPanel/scroll.ts:109-135`。第一轮写入 `AUTO_SCROLLER_PREFIX` key，第二轮又把它们重新解析一遍；第二轮可只遍历非 auto selector。
+16. **`markTabPagesForEviction` 双重数组拷贝**：`tabPanel/evict.ts:42-49`。`PageStackView.list()` 先 `getPages()` 再 `[...pages]`，只为取 id；可改用 `readonlyList()`，或让 store 侧直接用 `getPageIds()` 标记。
+
+### 11.5 P3 — 清理与可维护性
+
+- **未使用 / 仅测试引用**：`scrollUtils.getScrollbarWidth`（零运行时引用）、`createTabPanelScroll` 的 `invalidateAutoScrollCache`（未从 `useTabPanel` 暴露、无调用方）、`TabModel.DragData` / `ScrollEvents`（无引用）、`urlParser.isInvalidIframeUrl`（仅测试引用）、`MAX_TAB_TITLE_LENGTH` 导出、运行时状态 `defaultTabs`（`state.ts:18,37` + `useTabPanel.tsx:64,207`，只写不读）。建议删除或标注 `@internal`。
+- **`useTabPanel.tsx` 834 行**：`initialize`（≈100 行）、`updatePageState`（≈120 行）、`addPage` / tab 操作包装可以按现有 `tabPanel/` 分层拆出 `initialize.ts` / `routerAdapter.ts`，与 AGENTS 的“内部子模块”约定一致。
+- **事件总线承担控制流（历史遗留）**：`removeTab` 已返回 `nextActiveId`，上层可直接 `active(nextActiveId)`，比 `TAB_ACTIVE` 事件链更易追踪（10.x P3 已记录，仍未处理）。
+- **模板里的多余断言**：`components/TabHeader/index.vue:26-32` 多处 `item as unknown as ITabItem`；`tabs` 已经是 `Ref<ITabItem[]>`，去掉后 `vue-tsc` 仍可通过。
+- **`session` 写入去重**：每次激活/导航都会 `JSON.stringify` 整个激活标签（含页面栈），可在 `flushPendingWrite` 前与上次字符串比较，内容相同时跳过 `setItem`。
+- **CI 质量门**：仓库暂无 CI；建议至少加 `type-check + test + lint`，以及产物预算（主包 gzip、`dist/nuxt/runtime/plugin.mjs` 体积 / external 断言）。
+
+### 11.6 建议补充的回归测试
+
+1. 页面栈写入（`appendPage` / `popPages` / `clearPages`）不改变 `tabs` 数组身份；
+2. `activateTab` 重复激活同一标签不触发 `tabs` 重建；
+3. `isSameQueryIgnoringReserved` 的 key 集合差异用例（`{ a: '' }` vs `{ b: '' }`）；
+4. Nuxt 产物：`plugin.mjs` 不内联 Vue、`module.mjs` 的 `filePath` 真实存在（打包冒烟）；
+5. `default-tabs` 中 iframe 标签的行为（支持或明确警告）；
+6. `openTab(tab, true)` 在目标地址与当前地址相同时的行为。
+
+### 11.7 落地建议
+
+1. 先做 **11.3.1**（页面栈不重建 tabs）+ 回归测试：收益最直接、已验证、只影响渲染耦合。
+2. 再做 **11.3.2**（Nuxt external + filePath + 冒烟断言）：影响 Nuxt 使用方，属于打包正确性问题。
+3. 然后按 **11.4** 逐项清理；其中 1/2/3/4/7 都有已验证的小改动，1/2/7 还需补少量单测。
+4. 最后处理 **11.5** 死代码与结构调整，避免一次性大改。
