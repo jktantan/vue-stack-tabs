@@ -17,6 +17,25 @@ export enum TabScrollMode {
   BOTH = 'both'
 }
 
+/**
+ * @deprecated 标签栏拖拽内部已不再使用该类型；保留仅为兼容 2.x 的公开类型导出，
+ * 将在下一个大版本移除。
+ */
+export interface DragData {
+  thumbLeft: number
+  startScrollLeft: number
+  startThumbLeft: number
+  startPageX: number
+}
+
+/**
+ * @deprecated 内部滚轮/滚动事件常量已不再使用该类型；保留仅为兼容 2.x 的公开类型导出，
+ * 将在下一个大版本移除。
+ */
+export type ScrollEvents = {
+  ScrollUpdate: void
+}
+
 /** 滚动条滑块计算所需的数据（滚动过程中保持非响应式） */
 export interface ScrollData {
   clientWidth: number
