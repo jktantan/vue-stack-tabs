@@ -75,7 +75,7 @@
   依赖：useTabActions(tabs/closeTab/activeTab)、useContextMenu
 -->
 <script lang="ts" setup>
-import { inject, computed, ref, nextTick } from 'vue'
+import { inject, computed, ref, nextTick, watch, onUnmounted } from 'vue'
 import type { TransitionProps } from 'vue'
 import { TabScrollMode } from '../../model/TabModel'
 import type { IContextMenu, ITabItem } from '../../model/TabModel'
@@ -87,6 +87,7 @@ import TabHeaderScroll from './TabHeaderScroll.vue'
 import TabHeaderButton from './TabHeaderButton.vue'
 import { useI18n } from 'vue-i18n-lite'
 import { maximumKey } from '../../hooks/stackTabsContext'
+import { TabEventType, useTabEmitter } from '../../hooks/useTabEventBus'
 const { t } = useI18n()
 /** 是否最大化，由上层 provide */
 const maximum = inject(maximumKey, ref(false))
@@ -121,6 +122,47 @@ const props = withDefaults(
   }
 )
 const { closeTab, activeTab, moveTab, tabs } = useTabActions()
+
+/** 当前激活标签 id */
+const activeTabId = computed<string>(() => tabs.value.find((tab) => tab.active)?.id ?? '')
+
+/**
+ * 将指定标签滚动到可视区域；未指定 id 时使用当前激活标签。
+ * 仅在标签确实不可见时才滚动，避免干扰用户的手动滚动。
+ */
+const ensureTabInView = (tabId?: string) => {
+  const scrollContainer = scrollContainerRef.value
+  if (!scrollContainer) return
+
+  const target = headerRef.value?.querySelector<HTMLElement>(
+    tabId
+      ? `.stack-tab__nav [role="tab"][data-tab-id="${CSS.escape(tabId)}"]`
+      : '.stack-tab__nav .stack-tab__item--active'
+  )
+  const tabElement = target?.closest<HTMLElement>('.stack-tab__item')
+  if (tabElement && !scrollContainer.isInView(tabElement)) {
+    scrollContainer.scrollIntoView(tabElement)
+  }
+}
+
+/**
+ * 激活标签变化后确保其位于可视区域：
+ * 覆盖新开标签、通过 openTab 唤醒已有标签、关闭标签后顺延激活等场景。
+ * 仅响应用户主动滚动时不会触发（滚动不改变 active），因此不会把视图强行拉回。
+ */
+watch(activeTabId, () => {
+  nextTick(() => ensureTabInView())
+})
+
+/** 标签已是 active 但被滚开时，显式打开/激活请求仍需把标签栏滚动到它。 */
+const emitter = useTabEmitter()
+const handleTabScrollTo = ({ id }: { id: string }) => {
+  nextTick(() => ensureTabInView(id))
+}
+emitter.on(TabEventType.TAB_SCROLL_TO, handleTabScrollTo)
+onUnmounted(() => {
+  emitter.off(TabEventType.TAB_SCROLL_TO, handleTabScrollTo)
+})
 const draggingTabId = ref<string | null>(null)
 type DropPosition = 'before' | 'after'
 const dropIndicator = ref<{ tabId: string; position: DropPosition } | null>(null)

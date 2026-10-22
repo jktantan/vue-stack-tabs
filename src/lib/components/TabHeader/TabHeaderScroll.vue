@@ -170,6 +170,8 @@ const ensureActiveTabInView = () => {
 
 let scrollContainerResizeObserver: ResizeObserver | null = null
 let tabListResizeObserver: ResizeObserver | null = null
+/** 上一次观察到的标签数量，用于区分“标签增删”和普通的尺寸抖动 */
+let lastTabCount = 0
 /** 滚动到指定 left 位置 */
 const scrollTo = (left: number, smooth = true) => {
   scrollToUtil({ wrap: container.value, left, top: 0, smooth })
@@ -229,13 +231,20 @@ onMounted(() => {
     ensureActiveTabInView()
   })
   tabListResizeObserver = new ResizeObserver(() => {
-    // 内容溢出（存在滚动条）时才需要在标签增删后纠正滚动位置。
-    if (hasScroller.value) ensureActiveTabInView()
+    // 只有标签增删（数量变化）才需要纠正滚动位置。
+    // hover 展开关闭按钮、标题动态变化等也会改变列表宽度并触发本回调，
+    // 若此时无条件 ensureActiveTabInView，会把用户主动滚开的标签栏强行拉回 active 标签。
+    const tabCount = container.value?.querySelectorAll('.stack-tab__item').length ?? 0
+    const tabCountChanged = tabCount !== lastTabCount
+    lastTabCount = tabCount
+
+    if (hasScroller.value && tabCountChanged) ensureActiveTabInView()
     updateScrollState()
   })
 
   if (headerScroll.value) scrollContainerResizeObserver.observe(headerScroll.value)
   const tabNav = container.value?.querySelector('.stack-tab__nav')
+  lastTabCount = container.value?.querySelectorAll('.stack-tab__item').length ?? 0
   if (tabNav) tabListResizeObserver.observe(tabNav)
 })
 onUnmounted(() => {

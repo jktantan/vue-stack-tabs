@@ -19,6 +19,8 @@ declare module '@vue/runtime-core' {
 export enum TabEventType {
   PAGE_LOADING = 'PAGE_LOADING',
   TAB_ACTIVE = 'TAB_ACTIVE',
+  /** 请求标签栏将指定标签滚动到可视区域（不改变激活状态） */
+  TAB_SCROLL_TO = 'TAB_SCROLL_TO',
   FORWARD = 'FORWARD',
   BACKWARD = 'BACKWARD',
   REFRESH_IFRAME_POSTMESSAGE = 'REFRESH_IFRAME_POSTMESSAGE'
@@ -27,6 +29,7 @@ export enum TabEventType {
 export interface TabEventPayloadMap extends Record<EventType, unknown> {
   [TabEventType.PAGE_LOADING]: { tId: string; value: boolean }
   [TabEventType.TAB_ACTIVE]: { id: string; isRoute?: boolean }
+  [TabEventType.TAB_SCROLL_TO]: { id: string }
   [TabEventType.FORWARD]: void
   [TabEventType.BACKWARD]: void
   [TabEventType.REFRESH_IFRAME_POSTMESSAGE]: string

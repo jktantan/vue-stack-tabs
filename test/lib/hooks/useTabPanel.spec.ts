@@ -25,6 +25,7 @@ vi.mock('@/lib/hooks/useTabEventBus', () => ({
   TabEventType: {
     PAGE_LOADING: 'PAGE_LOADING',
     TAB_ACTIVE: 'TAB_ACTIVE',
+    TAB_SCROLL_TO: 'TAB_SCROLL_TO',
     FORWARD: 'FORWARD',
     BACKWARD: 'BACKWARD',
     REFRESH_IFRAME_POSTMESSAGE: 'REFRESH_IFRAME_POSTMESSAGE'
@@ -474,6 +475,25 @@ describe('useTabPanel', () => {
     expect(panel.tabs.value[0]?.pages.peek()?.id).toBe(page!.id)
     expect(panel.caches.value).toContain(page!.id)
     expect(panel.getComponent(page!.id)).toBe(component)
+
+    panel.destroy()
+    runtime.cleanup()
+  })
+
+  it('active 已是激活标签时发出 TAB_SCROLL_TO，且不重复导航', async () => {
+    const runtime = await withRuntimeContext()
+    const { default: useTabPanel } = await import('@/lib/hooks/useTabPanel')
+    const panel = useTabPanel()
+
+    panel.initialize([{ id: 'tab-1', title: '第一页', path: '/one' }])
+    await panel.active('tab-1', false)
+    emit.mockClear()
+    push.mockClear()
+
+    await panel.active('tab-1')
+
+    expect(emit).toHaveBeenCalledWith('TAB_SCROLL_TO', { id: 'tab-1' })
+    expect(push).not.toHaveBeenCalled()
 
     panel.destroy()
     runtime.cleanup()

@@ -40,6 +40,9 @@ vi.mock('@/lib/hooks/useTabPanel', () => ({
   })
 }))
 
+const isInViewMock = vi.fn(() => true)
+const scrollIntoViewMock = vi.fn()
+
 const TabHeaderScrollStub = defineComponent({
   name: 'TabHeaderScroll',
   props: {
@@ -49,8 +52,8 @@ const TabHeaderScrollStub = defineComponent({
   },
   setup(_, { slots, expose }) {
     expose({
-      isInView: () => true,
-      scrollIntoView: vi.fn()
+      isInView: isInViewMock,
+      scrollIntoView: scrollIntoViewMock
     })
 
     return () => h('div', { class: 'tab-header-scroll-stub' }, slots.default?.())
@@ -74,7 +77,7 @@ const TabHeaderItemStub = defineComponent({
       return h(
         'li',
         {
-          class: 'stack-tab__item',
+          class: ['stack-tab__item', item.active ? 'stack-tab__item--active' : ''],
           role: 'tab',
           tabindex: item.active ? 0 : -1,
           'data-tab-id': item.id,
@@ -150,7 +153,7 @@ function makeTab(overrides: Partial<ITabItem> = {}): ITabItem {
   }
 }
 
-function mountHeader(props: Record<string, unknown> = {}, maximum = ref(false)) {
+function mountHeader(props: Record<string, unknown> = {}, maximum = ref(false), emitter = mitt()) {
   return mount(TabHeader, {
     attachTo: document.body,
     props: {
@@ -160,7 +163,7 @@ function mountHeader(props: Record<string, unknown> = {}, maximum = ref(false)) 
     global: {
       provide: {
         [maximumKey as symbol]: maximum,
-        [tabEmitterKey as symbol]: mitt()
+        [tabEmitterKey as symbol]: emitter
       },
       stubs: {
         TabHeaderScroll: TabHeaderScrollStub as Component,
@@ -220,6 +223,9 @@ beforeEach(() => {
   removeRightTabsMock.mockReset()
   removeOtherTabsMock.mockReset()
   activeTabMock.mockResolvedValue(undefined)
+  isInViewMock.mockReset()
+  isInViewMock.mockReturnValue(true)
+  scrollIntoViewMock.mockReset()
   tabs.value = [makeTab()]
 })
 
@@ -444,5 +450,51 @@ describe('TabHeader keyboard navigation', () => {
     await tablist.trigger('keydown', { key: 'End' })
     await nextTick()
     expect(activeTabMock).toHaveBeenLastCalledWith('tab-3', true)
+  })
+})
+
+describe('TabHeader 激活标签自动滚动', () => {
+  it('active 切换后标签不在可视区时滚动到该标签', async () => {
+    tabs.value = [makeTab({ id: 'tab-1', active: true }), makeTab({ id: 'tab-2', active: false })]
+    isInViewMock.mockReturnValue(false)
+    const wrapper = mountHeader()
+
+    tabs.value = [makeTab({ id: 'tab-1', active: false }), makeTab({ id: 'tab-2', active: true })]
+    await nextTick()
+    await nextTick()
+
+    // 其它用例挂载到 body 的实例仍在监听同一个 tabs ref，只断言当前实例的调用。
+    const calls = scrollIntoViewMock.mock.calls.filter(([el]) =>
+      wrapper.element.contains(el as HTMLElement)
+    )
+    expect(calls).toHaveLength(1)
+    expect((calls[0]![0] as HTMLElement).getAttribute('data-tab-id')).toBe('tab-2')
+  })
+
+  it('active 切换后标签已在可视区时不滚动', async () => {
+    tabs.value = [makeTab({ id: 'tab-1', active: true }), makeTab({ id: 'tab-2', active: false })]
+    mountHeader()
+
+    tabs.value = [makeTab({ id: 'tab-1', active: false }), makeTab({ id: 'tab-2', active: true })]
+    await nextTick()
+    await nextTick()
+
+    expect(scrollIntoViewMock).not.toHaveBeenCalled()
+  })
+
+  it('收到 TAB_SCROLL_TO 时把对应标签滚动到可视区（即使它已是 active）', async () => {
+    isInViewMock.mockReturnValue(false)
+    const emitter = mitt()
+    const wrapper = mountHeader({}, ref(false), emitter)
+
+    emitter.emit('TAB_SCROLL_TO', { id: 'tab-1' })
+    await nextTick()
+    await nextTick()
+
+    const calls = scrollIntoViewMock.mock.calls.filter(([el]) =>
+      wrapper.element.contains(el as HTMLElement)
+    )
+    expect(calls).toHaveLength(1)
+    expect((calls[0]![0] as HTMLElement).getAttribute('data-tab-id')).toBe('tab-1')
   })
 })

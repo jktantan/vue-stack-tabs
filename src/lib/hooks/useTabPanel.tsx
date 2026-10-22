@@ -687,7 +687,11 @@ const createTabPanelApi = (runtimeContext: StackTabsRuntimeContext) => {
     emitter.emit(TabEventType.FORWARD)
     const target = getTab(id)
     if (!target) return Promise.resolve()
-    if (target.active) return Promise.resolve()
+    if (target.active) {
+      // 已是激活标签时仍需通知标签栏确保其可见（用户可能已把标签栏滚开）。
+      emitter.emit(TabEventType.TAB_SCROLL_TO, { id })
+      return Promise.resolve()
+    }
 
     const top = getTopPage(id)
     const activateTarget = () => {

@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h, nextTick } from 'vue'
 import type { Component } from 'vue'
 import TabHeaderScroll from '@/lib/components/TabHeader/TabHeaderScroll.vue'
+import { scrollIntoView } from '@/lib/utils/scrollUtils'
 
 vi.mock('@/lib/utils/scrollUtils', () => ({
   scrollTo: ({ wrap, left, top }: { wrap: HTMLElement | null; left?: number; top?: number }) => {
@@ -23,8 +24,18 @@ vi.mock('vue-i18n-lite', () => ({
 class ResizeObserverMock {
   observe = vi.fn()
   disconnect = vi.fn()
+  unobserve = vi.fn()
 
-  constructor() {}
+  constructor(public callback: ResizeObserverCallback) {
+    resizeCallbacks.push(callback)
+  }
+}
+
+/** 记录组件创建的两个 ResizeObserver 回调：[0] 外层容器，[1] 标签列表 */
+let resizeCallbacks: ResizeObserverCallback[] = []
+
+function triggerTabListResize() {
+  resizeCallbacks[1]?.([], {} as ResizeObserver)
 }
 
 const TabHeaderButtonStub = defineComponent({
@@ -101,6 +112,8 @@ async function mountScrollableHeaderScroll(props: Record<string, unknown>) {
 }
 
 beforeEach(() => {
+  resizeCallbacks = []
+  vi.clearAllMocks()
   vi.stubGlobal('ResizeObserver', ResizeObserverMock)
 })
 
@@ -154,5 +167,39 @@ describe('TabHeaderScroll scroll mode gates', () => {
 
     expect(container.scrollLeft).toBe(50)
     expect(wrapper.findAll('.tab-header-button-stub')).toHaveLength(2)
+  })
+})
+
+describe('TabHeaderScroll active tab auto scroll', () => {
+  it('标签列表尺寸抖动（如 hover 展开关闭按钮）不会把滚动位置拉回 active 标签', async () => {
+    const { container } = await mountScrollableHeaderScroll({ isScrollWheel: false })
+    const scrollIntoViewMock = vi.mocked(scrollIntoView)
+
+    // 用户主动滚开 active 标签
+    setScrollLeft(container, 300)
+    // 仅宽度发生微小变化，标签数量不变
+    setReadonlyNumberProperty(container, 'scrollWidth', 501)
+
+    triggerTabListResize()
+    await nextTick()
+
+    expect(scrollIntoViewMock).not.toHaveBeenCalled()
+  })
+
+  it('标签数量变化时仍会把不可见的 active 标签滚入视口', async () => {
+    const { wrapper, container } = await mountScrollableHeaderScroll({ isScrollWheel: false })
+    const scrollIntoViewMock = vi.mocked(scrollIntoView)
+
+    setScrollLeft(container, 300)
+
+    const nav = wrapper.find('.stack-tab__nav').element
+    const newItem = document.createElement('li')
+    newItem.className = 'stack-tab__item'
+    nav.appendChild(newItem)
+
+    triggerTabListResize()
+    await nextTick()
+
+    expect(scrollIntoViewMock).toHaveBeenCalledTimes(1)
   })
 })
