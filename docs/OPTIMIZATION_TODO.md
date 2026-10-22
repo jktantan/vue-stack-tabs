@@ -445,9 +445,11 @@ watch(() => iframeTabs.value.map((frame) => ({ id: frame.id, active: frame.activ
 
 测试环境：Vitest 4（node 环境跑 store / 纯函数探针，happy-dom 跑挂载探针），数字用于横向对比，不代表浏览器真实帧耗时。
 
-### 11.3 P1 — 建议优先处理
+### 11.3 P1 — 建议优先处理 ✅
 
-#### 11.3.1 页面栈写入不应重建 `tabs` 数组（已验证）
+#### 11.3.1 页面栈写入不应重建 `tabs` 数组（已验证 ✅）
+
+**状态**：已完成（提交 `a9fdec1`）。新增 store 级与挂载级回归测试。
 
 **文件**：`src/lib/hooks/tabPanel/tabStore.ts:419-463,511-518,312-316`
 
@@ -474,7 +476,9 @@ const activateTab = (id: string): ITabItem | null => {
 
 **风险**：`tabs` 数组的**对象身份**不再随入栈变化。外部若用 `watch(tabs, …)` 观察页面栈（此前依赖数组替换触发），需要改为读取 `tab.pages` / store API；建议在 release notes 中注明。库内部无此依赖（已 grep 全部 `.pages` 调用点）。
 
-#### 11.3.2 Nuxt 产物：插件内联 Vue 运行时，组件入口指向不存在的文件（高风险）
+#### 11.3.2 Nuxt 产物：插件内联 Vue 运行时，组件入口指向不存在的文件（高风险 ✅）
+
+**状态**：已完成（提交 `d772309`）。插件体积 50,046 B → 468 B，`verify-packaged` 增加产物断言。
 
 **文件**：`vite.config.nuxt.ts:16-30`、`src/lib/nuxt/module.ts:34-38`、`src/lib/nuxt/runtime/plugin.ts:19-22`
 
@@ -530,7 +534,7 @@ addComponent({
 - **`session` 写入去重 ✅**：`flushPendingWrite` 与上次成功写入的 JSON 比较，内容相同时跳过 `setItem`；恢复/清理时同步维护基线。
 - **CI 质量门 ✅**：新增 `.github/workflows/ci.yml`（`type-check` / `test` / `lint:check` / `format:check` / `lib:build` / `verify-packaged`）；包体积阈值仍未设置，建议后续补充。
 
-### 11.6 建议补充的回归测试
+### 11.6 建议补充的回归测试 ✅
 
 1. 页面栈写入（`appendPage` / `popPages` / `clearPages`）不改变 `tabs` 数组身份；
 2. `activateTab` 重复激活同一标签不触发 `tabs` 重建；
@@ -539,7 +543,7 @@ addComponent({
 5. `default-tabs` 中 iframe 标签的行为（支持或明确警告）；
 6. `openTab(tab, true)` 在目标地址与当前地址相同时的行为。
 
-### 11.7 落地建议
+### 11.7 落地建议（已按 1 → 4 顺序执行）
 
 1. 先做 **11.3.1**（页面栈不重建 tabs）+ 回归测试：收益最直接、已验证、只影响渲染耦合。
 2. 再做 **11.3.2**（Nuxt external + filePath + 冒烟断言）：影响 Nuxt 使用方，属于打包正确性问题。
