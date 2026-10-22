@@ -127,4 +127,26 @@ describe('package exports', () => {
       import: './dist/nuxt/module.mjs'
     })
   })
+
+  it('Nuxt 产物配置：Vue/i18n external 化，组件入口指向 dist 产物', () => {
+    const nuxtConfig = readFileSync(join(process.cwd(), 'vite.config.nuxt.ts'), 'utf8')
+    const nuxtModule = readFileSync(join(process.cwd(), 'src', 'lib', 'nuxt', 'module.ts'), 'utf8')
+    const packagedScript = readFileSync(
+      join(process.cwd(), 'scripts', 'verify-packaged.mjs'),
+      'utf8'
+    )
+
+    // 插件必须复用使用方的 Vue / i18n 实例，否则会出现两份运行时与 Symbol key 不匹配。
+    expect(nuxtConfig).toContain("'vue'")
+    expect(nuxtConfig).toContain("'vue-router'")
+    expect(nuxtConfig).toContain("'vue-i18n-lite'")
+
+    // 源码入口不会被发布，addComponent 必须指向真实产物。
+    expect(nuxtModule).toContain("resolve('../vue-stack-tabs.es.js')")
+    expect(nuxtModule).not.toContain("resolve('../index.ts')")
+
+    // 打包冒烟需要守住上述两条约束，避免后续回归。
+    expect(packagedScript).toContain('assertNuxtArtifacts')
+    expect(packagedScript).toContain('Nuxt 插件内联了 Vue 运行时')
+  })
 })

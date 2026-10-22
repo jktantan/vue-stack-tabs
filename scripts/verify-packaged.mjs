@@ -134,6 +134,36 @@ function assertExportTypesExist(packageDir, exportConfig) {
   }
 }
 
+/**
+ * Nuxt 产物检查：插件必须保持轻量且把 Vue / i18n 留给使用方解析；
+ * 自动注册组件的入口必须指向真实发布的文件。
+ */
+function assertNuxtArtifacts() {
+  const pluginPath = join(root, 'dist', 'nuxt', 'runtime', 'plugin.mjs')
+  const modulePath = join(root, 'dist', 'nuxt', 'module.mjs')
+  const pluginSource = fs.readFileSync(pluginPath, 'utf8')
+  const moduleSource = fs.readFileSync(modulePath, 'utf8')
+  const pluginSize = fs.statSync(pluginPath).size
+
+  if (pluginSize > 10_000) {
+    throw new Error(
+      `Nuxt 插件体积异常（${pluginSize} B），疑似内联了 Vue 运行时；请检查 vite.config.nuxt.ts 的 external`
+    )
+  }
+  if (pluginSource.includes('inject() can only be used inside setup')) {
+    throw new Error('Nuxt 插件内联了 Vue 运行时（inject 实现），请把 vue 加入 external')
+  }
+  if (!/from\s*["']vue-i18n-lite["']/.test(pluginSource)) {
+    throw new Error('Nuxt 插件未以 external 方式引用 vue-i18n-lite')
+  }
+  if (moduleSource.includes('../index.ts')) {
+    throw new Error('Nuxt 模块的 addComponent.filePath 仍指向未发布的 ../index.ts')
+  }
+  if (!moduleSource.includes('vue-stack-tabs.es.js')) {
+    throw new Error('Nuxt 模块的 addComponent.filePath 未指向 dist 产物')
+  }
+}
+
 async function packPackage(packDir) {
   await run('pnpm', ['pack', '--pack-destination', packDir], root)
 
@@ -273,6 +303,8 @@ async function main() {
         process.exit(1)
       }
     }
+
+    assertNuxtArtifacts()
 
     console.log('\n[2/3] pnpm pack 并验证 tarball 文件清单...')
     const packDir = join(tempRoot, 'pack')

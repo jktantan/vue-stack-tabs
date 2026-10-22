@@ -34,7 +34,9 @@ export default defineNuxtModule<ModuleOptions>({
     addComponent({
       name: 'VueStackTabs',
       export: 'VueStackTabs',
-      filePath: resolve('../index.ts')
+      // 指向发布产物（dist/vue-stack-tabs.es.js）中的命名导出；
+      // 源码入口 ../index.ts 不会被发布，Nuxt 构建时会解析失败。
+      filePath: resolve('../vue-stack-tabs.es.js')
     })
 
     addImports([
