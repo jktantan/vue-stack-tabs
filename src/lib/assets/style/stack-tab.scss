@@ -93,12 +93,16 @@
     &-container {
       width: 100%;
       height: 100%;
-      overflow: hidden;
+      // 使用原生横向滚动以保留触摸/触控板惯性与手感；
+      // 原生滚动条隐藏，视觉上仍由下方自绘滚动条呈现。
+      overflow-x: auto;
+      overflow-y: hidden;
+      overscroll-behavior-x: contain;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
 
-      // 移动设备原生滚动
-      &--mobile {
-        overflow-x: auto;
-        overflow-y: hidden;
+      &::-webkit-scrollbar {
+        display: none;
       }
     }
   }
@@ -128,6 +132,8 @@
     background-color: $stack-tab-color-scrollbar;
     border-radius: $stack-tab-scroll-border-radius;
     transition: background-color $stack-tab-transition-duration ease-in-out;
+    // 拖拽由 Pointer Events 接管，避免触摸时被浏览器手势打断
+    touch-action: none;
 
     &:hover {
       cursor: grab;
