@@ -16,11 +16,22 @@ const runtimeContext = {
   iframePath: { value: '/iframe' }
 }
 
-vi.mock('vue-router', () => ({
-  useRouter: () => ({ push, replace: vi.fn() }),
-  isNavigationFailure: (value: unknown) =>
-    typeof value === 'object' && value !== null && 'type' in value
-}))
+vi.mock('vue-router', () => {
+  const NavigationFailureType = {
+    aborted: 'aborted',
+    cancelled: 'cancelled',
+    duplicated: 'duplicated'
+  }
+  return {
+    NavigationFailureType,
+    useRouter: () => ({ push, replace: vi.fn() }),
+    isNavigationFailure: (value: unknown, type?: unknown) =>
+      typeof value === 'object' &&
+      value !== null &&
+      'type' in value &&
+      (type === undefined || (value as { type?: unknown }).type === type)
+  }
+})
 
 vi.mock('@/lib/hooks/useTabPanel', () => ({
   default: () => ({
@@ -125,6 +136,34 @@ describe('useTabActions', () => {
     const { openTab } = useTabActions()
 
     await expect(openTab({ id: 'new-tab', title: '新标签', path: '/new' })).rejects.toBe(failure)
+  })
+
+  it('renew 当前标签时 duplicated 导航视为成功', async () => {
+    const duplicated = { type: 'duplicated' }
+    push.mockResolvedValue(duplicated)
+    hasTab.mockReturnValue(true)
+    getTab.mockReturnValue({ id: 'tab-1', active: true, pages })
+    renewTab.mockReturnValue(vi.fn())
+
+    const { default: useTabActions } = await import('@/lib/hooks/useTabActions')
+    const { openTab } = useTabActions()
+
+    await expect(openTab({ id: 'tab-1', title: '续签', path: '/same' }, true)).resolves.toBe(
+      'tab-1'
+    )
+    expect(push).toHaveBeenCalledTimes(1)
+  })
+
+  it('非 renew 的新标签遇到 duplicated 导航仍然 reject', async () => {
+    const duplicated = { type: 'duplicated' }
+    push.mockResolvedValue(duplicated)
+
+    const { default: useTabActions } = await import('@/lib/hooks/useTabActions')
+    const { openTab } = useTabActions()
+
+    await expect(openTab({ id: 'new-tab', title: '新标签', path: '/same' })).rejects.toBe(
+      duplicated
+    )
   })
 
   it('renew 已存在标签时不受最大数量限制', async () => {

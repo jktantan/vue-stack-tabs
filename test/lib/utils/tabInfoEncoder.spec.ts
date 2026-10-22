@@ -110,6 +110,17 @@ describe('tabInfoEncoder', () => {
     })
   })
 
+  it('同一 __tab 重复解码返回内容相等的独立对象', () => {
+    const encoded = encodeTabInfo(tabData)
+    const first = decodeTabInfo(encoded)
+    first.title = 'mutated'
+    first.closable = false
+
+    const second = decodeTabInfo(encoded)
+    expect(second).toMatchObject({ id: 'tab-1', title: '测试', closable: true })
+    expect(second).not.toBe(first)
+  })
+
   it('createPageId 每次生成唯一 id', () => {
     const id1 = createPageId()
     const id2 = createPageId()

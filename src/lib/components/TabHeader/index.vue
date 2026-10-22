@@ -359,7 +359,9 @@ const handleActivateTab = (
   Promise.resolve(activeTab(item.id, isRoute))
     .then(() => emit('active', item.id))
     .catch((error: unknown) => {
-      console.warn('[vue-stack-tabs] Failed to activate tab:', error)
+      if (!import.meta.env.PROD) {
+        console.warn('[vue-stack-tabs] Failed to activate tab:', error)
+      }
     })
 }
 </script>

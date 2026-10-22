@@ -152,13 +152,27 @@ const createTabPanelApi = (runtimeContext: StackTabsRuntimeContext) => {
       fullItem.id = item.id ?? (options.pinned ? DEFAULT_HOME_TAB_ID : createId())
       if (options.closable !== undefined) fullItem.closable = options.closable
       const tabId = fullItem.id
+      const isIframe = Boolean(fullItem.iframe)
       const uri = parseUrl(fullItem.path)
       const cacheName = createPageId()
+      // iframe 标签的 path 是外部 URL：路由侧用 iframePath + __src 承载，
+      // 与 openTab 的语义保持一致（否则默认 iframe 标签会渲染 about:blank）。
+      const pagePath = isIframe
+        ? normalizePathname(runtimeContext.iframePath.value)
+        : normalizePathname(uri.path)
+      const iframeRefreshMode = isIframe
+        ? (fullItem.iframeRefreshMode ??
+          (isCrossOriginUrl(fullItem.path) ? 'reload' : 'postMessage'))
+        : 'postMessage'
+      // 把生效的刷新模式写回 fullItem，保证 __tab 与会话恢复得到一致的 iframe 刷新语义。
+      fullItem.iframeRefreshMode = iframeRefreshMode
+      const pageQuery = omitStackTabsReservedQuery(isIframe ? fullItem.query : uri.query)
+      if (isIframe) pageQuery.__src = encodeURIComponent(fullItem.path)
       const page: ITabPage = {
         id: cacheName,
         tabId,
-        path: normalizePathname(uri.path),
-        query: defu(omitStackTabsReservedQuery(uri.query), { __tab: encodeTabInfo(fullItem) })
+        path: pagePath,
+        query: defu(pageQuery, { __tab: encodeTabInfo(fullItem) })
       }
       const pages = new Stack<ITabPage>()
       pages.push(page)
@@ -167,11 +181,9 @@ const createTabPanelApi = (runtimeContext: StackTabsRuntimeContext) => {
         title: fullItem.title ?? '',
         closable: fullItem.closable!,
         refreshable: fullItem.refreshable!,
-        iframe: fullItem.iframe!,
-        iframeRefreshMode:
-          (fullItem as { iframeRefreshMode?: string }).iframeRefreshMode === 'reload'
-            ? 'reload'
-            : 'postMessage',
+        iframe: isIframe,
+        iframeRefreshMode,
+        url: isIframe ? toSafeTabUrl(fullItem.path) : undefined,
         active: false,
         pages,
         pinned: options.pinned
@@ -442,10 +454,8 @@ const createTabPanelApi = (runtimeContext: StackTabsRuntimeContext) => {
     let cacheName: string
     let page: ITabPage | null = null
 
-    if (targetTab && getTopPage(targetTab.id)) {
-      const top = getTopPage(targetTab.id)!
-      if (!top) throw new Error('[vue-stack-tabs] Stack is not empty but peek() returned undefined')
-
+    const top = targetTab ? getTopPage(targetTab.id) : null
+    if (targetTab && top) {
       if (isSameLocation(top)) {
         cacheName = top.id
       } else if (top.path === path) {
@@ -525,11 +535,17 @@ const createTabPanelApi = (runtimeContext: StackTabsRuntimeContext) => {
     // 首屏 URL 往往没有 __tab（用户直接打开默认路由）：把解析出的标签编码写回地址，
     // 保证 URL 始终指向当前标签；之后的导航各自会带上自己的 __tab。
     if (typeof route.query.__tab !== 'string') {
-      void router.replace({
-        path: route.path,
-        query: { ...cloneLocationQuery(route.query), __tab: encodeTabInfo(tabInfo) },
-        hash: route.hash
-      })
+      void router
+        .replace({
+          path: route.path,
+          query: { ...cloneLocationQuery(route.query), __tab: encodeTabInfo(tabInfo) },
+          hash: route.hash
+        })
+        .catch((error: unknown) => {
+          if (!import.meta.env.PROD) {
+            console.warn('[vue-stack-tabs] Failed to attach __tab to the current URL:', error)
+          }
+        })
     }
 
     saveActiveTabToSession(targetTab!)
@@ -558,7 +574,8 @@ const createTabPanelApi = (runtimeContext: StackTabsRuntimeContext) => {
       return getEmptyPlaceholderComponent()
     }
 
-    const routeKey = route.fullPath + (route.query.__tab || '')
+    // fullPath 已包含完整 query（含 __tab）与 hash；refreshKey 让 renew 能强制重新解析同一地址。
+    const routeKey = `${route.fullPath}::${refreshKey.value}`
     if (routeKey === lastRouteKey && lastAddPageResult) {
       return lastAddPageResult
     }
@@ -708,15 +725,11 @@ const createTabPanelApi = (runtimeContext: StackTabsRuntimeContext) => {
       return Promise.resolve()
     }
 
-    const __tab = encodeTabInfo({
-      id: target.id,
-      title: target.title,
-      closable: target.closable,
-      refreshable: target.refreshable,
-      iframe: target.iframe
-    })
-    // __tab 是兜底标识，目标栈顶已带 __tab 时优先沿用，否则用我们刚编码的版本。
-    const query = defu(top.query || {}, { __tab })
+    // __tab 是兜底标识：目标栈顶已带 __tab 时直接沿用，避免每次激活都重新编码。
+    const query = cloneLocationQuery(top.query)
+    if (typeof query.__tab !== 'string' || !query.__tab) {
+      query.__tab = encodeTabInfo(toTabBase(target))
+    }
 
     return runNavigationTransaction({
       apply: () => {

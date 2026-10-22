@@ -19,6 +19,7 @@ import {
   onBeforeUnmount,
   provide,
   ref,
+  toRef,
   watch
 } from 'vue'
 import type { TransitionProps } from 'vue'
@@ -201,6 +202,19 @@ const onComponentLoaded = () => {
 
 const pageSwitch = ref<string>(props.pageTransition)
 const emitter = runtimeContext.eventBus
+// 动态修改过渡名时同步当前状态；事件驱动的 forward/backward 切换不会被覆盖。
+watch(
+  () => props.pageTransition,
+  (value, previous) => {
+    if (pageSwitch.value === previous) pageSwitch.value = value
+  }
+)
+watch(
+  () => props.pageTransitionBack,
+  (value, previous) => {
+    if (pageSwitch.value === previous) pageSwitch.value = value
+  }
+)
 const forwardHandler = () => {
   pageSwitch.value = props.pageTransition
 }
@@ -230,7 +244,8 @@ const {
 } = useIframeManager({
   tabs,
   iframeRefreshKeys,
-  iframeLoadTimeout: props.iframeLoadTimeout,
+  // 传 ref 而不是快照，props 动态变化时超时时间立即生效。
+  iframeLoadTimeout: toRef(props, 'iframeLoadTimeout'),
   t
 })
 

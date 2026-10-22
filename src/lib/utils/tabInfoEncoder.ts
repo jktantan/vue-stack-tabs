@@ -130,7 +130,7 @@ export const encodeTabInfo = (tabData: ITabBase): string => {
   return encodeBase64Url(JSON.stringify(payload))
 }
 
-export const decodeTabInfo = (encoded: string): ITabBase => {
+const decodeTabInfoUncached = (encoded: string): ITabBase => {
   if (typeof encoded !== 'string' || encoded.length > MAX_ENCODED_TAB_INFO_LENGTH) {
     return { ...DEFAULT_TAB_INFO }
   }
@@ -150,6 +150,25 @@ export const decodeTabInfo = (encoded: string): ITabBase => {
   } catch {
     return { ...DEFAULT_TAB_INFO }
   }
+}
+
+/**
+ * 单条解码缓存：同一 __tab 在一次会话/连续导航中会反复出现，
+ * 缓存最近一次结果可省掉 Base64 + TextDecoder + JSON.parse。
+ * 返回值始终是副本，避免调用方修改缓存对象。
+ */
+let cachedEncodedTabInfo = ''
+let cachedTabInfo: ITabBase | null = null
+
+export const decodeTabInfo = (encoded: string): ITabBase => {
+  if (encoded === cachedEncodedTabInfo && cachedTabInfo) {
+    return { ...cachedTabInfo }
+  }
+
+  const decoded = decodeTabInfoUncached(encoded)
+  cachedEncodedTabInfo = encoded
+  cachedTabInfo = decoded
+  return { ...decoded }
 }
 
 /**

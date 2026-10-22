@@ -59,7 +59,7 @@ describe('evict', () => {
     const page: ITabPage = { id: 'p1', tabId: 't1', path: '/x' }
     const stack = new Stack<ITabPage>()
     stack.push(page)
-    const tab = { id: 't1', pages: { list: () => stack.list() } }
+    const tab = { id: 't1', pages: stack }
     eviction.markTabPagesForEviction(tab)
     expect(context.cacheIdsToEvict.has('p1')).toBe(true)
     expect(context.tabIdsToEvict.has('t1')).toBe(true)
@@ -69,7 +69,7 @@ describe('evict', () => {
     const page: ITabPage = { id: 'p1', tabId: 't1', path: '/x' }
     const stack = new Stack<ITabPage>()
     stack.push(page)
-    const tab = { pages: { list: () => stack.list() } }
+    const tab = { pages: stack }
     eviction.markTabPagesForEvictionOnly(tab)
     expect(context.cacheIdsToEvict.has('p1')).toBe(true)
     expect(context.tabIdsToEvict.size).toBe(0)

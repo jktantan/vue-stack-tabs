@@ -121,6 +121,9 @@ interface TabRecord {
 
 interface PageStackAccess {
   getPages: (tabId: string) => readonly ITabPage[]
+  getPageIds: (tabId: string) => readonly string[]
+  getPageAt: (tabId: string, index: number) => ITabPage | undefined
+  getPageCount: (tabId: string) => number
   getTopPage: (tabId: string) => ITabPage | null
   /** 读取任意页面的刷新版本；渲染层据此只重建对应页面 */
   getPageRefreshVersion: (pageId: string) => number
@@ -156,15 +159,16 @@ class PageStackView extends Stack<ITabPage> {
   }
 
   override at(index: number): ITabPage | undefined {
-    return this.access.getPages(this.tabId)[index]
+    // 只取单个元素时不必构造整条页面数组。
+    return this.access.getPageAt(this.tabId, index)
   }
 
   override isEmpty(): boolean {
-    return this.access.getPages(this.tabId).length === 0
+    return this.access.getPageCount(this.tabId) === 0
   }
 
   override size(): number {
-    return this.access.getPages(this.tabId).length
+    return this.access.getPageCount(this.tabId)
   }
 
   override clear(): void {
@@ -249,6 +253,15 @@ const createTabStore = (context: StackTabsRuntimeContext): TabStoreApi => {
     const ids = pageIdsByTabId.get(tabId)
     if (!ids || ids.length === 0) return null
     return pagesById.get(ids[ids.length - 1] as string) ?? null
+  }
+
+  const getPageCount = (tabId: string): number => pageIdsByTabId.get(tabId)?.length ?? 0
+
+  /** 按下标读取页面；越界（含负数）返回 undefined，与数组下标语义一致 */
+  const getPageAt = (tabId: string, index: number): ITabPage | undefined => {
+    const ids = pageIdsByTabId.get(tabId)
+    if (!ids || index < 0 || index >= ids.length) return undefined
+    return pagesById.get(ids[index] as string)
   }
 
   const getPageRefreshVersion = (pageId: string): number =>
@@ -550,6 +563,9 @@ const createTabStore = (context: StackTabsRuntimeContext): TabStoreApi => {
   // ---- 兼容视图 ----
   const pageAccess: PageStackAccess = {
     getPages,
+    getPageIds,
+    getPageAt,
+    getPageCount,
     getTopPage,
     getPageRefreshVersion,
     appendPage,

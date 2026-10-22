@@ -152,39 +152,51 @@ export function clonePage<T extends CloneablePage>(page: T): T {
   }
 }
 
-/** 忽略 __tab/__src/_back 等内部保留 key 后比较两个 query 是否等价 */
+/** 判断 key 是否为 vue-stack-tabs 内部保留参数（含后退参数 _back） */
+const isIgnoredQueryKey = (key: string): boolean =>
+  STACK_TABS_RESERVED_QUERY_KEYS.has(key) || key === '_back'
+
+/** 比较两个 query 值：数组按元素逐个比较，标量按字符串比较，并区分数组与标量 */
+const isSameQueryValue = (a: LocationQueryRaw[string], b: LocationQueryRaw[string]): boolean => {
+  const isArrayA = Array.isArray(a)
+  const isArrayB = Array.isArray(b)
+  if (isArrayA || isArrayB) {
+    if (!isArrayA || !isArrayB || a.length !== b.length) return false
+    for (let index = 0; index < a.length; index++) {
+      const itemA = a[index]
+      const itemB = b[index]
+      if (itemA !== itemB && String(itemA ?? '') !== String(itemB ?? '')) return false
+    }
+    return true
+  }
+  // 绝大多数 query 值是字符串：先做值直比，避免每次都 String() 分配。
+  return a === b || String(a ?? '') === String(b ?? '')
+}
+
+/**
+ * 忽略 __tab/__src/_back 等内部保留 key 后比较两个 query 是否等价。
+ *
+ * 直接按键逐一比较，不构造中间对象；同时要求 key 集合完全一致
+ * （旧实现只比较 key 数量，`{ a: '' }` 与 `{ b: '' }` 会被误判为相等）。
+ */
 export function isSameQueryIgnoringReserved(
   a: LocationQueryRaw = {},
   b: LocationQueryRaw = {}
 ): boolean {
-  const clean = (q: LocationQueryRaw): Record<string, string | string[]> => {
-    const result: Record<string, string | string[]> = {}
-    for (const [key, value] of Object.entries(q)) {
-      if (STACK_TABS_RESERVED_QUERY_KEYS.has(key) || key === '_back') continue
-      result[key] = Array.isArray(value)
-        ? value.map((item) => String(item ?? ''))
-        : String(value ?? '')
-    }
-    return result
+  let countA = 0
+  for (const key of Object.keys(a)) {
+    if (isIgnoredQueryKey(key)) continue
+    countA++
+    if (!Object.prototype.hasOwnProperty.call(b, key)) return false
+    if (!isSameQueryValue(a[key], b[key])) return false
   }
-  const ca = clean(a)
-  const cb = clean(b)
-  const keysA = Object.keys(ca)
-  const keysB = Object.keys(cb)
-  if (keysA.length !== keysB.length) return false
-  return keysA.every((key) => {
-    const aValue = ca[key]
-    const bValue = cb[key]
-    if (Array.isArray(aValue) || Array.isArray(bValue)) {
-      return (
-        Array.isArray(aValue) &&
-        Array.isArray(bValue) &&
-        aValue.length === bValue.length &&
-        aValue.every((value, index) => value === bValue[index])
-      )
-    }
-    return aValue === bValue
-  })
+
+  let countB = 0
+  for (const key of Object.keys(b)) {
+    if (isIgnoredQueryKey(key)) continue
+    countB++
+  }
+  return countA === countB
 }
 
 /** 移除 query 中的 vue-stack-tabs 保留参数（__tab、__src），返回干净的 query */

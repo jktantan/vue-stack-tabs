@@ -25,8 +25,6 @@ vi.mock('@/lib/hooks/useTabPanel', () => ({
 interface RendererSlotProps {
   wrappedComponent: DefineComponent
   activeCacheKey: string
-  refreshKey: number
-  activePageRefreshVersion: number
   component?: VNode | null
 }
 
@@ -97,10 +95,10 @@ function mountRenderer(props?: {
       component: props?.component ?? makeComponent()
     },
     slots: {
-      default: ({ wrappedComponent, activeCacheKey, refreshKey, component }: RendererSlotProps) =>
+      default: ({ wrappedComponent, activeCacheKey, component }: RendererSlotProps) =>
         h(wrappedComponent, {
           vnode: component,
-          key: `${activeCacheKey}-${refreshKey}`
+          key: activeCacheKey
         })
     }
   })

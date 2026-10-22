@@ -9,8 +9,11 @@ import type { StackTabsRuntimeContext } from '../stackTabsContext'
 
 export interface TabPanelEvictionApi {
   markCacheForEviction: (cacheName: string) => void
-  markTabPagesForEviction: (tab: { id: string; pages: { list(): ITabPage[] } }) => void
-  markTabPagesForEvictionOnly: (tab: { pages: { list(): ITabPage[] } }) => void
+  markTabPagesForEviction: (tab: {
+    id: string
+    pages: { readonlyList(): readonly ITabPage[] }
+  }) => void
+  markTabPagesForEvictionOnly: (tab: { pages: { readonlyList(): readonly ITabPage[] } }) => void
   addCache: (cacheName: string) => void
   removeCache: (cacheName: string) => void
   evictPageCache: (cacheName: string) => void
@@ -39,13 +42,18 @@ export const createTabPanelEviction = (context: StackTabsRuntimeContext): TabPan
     cacheIdsToEvict.add(cacheName)
   }
 
-  const markTabPagesForEviction = (tab: { id: string; pages: { list(): ITabPage[] } }): void => {
-    for (const page of tab.pages.list()) markCacheForEviction(page.id)
+  const markTabPagesForEviction = (tab: {
+    id: string
+    pages: { readonlyList(): readonly ITabPage[] }
+  }): void => {
+    for (const page of tab.pages.readonlyList()) markCacheForEviction(page.id)
     tabIdsToEvict.add(tab.id)
   }
 
-  const markTabPagesForEvictionOnly = (tab: { pages: { list(): ITabPage[] } }): void => {
-    for (const page of tab.pages.list()) markCacheForEviction(page.id)
+  const markTabPagesForEvictionOnly = (tab: {
+    pages: { readonlyList(): readonly ITabPage[] }
+  }): void => {
+    for (const page of tab.pages.readonlyList()) markCacheForEviction(page.id)
   }
 
   const addCache = (cacheName: string): void => {

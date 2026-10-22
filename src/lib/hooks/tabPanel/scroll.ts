@@ -124,9 +124,9 @@ export const createTabPanelScroll = (context: StackTabsRuntimeContext): TabPanel
     })
 
     for (const selector of positions.keys()) {
-      const element = selector.startsWith(AUTO_SCROLLER_PREFIX)
-        ? resolveAutoScrollElement(pageCacheId, selector)
-        : resolveScrollElement(selector)
+      // auto key 已在上一步按 DOM 顺序写入，无需再次解析。
+      if (selector.startsWith(AUTO_SCROLLER_PREFIX)) continue
+      const element = resolveScrollElement(selector)
       positions.set(selector, {
         top: element?.scrollTop ?? 0,
         left: element?.scrollLeft ?? 0

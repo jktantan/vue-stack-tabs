@@ -19,7 +19,7 @@ interface IframeLoadState {
 export interface UseIframeManagerOptions {
   tabs: Ref<ITabItem[]>
   iframeRefreshKeys: Ref<Record<string, number>>
-  iframeLoadTimeout: number
+  iframeLoadTimeout: Ref<number>
   t: (key: string) => string
 }
 
@@ -106,7 +106,7 @@ export function useIframeManager(options: UseIframeManagerOptions) {
             message: t('VueStackTab.iframeLoadTimeout')
           }
         }
-      }, iframeLoadTimeout)
+      }, iframeLoadTimeout.value)
     )
   }
 
@@ -176,20 +176,16 @@ export function useIframeManager(options: UseIframeManagerOptions) {
   )
 
   // refreshKey 变化时重新触发对应 iframe 的加载状态
-  watch(
-    iframeRefreshKeys,
-    (keys, previousKeys = {}) => {
-      for (const frame of iframeTabs.value) {
-        if (!frame.active) continue
-        const nextKey = keys[frame.id] ?? 0
-        const previousKey = previousKeys[frame.id] ?? 0
-        if (nextKey !== previousKey) {
-          setIframeLoading(frame.id, { force: true })
-        }
+  watch(iframeRefreshKeys, (keys, previousKeys = {}) => {
+    for (const frame of iframeTabs.value) {
+      if (!frame.active) continue
+      const nextKey = keys[frame.id] ?? 0
+      const previousKey = previousKeys[frame.id] ?? 0
+      if (nextKey !== previousKey) {
+        setIframeLoading(frame.id, { force: true })
       }
-    },
-    { deep: true }
-  )
+    }
+  })
 
   const handleIframeLoad = (frame: { id: string; url?: string }, event: Event) => {
     const iframe = event.currentTarget as HTMLIFrameElement | null

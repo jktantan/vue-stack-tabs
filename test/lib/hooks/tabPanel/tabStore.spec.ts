@@ -314,6 +314,9 @@ describe('tabStore', () => {
 
     expect(tab.pages.peek()?.id).toBe('t1-p1')
     expect(tab.pages.size()).toBe(1)
+    expect(tab.pages.isEmpty()).toBe(false)
+    expect(tab.pages.at(0)?.id).toBe('t1-p1')
+    expect(tab.pages.at(-1)).toBeUndefined()
 
     tab.pages.push(createPage('p2', 't1'))
     expect(store.getTopPage('t1')?.id).toBe('p2')

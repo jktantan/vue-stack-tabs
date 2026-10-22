@@ -1,4 +1,4 @@
-import { isNavigationFailure, useRouter } from 'vue-router'
+import { isNavigationFailure, NavigationFailureType, useRouter } from 'vue-router'
 import type { LocationQueryRaw } from 'vue-router'
 import { defu } from 'defu'
 import useTabPanel from './useTabPanel'
@@ -95,7 +95,7 @@ export default function useTabActions(providedRuntimeContext?: StackTabsRuntimeC
         return
       }
 
-      navigateToTab(tab, tabInfo).then(
+      navigateToTab(tab, tabInfo, isExistingTab && renew).then(
         () => resolve(tabInfo.id),
         (error) => {
           rollbackRenew?.()
@@ -107,7 +107,7 @@ export default function useTabActions(providedRuntimeContext?: StackTabsRuntimeC
   }
 
   /** 执行路由跳转到标签对应页面（普通路由或 iframe 占位路由） */
-  const navigateToTab = (tab: ITabData, tabInfo: ITabData) => {
+  const navigateToTab = (tab: ITabData, tabInfo: ITabData, allowDuplicatedNavigation = false) => {
     const __tab = encodeTabInfo(tabInfo)
     const tabQuery = omitStackTabsReservedQuery(tab.query)
     let query = defu(tabQuery, { __tab }) as LocationQueryRaw
@@ -137,7 +137,13 @@ export default function useTabActions(providedRuntimeContext?: StackTabsRuntimeC
       apply: () => undefined,
       navigate: () => router.push({ path, query, hash }),
       rollback: () => undefined,
-      isFailureResult: isNavigationFailure,
+      // renew 当前标签时地址可能不变：vue-router 会返回 duplicated NavigationFailure，
+      // 这属于预期结果（refreshKey 会触发页面重新解析），不应让 openTab reject。
+      isFailureResult: (result) =>
+        isNavigationFailure(result) &&
+        !(
+          allowDuplicatedNavigation && isNavigationFailure(result, NavigationFailureType.duplicated)
+        ),
       rejectFailureResult: true
     })
   }

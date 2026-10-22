@@ -138,4 +138,15 @@ describe('isSameQueryIgnoringReserved', () => {
     expect(isSameQueryIgnoringReserved({ tag: ['a', 'b'] }, { tag: 'a,b' })).toBe(false)
     expect(isSameQueryIgnoringReserved({ tag: ['a', 'b'] }, { tag: ['a', 'b'] })).toBe(true)
   })
+
+  it('key 集合不同但值都为空时不会误判相等', () => {
+    expect(isSameQueryIgnoringReserved({ a: '' }, { b: '' })).toBe(false)
+    expect(isSameQueryIgnoringReserved({ a: '' }, { a: '', __tab: 'x' })).toBe(true)
+  })
+
+  it('比较与键顺序无关，并忽略 _back 等内部参数', () => {
+    expect(isSameQueryIgnoringReserved({ b: '1', a: '2' }, { a: '2', b: '1' })).toBe(true)
+    expect(isSameQueryIgnoringReserved({ a: '1', _back: 'x' }, { a: '1' })).toBe(true)
+    expect(isSameQueryIgnoringReserved({ a: '1' }, { a: '1', __src: 'https://x' })).toBe(true)
+  })
 })

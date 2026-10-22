@@ -25,8 +25,6 @@ interface StackCacheRendererProps {
 interface StackCacheRendererSlotProps {
   wrappedComponent: DefineComponent
   activeCacheKey: string
-  refreshKey: number
-  activePageRefreshVersion: number
   component?: VNode | null
 }
 
@@ -36,7 +34,7 @@ defineSlots<{
   default(props: StackCacheRendererSlotProps): unknown
 }>()
 
-const { refreshKey, activeCacheKey, activePageRefreshVersion, addPage } = useTabPanel()
+const { refreshKey, activeCacheKey, addPage } = useTabPanel()
 
 const wrappedComponent = shallowRef<DefineComponent>(getEmptyPlaceholderComponent())
 
@@ -57,8 +55,6 @@ watch(
   <slot
     :wrapped-component="wrappedComponent"
     :active-cache-key="activeCacheKey"
-    :refresh-key="refreshKey"
-    :active-page-refresh-version="activePageRefreshVersion"
     :component="component"
   />
 </template>
