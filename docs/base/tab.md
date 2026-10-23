@@ -48,7 +48,7 @@ reset()
 
 ## Tab Loading Indicator
 
-`useTabLoading` shows a page-level overlay above the current tab. It must be used inside a page component rendered by `<VueStackTabs>`, because the library resolves the owning tab from the `tId` it injects into the page.
+`useTabLoading` shows a page-level overlay above the current tab. It must be used inside a page component rendered by `<VueStackTabs>`, because the library resolves the owning tab from the page context provided by its cache wrapper.
 
 ```vue:line-numbers
 <script setup lang="ts">

@@ -12,6 +12,7 @@ import { createMemoryHistory, createRouter } from 'vue-router'
 import StackTabs from '@/lib/StackTabs.vue'
 import useTabActions from '@/lib/hooks/useTabActions'
 import useTabPanel from '@/lib/hooks/useTabPanel'
+import useTabRouter from '@/lib/hooks/useTabRouter'
 import { Stack } from '@/lib/model/TabModel'
 import type { ITabData } from '@/lib/model/TabModel'
 
@@ -34,6 +35,18 @@ const View = (name: string) =>
     }
   })
 
+let fragmentPageContext: { tabId: string; pageId: string } | null = null
+
+const FragmentView = defineComponent({
+  name: 'FragmentView',
+  setup() {
+    const { tabId, pageId } = useTabRouter()
+    fragmentPageContext = { tabId, pageId }
+    // 多根节点页面：旧实现会在这里触发 extraneous attrs 警告。
+    return () => [h('p', 'fragment-a'), h('p', 'fragment-b')]
+  }
+})
+
 const settle = async () => {
   await flushPromises()
   await nextTick()
@@ -50,6 +63,7 @@ const mountStackTabs = async (
       { path: '/', component: View('HomeView') },
       { path: '/a', component: View('AView') },
       { path: '/b', component: View('BView') },
+      { path: '/fragment', component: FragmentView },
       { path: '/iframe', component: View('IframeView') }
     ]
   })
@@ -117,6 +131,29 @@ describe('标签内导航的渲染耦合', () => {
     ).toEqual(['/', '/a', '/b'])
     expect(panel().getTopPage('home')?.path).toBe('/b')
     expect(replacements()).toBe(0)
+  })
+
+  it('多根节点页面通过 provide 获取上下文，且不再触发 extraneous attrs 警告', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+
+    try {
+      const { router, panel } = await mountStackTabs()
+      const encodedTab = String(router.currentRoute.value.query.__tab)
+      fragmentPageContext = null
+
+      await router.push({ path: '/fragment', query: { __tab: encodedTab } })
+      await settle()
+
+      expect(fragmentPageContext).toEqual({
+        tabId: 'home',
+        pageId: panel().getTopPage('home')?.id
+      })
+
+      const warnings = warnSpy.mock.calls.map((args) => args.join(' ')).join('\n')
+      expect(warnings).not.toContain('Extraneous non-props attributes')
+    } finally {
+      warnSpy.mockRestore()
+    }
   })
 
   it('切换到另一个标签仍需要重建 tabs 数组（active 标记变化）', async () => {

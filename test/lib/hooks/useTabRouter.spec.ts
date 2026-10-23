@@ -92,6 +92,14 @@ describe('useTabRouter', () => {
     }
   })
 
+  it('暴露当前页面上下文，兼容旧版 attrs 注入', async () => {
+    const { default: useTabRouter } = await import('@/lib/hooks/useTabRouter')
+    const router = useTabRouter()
+
+    expect(router.tabId).toBe('tab-1')
+    expect(router.pageId).toBe('page-detail')
+  })
+
   it('backward 事务过期失败时清理本次弹出的缓存但不整栈回滚', async () => {
     const failure = { type: 'cancelled' }
     let rejectBackward!: (error: unknown) => void

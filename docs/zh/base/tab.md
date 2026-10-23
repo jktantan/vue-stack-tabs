@@ -54,7 +54,7 @@ reset()
 
 ## 页签页面加载动画
 
-`useTabLoading` 会在当前页签上方显示页面级遮罩。它只能在由 `<VueStackTabs>` 渲染的页面组件中使用：库会向页面注入 `tId`，并据此定位所属页签。
+`useTabLoading` 会在当前页签上方显示页面级遮罩。它只能在由 `<VueStackTabs>` 渲染的页面组件中使用：库会在缓存包装层提供页面上下文，并据此定位所属页签。
 
 ```vue:line-numbers
 <script setup lang="ts">

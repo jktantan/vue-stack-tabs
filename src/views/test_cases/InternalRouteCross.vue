@@ -18,8 +18,6 @@ watch(
   () => props,
   (newProps) => {
     const validProps = { ...newProps }
-    delete validProps.tId
-    delete validProps.pId
     if (Object.keys(validProps).length > 0) {
       backParams.value = validProps
     }

@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+### 新增
+
+- `useTabRouter()` 返回 `tabId` / `pageId`，可用于定位当前标签与缓存页；`pageId` 可配合 `getWrapper({ pageId })` 使用。
+
+### 修复
+
+- 页面上下文（`tabId` / `pageId`）改为在缓存包装组件中 `provide`、页面 Hook 通过 `inject` 读取，不再作为 attrs 注入页面组件。多根节点（Fragment）页面不再出现 `Extraneous non-props attributes (tId, pId)` 警告，单根节点页面也不会再把内部 ID 透传到 DOM。
+
+### 行为变更
+
+- 页面组件不再通过 `attrs.tId` / `attrs.pId` 获得内部 ID；请使用 `useTabRouter().tabId` / `useTabRouter().pageId`。手动传入的 attrs / props 仍作为兼容回退读取。
+
 ## 2.3.0 (2026-10-22)
 
 ### 新增

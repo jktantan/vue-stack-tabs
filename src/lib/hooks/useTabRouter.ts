@@ -1,9 +1,8 @@
-import { getCurrentInstance } from 'vue'
-import type { ComponentInternalInstance } from 'vue'
 import type { LocationQueryRaw, RouteLocationPathRaw } from 'vue-router'
 import { isNavigationFailure, useRoute, useRouter } from 'vue-router'
 
 import useTabPanel from './useTabPanel'
+import { resolveTabPageContext } from './tabPageContext'
 import {
   parseUrl,
   cloneLocationQuery,
@@ -22,30 +21,26 @@ import { createPageId } from '../utils/tabInfoEncoder'
  * useTabRouter - 标签内路由 Hook
  *
  * 职责：在单个标签内实现「前进/后退」栈式导航，以及滚动位置的记录与恢复
- * 使用范围：仅在标签内的页面组件中使用，依赖 StackTabs 通过 cloneVNode 注入的 tId / pId
+ * 使用范围：仅在标签内的页面组件中使用；页面上下文由缓存包装组件 provide，
+ * 通过 tabPageContext 解析（兼容旧版 attrs / props 注入）。
  *
  * 主要 API：
  * - forward(to)             前进：push 新页面到该标签的 pages 栈
  * - backward(to, backQuery) 后退：pop 栈顶、驱逐缓存，跳转到新栈顶
  * - addScrollTarget(...)    注册需要记录滚动位置的选择器
+ * - tabId / pageId          当前页面所属标签与缓存页 id（只读）
  */
 export default function useTabRouter() {
-  const instance = getCurrentInstance() as ComponentInternalInstance
-  const { attrs, props } = instance
+  const pageContext = resolveTabPageContext()
 
-  /**
-   * 当前标签 ID。
-   * StackTabs 在 StackTabs.vue 的 tabWrapper 里通过 cloneVNode(Node, { tId, pId }) 注入，
-   * 未在子组件 setup 中声明为 prop 的属性会落入 attrs，
-   * 因此优先读 attrs.tId，再 fallback 到 props.tId。
-   */
-  const tabId = (attrs.tId ?? props.tId) as string
+  /** 当前标签 ID，用于定位页面栈与标签激活状态。 */
+  const tabId = pageContext?.tabId ?? ''
 
   /**
    * 当前页面的缓存 ID（即 cacheName / keep-alive include 中的名称）。
    * 用于 addScrollTarget 向 useTabPanel 绑定该页面的可滚动容器选择器。
    */
-  const pageId = (attrs.pId ?? props.pId) as string
+  const pageId = pageContext?.pageId ?? ''
 
   const route = useRoute()
   const router = useRouter()
@@ -249,6 +244,8 @@ export default function useTabRouter() {
   return {
     forward,
     backward,
-    addScrollTarget
+    addScrollTarget,
+    tabId,
+    pageId
   }
 }

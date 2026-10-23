@@ -5,8 +5,13 @@ Used for navigation within a tab (forward/backward). Must be used inside tab pag
 ```typescript
 import { useTabRouter } from 'vue-stack-tabs'
 
-const { forward, backward, addScrollTarget } = useTabRouter()
+const { forward, backward, addScrollTarget, tabId, pageId } = useTabRouter()
 ```
+
+## tabId / pageId
+
+The current page's owning tab id and cache page id (read-only). Use `pageId` with
+`useTabActions().getWrapper({ pageId })` to target this page's content container.
 
 ## forward
 

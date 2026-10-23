@@ -13,6 +13,7 @@ import {
   onDeactivated,
   onMounted,
   onUnmounted,
+  provide,
   ref,
   shallowRef,
   watch
@@ -21,6 +22,7 @@ import type { DefineComponent, PropType, VNode } from 'vue'
 import type { ITabBase } from '../../model/TabModel'
 import PageLoading from '../../components/PageLoading.vue'
 import type { StackTabsRuntimeContext } from '../stackTabsContext'
+import { tabPageContextKey } from '../tabPageContext'
 import { useScrollShadow } from '../useScrollShadow'
 
 interface PageComponentFactoryOptions {
@@ -139,6 +141,14 @@ export const createPageComponentFactory = (options: PageComponentFactoryOptions)
       },
       emits: ['onLoaded'],
       setup(props, context) {
+        // 页面上下文只在缓存包装组件这一层 provide，页面组件及其嵌套组件都可 inject。
+        // 不再把 tId / pId 作为 attrs 注入页面：多根节点页面会触发 Vue 的
+        // “Extraneous non-props attributes”警告，单根节点页面则会把内部 ID 透传到 DOM。
+        provide(tabPageContextKey, {
+          tabId: tabInfo.id!,
+          pageId: cacheName
+        })
+
         const localBackParams = ref<Record<string, unknown> | null>(null)
         const lastVnode = shallowRef<VNode | null | undefined>(null)
         const lastCloned = shallowRef<VNode | null>(null)
@@ -337,12 +347,10 @@ export const createPageComponentFactory = (options: PageComponentFactoryOptions)
           const vnode = props.vnode
           const backParams = localBackParams.value
           if (vnode !== lastVnode.value || backParams !== lastBackParams.value) {
+            // _back 是页面需要读取的公开 prop，仍通过 cloneVNode 注入；
+            // tId / pId 已改为 provide/inject，不再污染页面 attrs。
             lastCloned.value = vnode
-              ? cloneVNode(vnode, {
-                  tId: tabInfo.id,
-                  pId: cacheName,
-                  ...(backParams ? { _back: backParams } : {})
-                })
+              ? cloneVNode(vnode, backParams ? { _back: backParams } : null)
               : null
             lastVnode.value = vnode
             lastBackParams.value = backParams

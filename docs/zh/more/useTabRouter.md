@@ -5,8 +5,13 @@
 ```typescript
 import { useTabRouter } from 'vue-stack-tabs'
 
-const { forward, backward, addScrollTarget } = useTabRouter()
+const { forward, backward, addScrollTarget, tabId, pageId } = useTabRouter()
 ```
+
+## tabId / pageId
+
+当前页面所属的标签 id 与缓存页 id，只读。`pageId` 可以配合
+`useTabActions().getWrapper({ pageId })` 精确定位当前页面的内容容器。
 
 ## forward
 

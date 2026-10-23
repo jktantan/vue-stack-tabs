@@ -9,7 +9,7 @@ const { openTabLoading, closeTabLoading } = useTabLoading()
 ```
 
 ::: warning
-Call it inside a page component rendered by `<VueStackTabs>`. The hook resolves the owning tab from the `tId` that the library injects into the page; called outside a tab page — for example in the layout that hosts the tabs — there is no target, and the overlay never appears.
+Call it inside a page component rendered by `<VueStackTabs>`. The hook resolves the owning tab from the page context provided by the library's cache wrapper; called outside a tab page — for example in the layout that hosts the tabs — there is no target, and the overlay never appears.
 :::
 
 The overlay is rendered per tab: it covers the current tab's page only, other tabs stay interactive, and the tab bar keeps working. Closing the tab or unmounting the page clears it automatically, so no manual cleanup is needed.
