@@ -1,18 +1,25 @@
 # Changelog
 
-## Unreleased
+## 2.4.0 (2026-10-24)
 
 ### 新增
 
+- 主题化：界面颜色与阴影抽为 `--stack-tab-*` CSS 变量，浅色默认值与旧版一致；内置深色主题，支持 `html.dark`、`html[data-theme="dark"]` 与局部 `[data-theme="dark"]`。
+- 在线演示新增「外观」控制，可切换浅色/深色与蓝/绿/紫主色，并持久化选择。
 - `useTabRouter()` 返回 `tabId` / `pageId`，可用于定位当前标签与缓存页；`pageId` 可配合 `getWrapper({ pageId })` 使用。
 
 ### 修复
 
+- 深色主题下页签、菜单与内容区滚动阴影不可见：深色改用描边 + 主色光晕 + 顶部高光表达层次，inset 阴影加宽并统一由 `--stack-tab-shadow-color` 控制。
 - 页面上下文（`tabId` / `pageId`）改为在缓存包装组件中 `provide`、页面 Hook 通过 `inject` 读取，不再作为 attrs 注入页面组件。多根节点（Fragment）页面不再出现 `Extraneous non-props attributes (tId, pId)` 警告，单根节点页面也不会再把内部 ID 透传到 DOM。
 
 ### 行为变更
 
 - 页面组件不再通过 `attrs.tId` / `attrs.pId` 获得内部 ID；请使用 `useTabRouter().tabId` / `useTabRouter().pageId`。手动传入的 attrs / props 仍作为兼容回退读取。
+
+### 工程
+
+- `docs:dev` 端口调整为文档 `18081`、演示 `18080`，避开 Windows Hyper-V/WinNAT 的保留端口段。
 
 ## 2.3.0 (2026-10-22)
 
