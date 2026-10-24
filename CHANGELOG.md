@@ -1,5 +1,23 @@
 # Changelog
 
+## 2.6.0 (2026-10-24)
+
+### 新增
+
+- `<VueStackTabs>` 新增可选属性 `scrollContainer`：允许宿主用自己的滚动组件（如 Element Plus `ElScrollbar`）承载每个页签内容区的滚动。组件只需渲染默认插槽并 expose `scrollElement`，或实现 `StackTabsScrollAdapter` 的可选方法（`getPosition` / `setPosition` / `getMetrics` / `onScroll`）。
+- 导出 `StackTabsScrollAdapter`、`StackTabsScrollElementInstance`、`StackTabsScrollMetrics`、`StackTabsScrollPosition` 类型。
+- 自定义滚动容器下，滚动位置记忆与上下滚动阴影改为作用于真实滚动元素；每个页签仍保持独立滚动位置。
+- 支持运行时切换 `scrollContainer`：只重新解析适配器并重新同步阴影/位置，不重建 keep-alive 缓存页。
+
+### 行为变更
+
+- 传入 `scrollContainer` 时缓存页 wrapper 恒为 `overflow: hidden`，`globalScroll` 只对默认路径生效。
+- 未传 `scrollContainer` 时行为与 2.5.1 完全一致。
+
+### 文档
+
+- 中英文滚动文档新增「自定义滚动容器」章节，属性表新增 `scrollContainer`。
+
 ## 2.5.1 (2026-10-24)
 
 ### 修复
