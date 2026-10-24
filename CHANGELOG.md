@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.6.1 (2026-10-24)
+
+### 修复
+
+- 页签切换（尤其是普通页签 → iframe 页签 → 切回）后内容区滚动位置回到顶部：keep-alive 停用会先把页面 DOM 移入隐藏容器，`onDeactivated` 读取到的 `scrollTop` 已归零。现在在滚动过程中实时记录主滚动容器的位置，停用时不再用归零值覆盖记录值。
+
 ## 2.6.0 (2026-10-24)
 
 ### 新增
@@ -13,10 +19,6 @@
 
 - 传入 `scrollContainer` 时缓存页 wrapper 恒为 `overflow: hidden`，`globalScroll` 只对默认路径生效。
 - 未传 `scrollContainer` 时行为与 2.5.1 完全一致。
-
-### 修复
-
-- 页签切换（尤其是普通页签 → iframe 页签 → 切回）后内容区滚动位置回到顶部：keep-alive 停用会先把页面 DOM 移入隐藏容器，`onDeactivated` 读取到的 `scrollTop` 已归零。现在在滚动过程中实时记录主滚动容器的位置，停用时不再用归零值覆盖记录值。
 
 ### 文档
 
