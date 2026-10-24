@@ -13,7 +13,7 @@
  */
 import type { ITabBase, ITabData, ITabItem, ITabPage } from '../model/TabModel'
 import { computed, ref } from 'vue'
-import type { DefineComponent, VNode } from 'vue'
+import type { Component, DefineComponent, VNode } from 'vue'
 import { isNavigationFailure, useRouter } from 'vue-router'
 import type { RouteLocationNormalizedLoaded } from 'vue-router'
 import { encodeTabInfo, createId, createPageId, decodeTabInfo } from '../utils/tabInfoEncoder'
@@ -108,7 +108,7 @@ const createTabPanelApi = (runtimeContext: StackTabsRuntimeContext) => {
     restoreCaches,
     reset: resetStore
   } = store
-  const { restoreScroller, saveScroller, removeScroller, addPageScroller } =
+  const { restoreScroller, saveScroller, removeScroller, addPageScroller, setPageScrollAdapter } =
     createTabPanelScroll(runtimeContext)
   const {
     saveActiveTabToSession,
@@ -246,6 +246,7 @@ const createTabPanelApi = (runtimeContext: StackTabsRuntimeContext) => {
     evictMarkedCaches,
     clearTabEvictionMarks,
     addPageScroller,
+    setPageScrollAdapter,
     saveScroller,
     restoreScroller,
     removeScroller
@@ -812,6 +813,9 @@ const createTabPanelApi = (runtimeContext: StackTabsRuntimeContext) => {
     addPageScroller,
     setGlobalScroll: (value: boolean) => {
       runtimeContext.useGlobalScroll.value = value
+    },
+    setScrollContainer: (value: Component | null | undefined) => {
+      runtimeContext.scrollContainer.value = value ?? null
     },
     clearSession,
     setSessionPrefix: (value: string) => {

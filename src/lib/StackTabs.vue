@@ -22,7 +22,7 @@ import {
   toRef,
   watch
 } from 'vue'
-import type { TransitionProps } from 'vue'
+import type { Component, TransitionProps } from 'vue'
 import { getMaxZIndex, invalidateZIndexCache } from './utils/scrollUtils'
 import { isAllowedTabUrl } from './utils/urlParser'
 import { applyStackTabsLocale } from './i18n/stackTabsLocale'
@@ -70,6 +70,14 @@ const props = withDefaults(
     i18n?: string
     space?: number
     globalScroll?: boolean
+    /**
+     * 可选的自定义滚动组件，用于承载每个页签内容区的滚动。
+     *
+     * 组件需要渲染默认插槽、根元素填满父容器，并通过 `expose` 暴露
+     * `scrollElement`（或实现 `StackTabsScrollAdapter` 的可选方法）。
+     * 传入后 wrapper 恒为 `overflow: hidden`，`globalScroll` 仅对默认路径生效。
+     */
+    scrollContainer?: Component
     iframePath: string
     sessionPrefix?: string
     iframeAllowedOrigins?: string[]
@@ -118,6 +126,7 @@ const runtimeContext =
     iframePath: props.iframePath,
     maxTabCount: props.max,
     useGlobalScroll: props.globalScroll,
+    scrollContainer: props.scrollContainer,
     sessionPrefix: props.sessionPrefix
   })
 const stackTabsApp = getCurrentInstance()?.appContext.app
@@ -148,6 +157,7 @@ const panelApi = isRuntimeContextOwner
       initialize: () => undefined,
       setMaxSize: () => undefined,
       setGlobalScroll: () => undefined,
+      setScrollContainer: () => undefined,
       setSessionPrefix: () => undefined
     }
 const {
@@ -157,6 +167,7 @@ const {
   initialize,
   setMaxSize,
   setGlobalScroll,
+  setScrollContainer,
   setSessionPrefix
 } = panelApi
 const tabActions = isRuntimeContextOwner
@@ -170,6 +181,7 @@ const { setIFramePath, openTab, openInNewWindow } = tabActions
 if (isRuntimeContextOwner) {
   setIFramePath(props.iframePath)
   setGlobalScroll(props.globalScroll)
+  setScrollContainer(props.scrollContainer)
   setMaxSize(props.max)
   applyStackTabsLocale(changeLocale, props.i18n)
 
@@ -182,6 +194,10 @@ if (isRuntimeContextOwner) {
   watch(
     () => props.globalScroll,
     (value) => setGlobalScroll(value)
+  )
+  watch(
+    () => props.scrollContainer,
+    (value) => setScrollContainer(value)
   )
   watch(
     () => props.sessionPrefix,

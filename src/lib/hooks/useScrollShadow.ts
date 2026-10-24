@@ -43,11 +43,25 @@ export interface UseScrollShadowOptions {
    * 距离边界 ≤ 阈值视为已贴边（不显示阴影）；距离边界 > 阈值视为可继续滚动（显示阴影）。
    */
   edgeThreshold?: number
+  /**
+   * 自定义尺寸读取（可选）。提供时优先于 `target` 的原生
+   * `scrollTop / scrollHeight / clientHeight`，用于命令式滚动组件。
+   */
+  getMetrics?: () => { scrollTop: number; scrollHeight: number; clientHeight: number } | null
+  /**
+   * 自定义滚动订阅（可选）。提供时优先于在 `target` 上监听 scroll 事件，
+   * 返回取消订阅函数。`target` 可以为 null（例如纯 transform 驱动的滚动组件）。
+   */
+  onScroll?: (listener: () => void) => () => void
 }
 
 export interface UseScrollShadowReturn {
-  /** 重新解析滚动/阴影目标并同步一次（用于 keep-alive 激活、DOM 重新挂载后） */
-  sync: () => void
+  /**
+   * 重新解析滚动/阴影目标并同步一次（用于 keep-alive 激活、DOM 重新挂载后）。
+   * `force` 为 true 时即使 target 未变化也重建订阅，用于适配器内部状态
+   * （自定义滚动元素的 expose）在两次 sync 之间发生变化的场景。
+   */
+  sync: (force?: boolean) => void
   /** 移除阴影类并取消待执行的 rAF（用于 keep-alive 失活） */
   clear: () => void
 }
@@ -65,6 +79,8 @@ export const useScrollShadow = (options: UseScrollShadowOptions): UseScrollShado
   const edgeThreshold = Math.max(0, options.edgeThreshold ?? DEFAULT_EDGE_THRESHOLD)
   let rafId: number | null = null
   let attached: HTMLElement | null = null
+  let attachedOnScroll: ((listener: () => void) => () => void) | null = null
+  let scrollCleanup: (() => void) | null = null
   let classElement: HTMLElement | null = null
   let resizeObserver: ResizeObserver | null = null
 
@@ -78,8 +94,8 @@ export const useScrollShadow = (options: UseScrollShadowOptions): UseScrollShado
     options.classTarget ? resolveTarget(options.classTarget) : attached
 
   const recompute = (): void => {
-    if (!attached) return
-    const target = attached
+    // 命令式滚动组件可能没有原生滚动元素，但通过 getMetrics 提供尺寸。
+    if (!attached && !options.getMetrics) return
     const nextClassTarget = resolveClassTarget()
     if (classElement && classElement !== nextClassTarget) {
       clearClasses(classElement)
@@ -88,7 +104,19 @@ export const useScrollShadow = (options: UseScrollShadowOptions): UseScrollShado
     classElement = nextClassTarget
     if (!classElement) return
 
-    const { scrollTop, scrollHeight, clientHeight } = target
+    // 自定义尺寸优先；返回 null 时回退到原生滚动元素。
+    const metrics =
+      options.getMetrics?.() ??
+      (attached
+        ? {
+            scrollTop: attached.scrollTop,
+            scrollHeight: attached.scrollHeight,
+            clientHeight: attached.clientHeight
+          }
+        : null)
+    if (!metrics) return
+
+    const { scrollTop, scrollHeight, clientHeight } = metrics
     const distanceToTop = scrollTop
     const distanceToBottom = scrollHeight - clientHeight - scrollTop
     // 顶部阴影：表示上方还有内容，离开顶部（距离顶部 > 阈值）时显示。
@@ -111,23 +139,40 @@ export const useScrollShadow = (options: UseScrollShadowOptions): UseScrollShado
     })
   }
 
-  const attach = (): void => {
+  /** 释放滚动事件订阅 / ResizeObserver，不清理阴影类。 */
+  const releaseScrollSource = (): void => {
+    if (attached) attached.removeEventListener('scroll', schedule)
+    if (scrollCleanup) {
+      scrollCleanup()
+      scrollCleanup = null
+    }
+    attachedOnScroll = null
+    resizeObserver?.disconnect()
+    resizeObserver = null
+  }
+
+  const attach = (force = false): void => {
     const el = resolveTarget(options.target)
-    if (!el) return
-    if (el === attached) {
+    const onScroll = options.onScroll ?? null
+    if (!el && !onScroll && !options.getMetrics) return
+    if (!force && el === attached && onScroll === attachedOnScroll) {
       schedule()
       return
     }
-    if (attached) {
-      attached.removeEventListener('scroll', schedule)
-      resizeObserver?.disconnect()
-      resizeObserver = null
-      clearClasses(classElement)
-      classElement = null
-    }
+    releaseScrollSource()
+    clearClasses(classElement)
+    classElement = null
+
     attached = el
-    el.addEventListener('scroll', schedule, { passive: true })
-    if (watchResize && typeof ResizeObserver !== 'undefined') {
+    if (onScroll) {
+      // 自定义滚动订阅优先于原生 scroll 事件；没有原生滚动元素时也能工作。
+      attachedOnScroll = onScroll
+      const cleanup = onScroll(schedule)
+      scrollCleanup = typeof cleanup === 'function' ? cleanup : null
+    } else if (el) {
+      el.addEventListener('scroll', schedule, { passive: true })
+    }
+    if (watchResize && el && typeof ResizeObserver !== 'undefined') {
       resizeObserver = new ResizeObserver(() => schedule())
       resizeObserver.observe(el)
     }
@@ -147,24 +192,23 @@ export const useScrollShadow = (options: UseScrollShadowOptions): UseScrollShado
   }
 
   /** 重新解析目标：keep-alive 激活或 DOM 重新挂载后由调用方触发 */
-  const sync = (): void => {
+  const sync = (force = false): void => {
     const el = resolveTarget(options.target)
-    if (!el) {
-      clear()
+    const onScroll = options.onScroll ?? null
+    if (!el && !onScroll && !options.getMetrics) {
+      detach()
       return
     }
-    if (el !== attached) {
-      attach()
+    if (force || el !== attached || onScroll !== attachedOnScroll) {
+      attach(force)
       return
     }
     schedule()
   }
 
   const detach = (): void => {
-    if (attached) attached.removeEventListener('scroll', schedule)
+    releaseScrollSource()
     attached = null
-    resizeObserver?.disconnect()
-    resizeObserver = null
     clearClasses(classElement)
     classElement = null
     cancelScheduled()

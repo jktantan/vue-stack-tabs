@@ -7,6 +7,7 @@
 import {
   cloneVNode,
   defineComponent,
+  h,
   nextTick,
   onActivated,
   onBeforeUnmount,
@@ -20,6 +21,11 @@ import {
 } from 'vue'
 import type { DefineComponent, PropType, VNode } from 'vue'
 import type { ITabBase } from '../../model/TabModel'
+import {
+  readAdapterScrollMetrics,
+  resolveScrollAdapter,
+  type StackTabsScrollAdapter
+} from '../../model/ScrollAdapter'
 import PageLoading from '../../components/PageLoading.vue'
 import type { StackTabsRuntimeContext } from '../stackTabsContext'
 import { tabPageContextKey } from '../tabPageContext'
@@ -34,6 +40,10 @@ interface PageComponentFactoryOptions {
   evictMarkedCaches: () => void
   clearTabEvictionMarks: () => void
   addPageScroller: (pageId: string, ...selectors: string[]) => void
+  setPageScrollAdapter: (
+    pageId: string,
+    getter: (() => StackTabsScrollAdapter | null) | null
+  ) => void
   saveScroller: (pageId: string) => void
   restoreScroller: (pageId: string) => void
   removeScroller: (pageId: string) => void
@@ -79,6 +89,7 @@ export const createPageComponentFactory = (options: PageComponentFactoryOptions)
     evictMarkedCaches,
     clearTabEvictionMarks,
     addPageScroller,
+    setPageScrollAdapter,
     saveScroller,
     restoreScroller,
     removeScroller
@@ -154,6 +165,9 @@ export const createPageComponentFactory = (options: PageComponentFactoryOptions)
         const lastCloned = shallowRef<VNode | null>(null)
         const lastBackParams = shallowRef<Record<string, unknown> | null>(null)
         const pageRoot = ref<HTMLElement | null>(null)
+        /** 自定义滚动组件的实例（expose proxy），用于解析滚动适配器。 */
+        const scrollContainerRef = ref<unknown>(null)
+        const customScrollAdapter = shallowRef<StackTabsScrollAdapter | null>(null)
         /**
          * 实际渲染的刷新版本。
          *
@@ -162,6 +176,62 @@ export const createPageComponentFactory = (options: PageComponentFactoryOptions)
          * props.refreshVersion。外层 keep-alive key 保持不变，避免实例累积。
          */
         const renderedRefreshVersion = ref(props.refreshVersion ?? 0)
+
+        const hasCustomScrollContainer = (): boolean =>
+          Boolean(runtimeContext.scrollContainer.value)
+
+        /**
+         * 当前页面的主滚动适配器。
+         *
+         * 未传 `scrollContainer` 时把 wrapper 本身当作适配器，默认路径行为保持不变；
+         * 传入时读取自定义组件 expose 的能力，解析不到则按「无滚动容器」处理。
+         */
+        const getScrollAdapter = (): StackTabsScrollAdapter | null => {
+          if (!hasCustomScrollContainer()) {
+            return pageRoot.value ? { scrollElement: pageRoot.value } : null
+          }
+          return customScrollAdapter.value
+        }
+
+        /** 重新解析自定义滚动组件的适配器（运行时切换容器后也会调用）。 */
+        const syncScrollAdapter = (): void => {
+          customScrollAdapter.value = hasCustomScrollContainer()
+            ? resolveScrollAdapter(scrollContainerRef.value)
+            : null
+        }
+
+        /** 阴影订阅：优先用适配器的 onScroll，缺失时监听原生滚动元素。 */
+        const subscribeAdapterScroll = (listener: () => void): (() => void) => {
+          const adapter = getScrollAdapter()
+          if (adapter?.onScroll) return adapter.onScroll(listener)
+          const element = adapter?.scrollElement
+          if (!element) return () => undefined
+          element.addEventListener('scroll', listener, { passive: true })
+          return () => element.removeEventListener('scroll', listener)
+        }
+
+        // 阴影类挂到不被刷新动画 transform 的 panel 上；滚动监听绑定真实滚动元素。
+        // 否则 ::after 的绝对定位包含块会随 transform 变化，顶部阴影会错位/消失。
+        const scrollShadow = useScrollShadow({
+          target: () => getScrollAdapter()?.scrollElement ?? null,
+          classTarget: () => pageRoot.value?.parentElement ?? null,
+          getMetrics: () => readAdapterScrollMetrics(getScrollAdapter()),
+          onScroll: subscribeAdapterScroll
+        })
+
+        /**
+         * 同步主滚动容器的注册方式：
+         * - 默认路径：保持 `#W-<cacheName>` 选择器，行为与旧版本一致；
+         * - 自定义路径：改用适配器读写位置，跳过 wrapper 的注册。
+         */
+        const syncScrollRegistration = (): void => {
+          if (hasCustomScrollContainer()) {
+            setPageScrollAdapter(cacheName, () => customScrollAdapter.value)
+            return
+          }
+          addPageScroller(cacheName, `#W-${cacheName}`)
+          setPageScrollAdapter(cacheName, null)
+        }
 
         let refreshDisposed = false
         let isFlushingRefresh = false
@@ -309,11 +379,22 @@ export const createPageComponentFactory = (options: PageComponentFactoryOptions)
 
         onMounted(() => {
           context.emit('onLoaded')
-          addPageScroller(cacheName, `#W-${cacheName}`)
+          syncScrollRegistration()
+          syncScrollAdapter()
           // 新页面经 Transition(out-in) 挂载时，setup 后的 microtask 可能早于 ref 赋值；
           // 挂载后重新 sync，确保 scroll shadow 监听与阴影类目标正确绑定。
-          scrollShadow.sync()
+          scrollShadow.sync(true)
           checkAndConsumeBackParams()
+
+          // 自定义滚动组件可能异步加载（异步组件 / Suspense），首帧尚未 expose。
+          // 下一 tick 再解析一次；首次解析成功时补一次位置恢复。
+          void nextTick(() => {
+            if (refreshDisposed) return
+            const wasResolved = Boolean(customScrollAdapter.value)
+            syncScrollAdapter()
+            if (!wasResolved && customScrollAdapter.value) restoreScroller(cacheName)
+            scrollShadow.sync(true)
+          })
         })
         onDeactivated(() => {
           scrollShadow.clear()
@@ -321,8 +402,9 @@ export const createPageComponentFactory = (options: PageComponentFactoryOptions)
         })
         onActivated(() => {
           context.emit('onLoaded')
+          syncScrollAdapter()
           restoreScroller(cacheName)
-          scrollShadow.sync()
+          scrollShadow.sync(true)
           evictMarkedCaches()
           clearTabEvictionMarks()
           checkAndConsumeBackParams()
@@ -336,12 +418,21 @@ export const createPageComponentFactory = (options: PageComponentFactoryOptions)
         })
         onUnmounted(() => removeScroller(cacheName))
 
-        // 阴影类挂到不被刷新动画 transform 的 panel 上；滚动监听仍绑定 wrapper。
-        // 否则 ::after 的绝对定位包含块会随 transform 变化，顶部阴影会错位/消失。
-        const scrollShadow = useScrollShadow({
-          target: pageRoot,
-          classTarget: () => pageRoot.value?.parentElement ?? null
-        })
+        // 运行时切换滚动组件：只重新解析适配器并重新同步阴影，不重建缓存页。
+        watch(
+          () => runtimeContext.scrollContainer.value,
+          () => {
+            // 切换前保存旧容器的主滚动位置，切换后由新容器 / 默认 wrapper 恢复。
+            saveScroller(cacheName)
+            void nextTick(() => {
+              if (refreshDisposed) return
+              syncScrollRegistration()
+              syncScrollAdapter()
+              restoreScroller(cacheName)
+              scrollShadow.sync(true)
+            })
+          }
+        )
 
         return () => {
           const vnode = props.vnode
@@ -356,24 +447,33 @@ export const createPageComponentFactory = (options: PageComponentFactoryOptions)
             lastBackParams.value = backParams
           }
 
+          const scrollContainer = runtimeContext.scrollContainer.value
+          const pageContent = lastCloned.value ? (
+            <PageShell
+              key={`${cacheName}-${renderedRefreshVersion.value}`}
+              vnode={lastCloned.value}
+            />
+          ) : null
+
           return (
             <div
               ref={pageRoot}
               class="stack-tab__cache-page-wrapper"
               id={`W-${cacheName}`}
               style={[
+                // 自定义滚动容器优先：wrapper 不再承担滚动，避免出现两层滚动条。
                 // 动画作用于 wrapper 本身，页面内容不会相对滚动容器位移，
                 // 因此无需临时隐藏 overflow，避免动画期间滚动条消失导致内容宽度跳动。
-                runtimeContext.useGlobalScroll.value ? 'overflow:auto' : 'overflow:hidden',
+                !scrollContainer && runtimeContext.useGlobalScroll.value
+                  ? 'overflow:auto'
+                  : 'overflow:hidden',
                 'height: 100%'
               ]}
             >
-              {lastCloned.value ? (
-                <PageShell
-                  key={`${cacheName}-${renderedRefreshVersion.value}`}
-                  vnode={lastCloned.value}
-                />
-              ) : null}
+              {scrollContainer
+                ? h(scrollContainer, { ref: scrollContainerRef }, { default: () => pageContent })
+                : pageContent}
+              {/* PageLoading 必须在滚动容器外层：它是覆盖整个内容区的遮罩。 */}
               <PageLoading tabId={tabInfo.id!} />
             </div>
           )

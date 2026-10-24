@@ -65,4 +65,47 @@ describe('useScrollShadow', () => {
     api.clear()
     expect(classEl.classList.contains('stack-tab__shadow-inset-bottom')).toBe(false)
   })
+
+  it('通过 getMetrics / onScroll 支持没有原生滚动元素的命令式组件', async () => {
+    const classTarget = ref<HTMLElement | null>(null)
+    const metrics = { scrollTop: 100, clientHeight: 100, scrollHeight: 300 }
+    const scrollSubscription: { trigger: (() => void) | null } = { trigger: null }
+    let api!: ReturnType<typeof useScrollShadow>
+
+    const Host = defineComponent({
+      name: 'ImperativeScrollShadowHost',
+      setup() {
+        api = useScrollShadow({
+          target: () => null,
+          classTarget,
+          getMetrics: () => metrics,
+          onScroll: (listener) => {
+            scrollSubscription.trigger = listener
+            return () => {
+              if (scrollSubscription.trigger === listener) scrollSubscription.trigger = null
+            }
+          }
+        })
+        return () => h('div', { ref: classTarget, 'data-test': 'class-target' })
+      }
+    })
+
+    const wrapper = mount(Host)
+    const classEl = wrapper.get('[data-test="class-target"]').element as HTMLElement
+
+    api.sync(true)
+    scrollSubscription.trigger?.()
+    await waitFrame()
+
+    expect(classEl.classList.contains('stack-tab__shadow-inset-vertical')).toBe(true)
+
+    metrics.scrollTop = 250
+    scrollSubscription.trigger?.()
+    await waitFrame()
+
+    expect(classEl.classList.contains('stack-tab__shadow-inset-top')).toBe(true)
+    expect(classEl.classList.contains('stack-tab__shadow-inset-vertical')).toBe(false)
+
+    wrapper.unmount()
+  })
 })

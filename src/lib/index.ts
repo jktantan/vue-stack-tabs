@@ -37,6 +37,12 @@ export {
 }
 export { postOpenTab, onRefreshRequest, MSG_REFRESH, MSG_OPEN_TAB } from './utils/iframeBridge'
 export type { IframeOpenTabPayload } from './utils/iframeBridge'
+export type {
+  StackTabsScrollAdapter,
+  StackTabsScrollElementInstance,
+  StackTabsScrollMetrics,
+  StackTabsScrollPosition
+} from './model/ScrollAdapter'
 export default {
   install(Vue: App, options?: VueStackTabsPluginOptions): void {
     logVersion(import.meta.env.PACKAGE_VERSION)

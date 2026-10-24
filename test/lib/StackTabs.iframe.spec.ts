@@ -13,6 +13,7 @@ const destroyMock = vi.fn()
 const initializeMock = vi.fn()
 const setMaxSizeMock = vi.fn()
 const setGlobalScrollMock = vi.fn()
+const setScrollContainerMock = vi.fn()
 const setSessionPrefixMock = vi.fn()
 const setIFramePathMock = vi.fn()
 const openTabMock = vi.fn()
@@ -45,6 +46,7 @@ vi.mock('@/lib/hooks/useTabPanel', () => ({
     initialize: initializeMock,
     setMaxSize: setMaxSizeMock,
     setGlobalScroll: setGlobalScrollMock,
+    setScrollContainer: setScrollContainerMock,
     setSessionPrefix: setSessionPrefixMock
   })
 }))
@@ -115,6 +117,7 @@ beforeEach(() => {
   initializeMock.mockReset()
   setMaxSizeMock.mockReset()
   setGlobalScrollMock.mockReset()
+  setScrollContainerMock.mockReset()
   setSessionPrefixMock.mockReset()
   setIFramePathMock.mockReset()
   openTabMock.mockReset()
