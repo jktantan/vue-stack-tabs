@@ -5,9 +5,14 @@
 //
 // 所有默认值都等于改造前的硬编码值，保证升级后浅色外观零变化。
 // 宿主在 :root 或任意作用域覆盖这些变量即可换肤，无需覆盖内部类名。
+//
+// 所有主题块都用 :where() 包裹，特异性归零（:where() 内部权重不参与比较），
+// 因此宿主写普通 :root { --stack-tab-*: ... } 即可在浅色与深色下同时生效，
+// 无需 :root:root 之类的高特异性补丁。块内顺序决定库内默认值的优先级：
+// 默认值 -> 尺寸预设 -> 深色。
 // ============================================================
 
-:root {
+:where(:root) {
   /* accent */
   --stack-tab-accent: #{$stack-tab-color-primary};
   --stack-tab-accent-active: #{$stack-tab-color-primary-activate};
@@ -79,24 +84,21 @@
 }
 
 /* 尺寸预设：small / normal / large，也可直接覆盖上面的变量 */
-:root[data-stack-tab-size='small'],
-[data-stack-tab-size='small'] {
+:where(:root[data-stack-tab-size='small'], [data-stack-tab-size='small']) {
   --stack-tab-font-size: 12px;
   --stack-tab-head-height: 32px;
   --stack-tab-context-menu-item-height: 26px;
   --stack-tab-context-menu-padding: 6px;
 }
 
-:root[data-stack-tab-size='normal'],
-[data-stack-tab-size='normal'] {
+:where(:root[data-stack-tab-size='normal'], [data-stack-tab-size='normal']) {
   --stack-tab-font-size: #{$stack-tab-font-size};
   --stack-tab-head-height: #{$stack-tab-head-height};
   --stack-tab-context-menu-item-height: 30px;
   --stack-tab-context-menu-padding: 8px;
 }
 
-:root[data-stack-tab-size='large'],
-[data-stack-tab-size='large'] {
+:where(:root[data-stack-tab-size='large'], [data-stack-tab-size='large']) {
   --stack-tab-font-size: 16px;
   --stack-tab-head-height: 48px;
   --stack-tab-context-menu-item-height: 36px;
@@ -111,10 +113,11 @@
  * - <html data-theme="dark"> 或任意容器 [data-theme="dark"]
  *
  * 以下是一套中性深色默认值，宿主可整体覆盖。
+ *
+ * 与默认值、尺寸预设一样包进 :where()，特异性为 0：
+ * 宿主普通 :root 覆盖能同时压过浅色默认值与深色值。
  */
-:root.dark,
-:root[data-theme='dark'],
-[data-theme='dark'] {
+:where(:root.dark, :root[data-theme='dark'], [data-theme='dark']) {
   color-scheme: dark;
 
   --stack-tab-accent: #6ea8fe;

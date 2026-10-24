@@ -33,9 +33,17 @@ A neutral dark palette is built in and can be activated in three ways:
 </div>
 ```
 
-The dark block also sets `color-scheme: dark`, so native scrollbars and form controls follow. To customize the dark palette, override variables after the same selector:
+The dark block also sets `color-scheme: dark`, so native scrollbars and form controls follow.
+
+Every theme block (light defaults, size presets, dark) is wrapped in `:where()`, so it has zero specificity. A plain `:root` override therefore wins over both the light defaults and the dark values — no `:root:root` workaround needed:
 
 ```css
+/* Applies to both light and dark */
+:root {
+  --stack-tab-accent: #4f46e5;
+}
+
+/* Dark only */
 :root.dark {
   --stack-tab-accent: #818cf8;
   --stack-tab-surface: #0b1120;
@@ -127,6 +135,8 @@ Three size presets are built in and activated with `data-stack-tab-size` (scoped
 <!-- normal / large work the same way; variables can also be overridden directly -->
 ```
 
+Size presets are wrapped in `:where()` too, so overriding `--stack-tab-font-size` (or the other layout variables) on `:root` wins over the preset.
+
 | Preset   | Font size | Header height | Menu item height | Menu padding |
 | -------- | --------- | ------------- | ---------------- | ------------ |
 | `small`  | 12px      | 32px          | 26px             | 6px          |
@@ -135,7 +145,7 @@ Three size presets are built in and activated with `data-stack-tab-size` (scoped
 
 ## Scoped overrides
 
-Variables are declared on `:root`; overriding them in any scope only affects that subtree:
+Variables are declared on `:where(:root)` (zero specificity); overriding them in any scope only affects that subtree:
 
 ```css
 .side-layout {
@@ -148,3 +158,4 @@ Variables are declared on `:root`; overriding them in any scope only affects tha
 - Light-theme defaults match the old hard-coded values, so the visual result is unchanged after upgrading.
 - Dark backgrounds swallow black shadows, so the dark theme uses an outline + accent glow + top highlight instead, and raises `--stack-tab-border` to `#334155`. Override `--stack-tab-shadow-tab` / `--stack-tab-shadow-menu` to make the shadows stronger or softer.
 - These variables are a public API from `2.4.0` on: they are only added, never renamed.
+- Theme selectors use `:where()` for zero specificity, so a plain `:root` override applies in both light and dark mode; avoid high-specificity workarounds such as `:root:root`. `:where()` is supported in Chrome 88+ / Safari 14+ / Firefox 78+, which is not an extra restriction given the `color-mix()` (Chrome 111+) already used by the library.
