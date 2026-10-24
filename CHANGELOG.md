@@ -1,18 +1,28 @@
 # Changelog
 
+## 2.5.0 (2026-10-24)
+
+### 新增
+
+- `--stack-tab-loading-accent` 改为由主色派生，loading 圆环会跟随 `--stack-tab-accent` 换色。
+- 新增页签头高度、右键菜单项高度/内边距令牌，以及 `data-stack-tab-size="small|normal|large"` 三档尺寸预设。
+- 在线演示新增「尺寸」控制，可切换小/正常/大，并持久化选择。
+
+### 修复
+
+- 深色下右键菜单 hover 对比度不足：改用按下态主色作背景、浅色文字/图标，避免“亮底深字”看不清。
+
 ## 2.4.0 (2026-10-24)
 
 ### 新增
 
 - 主题化：界面颜色与阴影抽为 `--stack-tab-*` CSS 变量，浅色默认值与旧版一致；内置深色主题，支持 `html.dark`、`html[data-theme="dark"]` 与局部 `[data-theme="dark"]`。
-- `--stack-tab-loading-accent` 改为由主色派生；新增页签头高度、右键菜单项高度/内边距令牌，以及 `data-stack-tab-size="small|normal|large"` 三档尺寸预设。
-- 在线演示新增「外观」控制，可切换浅色/深色、蓝/绿/紫主色与小/正常/大尺寸，并持久化选择。
+- 在线演示新增「外观」控制，可切换浅色/深色与蓝/绿/紫主色，并持久化选择。
 - `useTabRouter()` 返回 `tabId` / `pageId`，可用于定位当前标签与缓存页；`pageId` 可配合 `getWrapper({ pageId })` 使用。
 
 ### 修复
 
 - 深色主题下页签、菜单与内容区滚动阴影不可见：深色改用描边 + 主色光晕 + 顶部高光表达层次，inset 阴影加宽并统一由 `--stack-tab-shadow-color` 控制。
-- 深色下右键菜单 hover 对比度不足：改用按下态主色作背景、浅色文字/图标，避免“亮底深字”看不清。
 - 页面上下文（`tabId` / `pageId`）改为在缓存包装组件中 `provide`、页面 Hook 通过 `inject` 读取，不再作为 attrs 注入页面组件。多根节点（Fragment）页面不再出现 `Extraneous non-props attributes (tId, pId)` 警告，单根节点页面也不会再把内部 ID 透传到 DOM。
 
 ### 行为变更
