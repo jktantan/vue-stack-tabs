@@ -108,8 +108,14 @@ const createTabPanelApi = (runtimeContext: StackTabsRuntimeContext) => {
     restoreCaches,
     reset: resetStore
   } = store
-  const { restoreScroller, saveScroller, removeScroller, addPageScroller, setPageScrollAdapter } =
-    createTabPanelScroll(runtimeContext)
+  const {
+    restoreScroller,
+    saveScroller,
+    recordMainScroller,
+    removeScroller,
+    addPageScroller,
+    setPageScrollAdapter
+  } = createTabPanelScroll(runtimeContext)
   const {
     saveActiveTabToSession,
     clearSession,
@@ -248,6 +254,7 @@ const createTabPanelApi = (runtimeContext: StackTabsRuntimeContext) => {
     addPageScroller,
     setPageScrollAdapter,
     saveScroller,
+    recordMainScroller,
     restoreScroller,
     removeScroller
   })

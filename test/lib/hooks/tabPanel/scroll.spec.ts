@@ -106,4 +106,69 @@ describe('tabPanel scroll', () => {
 
     expect(root.scrollTop).toBe(66)
   })
+
+  it('keep-alive 停用导致 scrollTop 归零时保留滚动过程中记录的位置', () => {
+    const pageId = 'page-keep-alive'
+    const root = document.createElement('div')
+    root.id = `W-${pageId}`
+    const pageContent = document.createElement('div')
+    root.append(pageContent)
+    document.body.append(root)
+
+    const scroll = createTabPanelScroll(createStackTabsRuntimeContext())
+    scroll.addPageScroller(pageId, `#W-${pageId}`)
+
+    root.scrollTop = 150
+    root.scrollLeft = 15
+    // 滚动事件触发时持续记录。
+    scroll.recordMainScroller(pageId)
+
+    // 模拟 keep-alive 把页面移入隐藏容器：DOM 仍在，但原生位置被重置。
+    root.scrollTop = 0
+    root.scrollLeft = 0
+    scroll.saveScroller(pageId)
+
+    scroll.restoreScroller(pageId)
+    expect(root.scrollTop).toBe(150)
+    expect(root.scrollLeft).toBe(15)
+  })
+
+  it('用户滚动回顶部后保存为 0，不会恢复旧位置', () => {
+    const pageId = 'page-scroll-to-top'
+    const root = document.createElement('div')
+    root.id = `W-${pageId}`
+    document.body.append(root)
+
+    const scroll = createTabPanelScroll(createStackTabsRuntimeContext())
+    scroll.addPageScroller(pageId, `#W-${pageId}`)
+
+    root.scrollTop = 150
+    scroll.recordMainScroller(pageId)
+    root.scrollTop = 0
+    scroll.recordMainScroller(pageId)
+    scroll.saveScroller(pageId)
+
+    scroll.restoreScroller(pageId)
+    expect(root.scrollTop).toBe(0)
+  })
+
+  it('自定义滚动容器在停用后读到 0 时同样保留实时记录的位置', () => {
+    const pageId = 'page-custom-keep-alive'
+    let position = { top: 0, left: 0 }
+    const scroll = createTabPanelScroll(createStackTabsRuntimeContext())
+    scroll.setPageScrollAdapter(pageId, () => ({
+      getPosition: () => position,
+      setPosition: (next) => {
+        position = { ...next }
+      }
+    }))
+
+    position = { top: 90, left: 9 }
+    scroll.recordMainScroller(pageId)
+    position = { top: 0, left: 0 }
+    scroll.saveScroller(pageId)
+
+    scroll.restoreScroller(pageId)
+    expect(position).toEqual({ top: 90, left: 9 })
+  })
 })

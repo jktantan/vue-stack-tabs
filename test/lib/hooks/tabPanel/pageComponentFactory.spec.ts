@@ -44,6 +44,7 @@ const createHarness = (runtimeContext: StackTabsRuntimeContext) => {
     addPageScroller: scroll.addPageScroller,
     setPageScrollAdapter: scroll.setPageScrollAdapter,
     saveScroller: scroll.saveScroller,
+    recordMainScroller: scroll.recordMainScroller,
     restoreScroller: scroll.restoreScroller,
     removeScroller: scroll.removeScroller
   })

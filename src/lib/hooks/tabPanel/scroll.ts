@@ -6,6 +6,7 @@
  *       避免每次 deactivate 都全量 querySelectorAll。
  */
 import type { StackTabsRuntimeContext } from '../stackTabsContext'
+import type { ScrollPosition } from './state'
 import {
   readAdapterScrollPosition,
   writeAdapterScrollPosition,
@@ -15,6 +16,13 @@ import {
 export interface TabPanelScrollApi {
   restoreScroller: (pageCacheId: string) => void
   saveScroller: (pageCacheId: string) => void
+  /**
+   * 记录主滚动容器的实时位置（由页面滚动事件调用）。
+   *
+   * keep-alive 停用时会先把页面 DOM 移入隐藏容器，原生 scrollTop 随之归零；
+   * 因此不能只在 onDeactivated 时读取 DOM，必须在滚动过程中持续记录。
+   */
+  recordMainScroller: (pageCacheId: string) => void
   removeScroller: (pageCacheId: string) => void
   addPageScroller: (pageCacheId: string, ...selectorIds: string[]) => void
   /**
@@ -32,6 +40,10 @@ export interface TabPanelScrollApi {
 
 /** 自定义滚动容器对应的主滚动位置 key；无自定义容器时仍使用 `#W-<cacheName>`。 */
 const MAIN_SCROLLER_KEY = '__stack-tab-main-scroller__'
+
+/** 位置是否为原点（或尚未记录）。 */
+const isZeroPosition = (position: ScrollPosition | undefined): boolean =>
+  !position || (position.top === 0 && position.left === 0)
 
 const resolveScrollElement = (selector: string): HTMLElement | null =>
   selector.startsWith('#')
@@ -113,6 +125,22 @@ export const createTabPanelScroll = (context: StackTabsRuntimeContext): TabPanel
   const getPageAdapter = (pageCacheId: string): StackTabsScrollAdapter | null =>
     adapterGetters.get(pageCacheId)?.() ?? null
 
+  const recordMainScroller = (pageCacheId: string): void => {
+    const positions = scrollPositionsByPageId.get(pageCacheId)
+    if (!positions) return
+
+    if (adapterGetters.has(pageCacheId)) {
+      const position = readAdapterScrollPosition(getPageAdapter(pageCacheId))
+      if (position) positions.set(MAIN_SCROLLER_KEY, position)
+      return
+    }
+
+    const wrapper =
+      typeof document !== 'undefined' ? document.getElementById(`W-${pageCacheId}`) : null
+    if (!wrapper) return
+    positions.set(`#W-${pageCacheId}`, { top: wrapper.scrollTop, left: wrapper.scrollLeft })
+  }
+
   const restoreScroller = (pageCacheId: string): void => {
     const positions = scrollPositionsByPageId.get(pageCacheId)
     if (!positions) return
@@ -151,7 +179,11 @@ export const createTabPanelScroll = (context: StackTabsRuntimeContext): TabPanel
     if (adapterGetters.has(pageCacheId)) {
       positions.delete(`#W-${pageCacheId}`)
       const position = readAdapterScrollPosition(getPageAdapter(pageCacheId))
-      if (position) positions.set(MAIN_SCROLLER_KEY, position)
+      const previous = positions.get(MAIN_SCROLLER_KEY)
+      // 停用时滚动元素可能已被移入隐藏容器而读到 0；保留滚动过程中的记录值。
+      if (position && (!isZeroPosition(position) || isZeroPosition(previous))) {
+        positions.set(MAIN_SCROLLER_KEY, position)
+      }
     }
 
     // 与当前页面 DOM 同步自动标记的容器；移除的元素不保留过期位置。
@@ -171,10 +203,14 @@ export const createTabPanelScroll = (context: StackTabsRuntimeContext): TabPanel
       // auto key 已在上一步按 DOM 顺序写入，主滚动位置由适配器维护，均无需再次解析。
       if (selector.startsWith(AUTO_SCROLLER_PREFIX) || selector === MAIN_SCROLLER_KEY) continue
       const element = resolveScrollElement(selector)
-      positions.set(selector, {
-        top: element?.scrollTop ?? 0,
-        left: element?.scrollLeft ?? 0
-      })
+      const next = { top: element?.scrollTop ?? 0, left: element?.scrollLeft ?? 0 }
+      const previous = positions.get(selector)
+      // 元素不可用，或停用后读到 0 而此前记录过非零位置时，保留记录值。
+      if (!element || (isZeroPosition(next) && !isZeroPosition(previous))) {
+        if (previous) positions.set(selector, previous)
+        continue
+      }
+      positions.set(selector, next)
     }
   }
 
@@ -224,6 +260,7 @@ export const createTabPanelScroll = (context: StackTabsRuntimeContext): TabPanel
   return {
     restoreScroller,
     saveScroller,
+    recordMainScroller,
     removeScroller,
     addPageScroller,
     setPageScrollAdapter

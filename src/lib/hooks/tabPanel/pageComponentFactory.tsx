@@ -45,6 +45,7 @@ interface PageComponentFactoryOptions {
     getter: (() => StackTabsScrollAdapter | null) | null
   ) => void
   saveScroller: (pageId: string) => void
+  recordMainScroller: (pageId: string) => void
   restoreScroller: (pageId: string) => void
   removeScroller: (pageId: string) => void
 }
@@ -91,6 +92,7 @@ export const createPageComponentFactory = (options: PageComponentFactoryOptions)
     addPageScroller,
     setPageScrollAdapter,
     saveScroller,
+    recordMainScroller,
     restoreScroller,
     removeScroller
   } = options
@@ -203,11 +205,17 @@ export const createPageComponentFactory = (options: PageComponentFactoryOptions)
         /** 阴影订阅：优先用适配器的 onScroll，缺失时监听原生滚动元素。 */
         const subscribeAdapterScroll = (listener: () => void): (() => void) => {
           const adapter = getScrollAdapter()
-          if (adapter?.onScroll) return adapter.onScroll(listener)
+          // keep-alive 停用会先把 DOM 移入隐藏容器、让 scrollTop 归零，
+          // 因此滚动过程中就要记录位置，不能等到 onDeactivated 再读 DOM。
+          const handleScroll = () => {
+            recordMainScroller(cacheName)
+            listener()
+          }
+          if (adapter?.onScroll) return adapter.onScroll(handleScroll)
           const element = adapter?.scrollElement
           if (!element) return () => undefined
-          element.addEventListener('scroll', listener, { passive: true })
-          return () => element.removeEventListener('scroll', listener)
+          element.addEventListener('scroll', handleScroll, { passive: true })
+          return () => element.removeEventListener('scroll', handleScroll)
         }
 
         // 阴影类挂到不被刷新动画 transform 的 panel 上；滚动监听绑定真实滚动元素。
