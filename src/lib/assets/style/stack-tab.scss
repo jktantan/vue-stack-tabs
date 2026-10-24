@@ -56,14 +56,14 @@
     position: relative;
     display: flex;
     width: 100%;
-    height: $stack-tab-head-height;
+    height: $stack-tab-head-height-token;
     border-bottom: 1px solid $stack-tab-border-color-token;
     box-sizing: border-box;
 
     // tab header 上面的按钮
     &-button {
       z-index: 2;
-      height: $stack-tab-head-height;
+      height: $stack-tab-head-height-token;
       width: fit-content;
       overflow: hidden;
       background-color: $stack-tab-surface;
@@ -87,7 +87,7 @@
   &__scroll {
     position: relative;
     flex: 1 1 0;
-    height: $stack-tab-head-height;
+    height: $stack-tab-head-height-token;
     overflow: hidden;
 
     &-container {
@@ -376,7 +376,7 @@
     position: fixed;
     z-index: 999;
     min-width: 120px;
-    padding: 8px;
+    padding: $stack-tab-context-menu-padding-token;
     font-size: $stack-tab-font-size-token;
     background: $stack-tab-surface;
     border: $stack-tab-border-token;
@@ -390,11 +390,11 @@
       align-items: center;
       justify-content: flex-start;
       width: 100%;
-      min-height: 30px;
+      min-height: $stack-tab-context-menu-item-height-token;
       margin: 0;
       @include button-reset;
       padding: 0 10px;
-      line-height: 30px;
+      line-height: $stack-tab-context-menu-item-height-token;
       box-sizing: border-box;
       color: $stack-tab-text;
       cursor: pointer;
@@ -409,11 +409,11 @@
       &:hover,
       &:active,
       &:focus-visible {
-        color: $stack-tab-accent-contrast;
-        background-color: $stack-tab-accent;
+        color: $stack-tab-menu-hover-text;
+        background-color: $stack-tab-menu-hover-bg;
 
         .stack-tab__icon--mask {
-          background-color: $stack-tab-accent-contrast;
+          background-color: $stack-tab-menu-hover-text;
         }
       }
 

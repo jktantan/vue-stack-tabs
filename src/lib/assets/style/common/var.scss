@@ -69,6 +69,7 @@ $stack-tab-button-size: 20px !default;
 
 // 标签头高度
 $stack-tab-head-height: 40px !default;
+$stack-tab-head-height-token: var(--stack-tab-head-height, #{$stack-tab-head-height}) !default;
 $stack-tab-head-invalid-height: $stack-tab-head-height - 3px !default;
 
 // 滚动条
@@ -207,5 +208,14 @@ $stack-tab-shadow-inset-vertical: var(
 $stack-tab-badge-default: var(--stack-tab-badge-default, #{$stack-tab-color-danger}) !default;
 $stack-tab-badge-primary: var(--stack-tab-badge-primary, #{$stack-tab-color-primary}) !default;
 
+// context menu
+$stack-tab-context-menu-item-height-token: var(--stack-tab-context-menu-item-height, 30px) !default;
+$stack-tab-context-menu-padding-token: var(--stack-tab-context-menu-padding, 8px) !default;
+$stack-tab-menu-hover-bg: var(--stack-tab-menu-hover-bg, #{$stack-tab-accent}) !default;
+$stack-tab-menu-hover-text: var(--stack-tab-menu-hover-text, #{$stack-tab-color-white}) !default;
+
 // loading
-$stack-tab-loading-accent: var(--stack-tab-loading-accent, #{$stack-tab-loading-color}) !default;
+$stack-tab-loading-accent: var(
+  --stack-tab-loading-accent,
+  color-mix(in srgb, var(--stack-tab-accent) 60%, transparent)
+) !default;

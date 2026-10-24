@@ -42,7 +42,11 @@ const zh = {
     accentGroup: '主色',
     accentBlue: '蓝色',
     accentGreen: '绿色',
-    accentViolet: '紫色'
+    accentViolet: '紫色',
+    sizeGroup: '尺寸',
+    sizeSmall: '小',
+    sizeNormal: '正常',
+    sizeLarge: '大'
   },
   home: {
     eyebrow: '在线演示',
@@ -183,7 +187,11 @@ const en: typeof zh = {
     accentGroup: 'Accent',
     accentBlue: 'Blue',
     accentGreen: 'Green',
-    accentViolet: 'Violet'
+    accentViolet: 'Violet',
+    sizeGroup: 'Size',
+    sizeSmall: 'Small',
+    sizeNormal: 'Normal',
+    sizeLarge: 'Large'
   },
   home: {
     eyebrow: 'Live demo',

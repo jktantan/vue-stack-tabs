@@ -7,14 +7,19 @@
  */
 export type DemoTheme = 'light' | 'dark'
 export type DemoAccent = 'blue' | 'green' | 'violet'
+export type DemoSize = 'small' | 'normal' | 'large'
 
 const THEME_STORAGE_KEY = 'vue-stack-tabs-demo-theme'
 const ACCENT_STORAGE_KEY = 'vue-stack-tabs-demo-accent'
+const SIZE_STORAGE_KEY = 'vue-stack-tabs-demo-size'
 
 const isTheme = (value: string | null): value is DemoTheme => value === 'light' || value === 'dark'
 
 const isAccent = (value: string | null): value is DemoAccent =>
   value === 'blue' || value === 'green' || value === 'violet'
+
+const isSize = (value: string | null): value is DemoSize =>
+  value === 'small' || value === 'normal' || value === 'large'
 
 const readQuery = (key: string): string | null => {
   if (typeof window === 'undefined') return null
@@ -51,10 +56,23 @@ export const resolveInitialAccent = (): DemoAccent => {
   return isAccent(stored) ? stored : 'blue'
 }
 
+export const resolveInitialSize = (): DemoSize => {
+  const fromQuery = readQuery('size')
+  if (isSize(fromQuery)) return fromQuery
+
+  const stored = readStorage(SIZE_STORAGE_KEY)
+  return isSize(stored) ? stored : 'normal'
+}
+
 /**
  * 应用主题。persist=false 用于初始化，避免把系统偏好或 URL 参数误写入 localStorage。
  */
-export const applyDemoTheme = (theme: DemoTheme, accent: DemoAccent, persist = true): void => {
+export const applyDemoTheme = (
+  theme: DemoTheme,
+  accent: DemoAccent,
+  size: DemoSize,
+  persist = true
+): void => {
   const root = document.documentElement
   root.classList.toggle('dark', theme === 'dark')
   if (theme === 'dark') {
@@ -63,11 +81,13 @@ export const applyDemoTheme = (theme: DemoTheme, accent: DemoAccent, persist = t
     root.removeAttribute('data-theme')
   }
   root.setAttribute('data-accent', accent)
+  root.setAttribute('data-stack-tab-size', size)
 
   if (!persist) return
   try {
     window.localStorage.setItem(THEME_STORAGE_KEY, theme)
     window.localStorage.setItem(ACCENT_STORAGE_KEY, accent)
+    window.localStorage.setItem(SIZE_STORAGE_KEY, size)
   } catch {
     // 隐私模式或存储被禁用时忽略
   }
@@ -75,5 +95,5 @@ export const applyDemoTheme = (theme: DemoTheme, accent: DemoAccent, persist = t
 
 /** 在挂载前调用，让首屏就使用正确的主题，避免闪烁。 */
 export const initDemoTheme = (): void => {
-  applyDemoTheme(resolveInitialTheme(), resolveInitialAccent(), false)
+  applyDemoTheme(resolveInitialTheme(), resolveInitialAccent(), resolveInitialSize(), false)
 }

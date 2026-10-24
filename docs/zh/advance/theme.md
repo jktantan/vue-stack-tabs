@@ -54,6 +54,8 @@
 | `--stack-tab-accent-active`   | `#337ecc`   | 主色按下态                                      |
 | `--stack-tab-accent-contrast` | `#ffffff`   | 主色背景上的文字与图标、badge 文字              |
 | `--stack-tab-accent-shadow`   | `#409effcc` | 拖拽指示条光晕                                  |
+| `--stack-tab-menu-hover-bg`   | `#409eff`   | 右键菜单悬停背景（深色自动改用按下态主色）      |
+| `--stack-tab-menu-hover-text` | `#ffffff`   | 右键菜单悬停文字与图标（深色为 `#f8fafc`）      |
 
 ### 表面与边框
 
@@ -99,16 +101,37 @@
 
 ### badge、loading 与 iframe
 
-| 变量                               | 浅色默认值  | 用途                   |
-| ---------------------------------- | ----------- | ---------------------- |
-| `--stack-tab-badge-default`        | `#ef4f4f`   | badge 默认色           |
-| `--stack-tab-badge-primary`        | `#409eff`   | badge 主色             |
-| `--stack-tab-loading-accent`       | `#007bff97` | loading 圆环           |
-| `--stack-tab-iframe-loading-bg`    | `#f5f5f5`   | iframe 加载背景        |
-| `--stack-tab-iframe-loading-color` | `#999`      | iframe 加载文字        |
-| `--stack-tab-iframe-error-bg`      | `#ffffffeb` | iframe 错误背景        |
-| `--stack-tab-iframe-error-color`   | `#666`      | iframe 错误文字        |
-| `--stack-tab-font-size`            | `14px`      | 页签与 iframe 文本字号 |
+| 变量                               | 浅色默认值    | 用途                   |
+| ---------------------------------- | ------------- | ---------------------- |
+| `--stack-tab-badge-default`        | `#ef4f4f`     | badge 默认色           |
+| `--stack-tab-badge-primary`        | `#409eff`     | badge 主色             |
+| `--stack-tab-loading-accent`       | 主色 60% 透明 | loading 圆环，跟随主色 |
+| `--stack-tab-iframe-loading-bg`    | `#f5f5f5`     | iframe 加载背景        |
+| `--stack-tab-iframe-loading-color` | `#999`        | iframe 加载文字        |
+| `--stack-tab-iframe-error-bg`      | `#ffffffeb`   | iframe 错误背景        |
+| `--stack-tab-iframe-error-color`   | `#666`        | iframe 错误文字        |
+
+### 布局与尺寸
+
+| 变量                                   | 默认值 | 用途                            |
+| -------------------------------------- | ------ | ------------------------------- |
+| `--stack-tab-font-size`                | `14px` | 页签、右键菜单、iframe 文本字号 |
+| `--stack-tab-head-height`              | `40px` | 页签头高度                      |
+| `--stack-tab-context-menu-item-height` | `30px` | 右键菜单项高度                  |
+| `--stack-tab-context-menu-padding`     | `8px`  | 右键菜单内边距                  |
+
+内置三档尺寸，通过 `data-stack-tab-size` 激活（也支持局部容器）：
+
+```html
+<html data-stack-tab-size="small"></html>
+<!-- normal / large 同理；也可以直接覆盖上面的变量 -->
+```
+
+| 预设     | 字号 | 页签头高度 | 菜单项高度 | 菜单内边距 |
+| -------- | ---- | ---------- | ---------- | ---------- |
+| `small`  | 12px | 32px       | 26px       | 6px        |
+| `normal` | 14px | 40px       | 30px       | 8px        |
+| `large`  | 16px | 48px       | 36px       | 10px       |
 
 ## 局部覆盖
 

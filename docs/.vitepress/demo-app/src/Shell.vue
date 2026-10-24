@@ -15,8 +15,10 @@ import { useTabActions, type ITabData } from 'vue-stack-tabs'
 import {
   applyDemoTheme,
   resolveInitialAccent,
+  resolveInitialSize,
   resolveInitialTheme,
   type DemoAccent,
+  type DemoSize,
   type DemoTheme
 } from './theme'
 
@@ -25,6 +27,7 @@ const { openTab, closeAllTabs, refreshTab, refreshAllTabs, tabs } = useTabAction
 
 const theme = ref<DemoTheme>(resolveInitialTheme())
 const accent = ref<DemoAccent>(resolveInitialAccent())
+const size = ref<DemoSize>(resolveInitialSize())
 
 const themeOptions = computed<{ value: DemoTheme; label: string }[]>(() => [
   { value: 'light', label: t('Demo.console.themeLight') },
@@ -37,14 +40,25 @@ const accentOptions = computed<{ value: DemoAccent; label: string; color: string
   { value: 'violet', label: t('Demo.console.accentViolet'), color: '#8b5cf6' }
 ])
 
+const sizeOptions = computed<{ value: DemoSize; label: string }[]>(() => [
+  { value: 'small', label: t('Demo.console.sizeSmall') },
+  { value: 'normal', label: t('Demo.console.sizeNormal') },
+  { value: 'large', label: t('Demo.console.sizeLarge') }
+])
+
 const setTheme = (value: DemoTheme) => {
   theme.value = value
-  applyDemoTheme(theme.value, accent.value)
+  applyDemoTheme(theme.value, accent.value, size.value)
 }
 
 const setAccent = (value: DemoAccent) => {
   accent.value = value
-  applyDemoTheme(theme.value, accent.value)
+  applyDemoTheme(theme.value, accent.value, size.value)
+}
+
+const setSize = (value: DemoSize) => {
+  size.value = value
+  applyDemoTheme(theme.value, accent.value, size.value)
 }
 
 const base = import.meta.env.BASE_URL || '/'
@@ -183,6 +197,21 @@ const refreshActive = () => {
             :aria-pressed="accent === item.value"
             @click="setAccent(item.value)"
           />
+
+          <span class="demo-console__label demo-console__label--accent">
+            {{ t('Demo.console.sizeGroup') }}
+          </span>
+          <button
+            v-for="item in sizeOptions"
+            :key="item.value"
+            class="demo-btn"
+            :class="{ 'demo-btn--active': size === item.value }"
+            type="button"
+            :aria-pressed="size === item.value"
+            @click="setSize(item.value)"
+          >
+            {{ item.label }}
+          </button>
         </div>
       </div>
     </section>

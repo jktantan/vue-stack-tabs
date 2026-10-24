@@ -60,8 +60,8 @@
   --stack-tab-badge-default: #{$stack-tab-color-danger};
   --stack-tab-badge-primary: #{$stack-tab-color-primary};
 
-  /* loading */
-  --stack-tab-loading-accent: #{$stack-tab-loading-color};
+  /* loading：跟随主色派生 */
+  --stack-tab-loading-accent: color-mix(in srgb, var(--stack-tab-accent) 60%, transparent);
 
   /* iframe（已有变量，这里给出显式默认值） */
   --stack-tab-iframe-loading-bg: #{$stack-tab-iframe-loading-bg};
@@ -69,8 +69,38 @@
   --stack-tab-iframe-error-bg: #{$stack-tab-iframe-error-bg};
   --stack-tab-iframe-error-color: #{$stack-tab-iframe-error-color};
 
+  /* layout */
+  --stack-tab-head-height: #{$stack-tab-head-height};
+  --stack-tab-context-menu-item-height: 30px;
+  --stack-tab-context-menu-padding: 8px;
+
   /* typography */
   --stack-tab-font-size: #{$stack-tab-font-size};
+}
+
+/* 尺寸预设：small / normal / large，也可直接覆盖上面的变量 */
+:root[data-stack-tab-size='small'],
+[data-stack-tab-size='small'] {
+  --stack-tab-font-size: 12px;
+  --stack-tab-head-height: 32px;
+  --stack-tab-context-menu-item-height: 26px;
+  --stack-tab-context-menu-padding: 6px;
+}
+
+:root[data-stack-tab-size='normal'],
+[data-stack-tab-size='normal'] {
+  --stack-tab-font-size: #{$stack-tab-font-size};
+  --stack-tab-head-height: #{$stack-tab-head-height};
+  --stack-tab-context-menu-item-height: 30px;
+  --stack-tab-context-menu-padding: 8px;
+}
+
+:root[data-stack-tab-size='large'],
+[data-stack-tab-size='large'] {
+  --stack-tab-font-size: 16px;
+  --stack-tab-head-height: 48px;
+  --stack-tab-context-menu-item-height: 36px;
+  --stack-tab-context-menu-padding: 10px;
 }
 
 /**
@@ -91,6 +121,10 @@
   --stack-tab-accent-active: #4d8fe0;
   --stack-tab-accent-contrast: #0b1120;
   --stack-tab-accent-shadow: rgb(110 168 254 / 0.8);
+
+  /* 深色菜单 hover 用更深的主色 + 浅色文字，避免“亮底深字”看不清 */
+  --stack-tab-menu-hover-bg: var(--stack-tab-accent-active);
+  --stack-tab-menu-hover-text: #f8fafc;
 
   --stack-tab-surface: #111827;
   --stack-tab-surface-muted: #1f2937;
@@ -138,8 +172,6 @@
 
   --stack-tab-badge-default: #f87171;
   --stack-tab-badge-primary: #6ea8fe;
-
-  --stack-tab-loading-accent: #60a5fa;
 
   --stack-tab-iframe-loading-bg: #0f172a;
   --stack-tab-iframe-loading-color: #94a3b8;
