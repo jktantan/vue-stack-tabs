@@ -57,7 +57,7 @@ cd -
 
 ### 演示（Demo）工作原理
 
-- **开发环境**：`pnpm run docs:dev` 会并行启动文档（5173）与演示应用（5174）；文档中的 `<DemoPreview />` 以 iframe 指向演示应用
+- **开发环境**：`pnpm run docs:dev` 会并行启动文档（18081）与演示应用（18080）；文档中的 `<DemoPreview />` 以 iframe 指向演示应用
 - **生产环境**：`docs:build` 先构建文档，再把演示应用构建到 `docs/.vitepress/dist/demo-app/`，部署后 iframe 指向 `{base}demo-app/`
 
 实现细节见 `docs/.vitepress/EMBEDDED_DEMO.md`。

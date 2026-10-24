@@ -7,7 +7,7 @@
 :root {
   --demo-brand: #377dff;
   --demo-brand-strong: #2b68db;
-  --demo-brand-soft: #eaf1ff;
+  --demo-brand-soft: color-mix(in srgb, var(--demo-brand) 12%, var(--demo-surface));
   --demo-accent: #00d797;
   --demo-text: #1f2d3d;
   --demo-muted: #5c6b7a;
@@ -17,6 +17,53 @@
   --demo-surface-2: #eef2f8;
   --demo-danger: #d94b4b;
   --demo-radius: 10px;
+}
+
+/* ---------- 主题：主色 ---------- */
+
+:root[data-accent='blue'] {
+  --demo-brand: #377dff;
+  --demo-accent: #00d797;
+  --demo-brand-strong: #2b68db;
+  --stack-tab-accent: #377dff;
+  --stack-tab-accent-active: #2b68db;
+  --stack-tab-accent-shadow: rgb(55 125 255 / 0.8);
+  --stack-tab-badge-primary: #377dff;
+}
+
+:root[data-accent='green'] {
+  --demo-brand: #0f9f6e;
+  --demo-accent: #10b981;
+  --demo-brand-strong: #0b7f58;
+  --stack-tab-accent: #10b981;
+  --stack-tab-accent-active: #0f9f6e;
+  --stack-tab-accent-shadow: rgb(16 185 129 / 0.8);
+  --stack-tab-badge-primary: #10b981;
+}
+
+:root[data-accent='violet'] {
+  --demo-brand: #7c3aed;
+  --demo-accent: #8b5cf6;
+  --demo-brand-strong: #6d28d9;
+  --stack-tab-accent: #8b5cf6;
+  --stack-tab-accent-active: #7c3aed;
+  --stack-tab-accent-shadow: rgb(139 92 246 / 0.8);
+  --stack-tab-badge-primary: #8b5cf6;
+}
+
+/* ---------- 主题：深色 ---------- */
+
+:root[data-theme='dark'] {
+  --demo-text: #e6edf7;
+  --demo-muted: #94a3b8;
+  --demo-border: #2a3648;
+  --demo-bg: #0b1120;
+  --demo-surface: #111827;
+  --demo-surface-2: #1b2638;
+  --demo-danger: #f87171;
+
+  /* 深色下主色按钮的 hover 需要提亮，基于当前主色计算 */
+  --demo-brand-strong: color-mix(in srgb, var(--demo-brand) 72%, #fff);
 }
 
 * {
@@ -97,6 +144,39 @@ kbd {
 .demo-btn--primary:hover {
   background: var(--demo-brand-strong);
   color: #fff;
+}
+
+.demo-btn--active {
+  border-color: var(--demo-brand);
+  background: var(--demo-brand-soft);
+  color: var(--demo-brand-strong);
+}
+
+.demo-swatch {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: inset 0 0 0 2px var(--demo-surface);
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.demo-swatch:hover {
+  transform: scale(1.1);
+}
+
+.demo-swatch:focus-visible {
+  outline: 2px solid var(--demo-brand);
+  outline-offset: 2px;
+}
+
+.demo-swatch[aria-pressed='true'] {
+  border-color: var(--demo-surface);
+  box-shadow: 0 0 0 2px var(--demo-brand);
 }
 
 /* ---------- 页面骨架 ---------- */

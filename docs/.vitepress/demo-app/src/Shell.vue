@@ -9,12 +9,43 @@
   见 src/i18n.ts。
 -->
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n-lite'
 import { useTabActions, type ITabData } from 'vue-stack-tabs'
+import {
+  applyDemoTheme,
+  resolveInitialAccent,
+  resolveInitialTheme,
+  type DemoAccent,
+  type DemoTheme
+} from './theme'
 
 const { t } = useI18n()
 const { openTab, closeAllTabs, refreshTab, refreshAllTabs, tabs } = useTabActions()
+
+const theme = ref<DemoTheme>(resolveInitialTheme())
+const accent = ref<DemoAccent>(resolveInitialAccent())
+
+const themeOptions = computed<{ value: DemoTheme; label: string }[]>(() => [
+  { value: 'light', label: t('Demo.console.themeLight') },
+  { value: 'dark', label: t('Demo.console.themeDark') }
+])
+
+const accentOptions = computed<{ value: DemoAccent; label: string; color: string }[]>(() => [
+  { value: 'blue', label: t('Demo.console.accentBlue'), color: '#377dff' },
+  { value: 'green', label: t('Demo.console.accentGreen'), color: '#10b981' },
+  { value: 'violet', label: t('Demo.console.accentViolet'), color: '#8b5cf6' }
+])
+
+const setTheme = (value: DemoTheme) => {
+  theme.value = value
+  applyDemoTheme(theme.value, accent.value)
+}
+
+const setAccent = (value: DemoAccent) => {
+  accent.value = value
+  applyDemoTheme(theme.value, accent.value)
+}
 
 const base = import.meta.env.BASE_URL || '/'
 /** 同源的 iframe 演示页（构建时随 demo 应用一起复制到 public） */
@@ -123,6 +154,36 @@ const refreshActive = () => {
             {{ t('Demo.console.closeAll') }}
           </button>
         </div>
+
+        <div class="demo-console__group">
+          <span class="demo-console__label">{{ t('Demo.console.themeGroup') }}</span>
+          <button
+            v-for="item in themeOptions"
+            :key="item.value"
+            class="demo-btn"
+            :class="{ 'demo-btn--active': theme === item.value }"
+            type="button"
+            :aria-pressed="theme === item.value"
+            @click="setTheme(item.value)"
+          >
+            {{ item.label }}
+          </button>
+
+          <span class="demo-console__label demo-console__label--accent">
+            {{ t('Demo.console.accentGroup') }}
+          </span>
+          <button
+            v-for="item in accentOptions"
+            :key="item.value"
+            class="demo-swatch"
+            type="button"
+            :style="{ backgroundColor: item.color }"
+            :aria-label="item.label"
+            :title="item.label"
+            :aria-pressed="accent === item.value"
+            @click="setAccent(item.value)"
+          />
+        </div>
       </div>
     </section>
   </div>
@@ -199,6 +260,10 @@ const refreshActive = () => {
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--demo-muted);
+}
+
+.demo-console__label--accent {
+  margin-left: 8px;
 }
 
 @media (max-width: 720px) {

@@ -509,6 +509,20 @@ You can specify refresh behavior via `iframeRefreshMode` when calling `openTab`:
 
 ---
 
+## Theming
+
+Every color and shadow is controlled by CSS variables. Light-theme defaults match the previous release, so no change is needed after upgrading. Re-skin by overriding variables:
+
+```css
+:root {
+  --stack-tab-accent: #4f46e5;
+  --stack-tab-accent-active: #4338ca;
+  --stack-tab-accent-contrast: #fff;
+}
+```
+
+A dark palette is built in and activates via `<html class="dark">`, `<html data-theme="dark">` or any `[data-theme="dark"]` container. See the [theming guide](https://jktantan.github.io/vue-stack-tabs/advance/theme) for the full variable list and scoped overrides.
+
 ## i18n
 
 Built-in languages: `zh-CN` (Chinese), `en` (English).

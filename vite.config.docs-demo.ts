@@ -6,7 +6,9 @@
  * （见 theme/DemoPreview.vue）既避免冲突，又保留了真实的 URL、前进后退与缓存行为。
  *
  * - 构建：产物输出到 docs/.vitepress/dist/demo-app，随文档一起部署
- * - 开发：`pnpm run docs:dev` 会并行启动本应用的 dev server（默认 5174）
+ * - 开发：`pnpm run docs:dev` 会并行启动本应用的 dev server（默认 18080）
+ *   注意：不要使用 5173/5174，Windows 的 Hyper-V/WinNAT 可能把它们保留到排除端口段，
+ *   导致绑定时报 EACCES；18080 当前不在常见保留范围内。
  */
 import { defineConfig } from 'vite'
 import { fileURLToPath, URL } from 'node:url'
@@ -26,7 +28,7 @@ export default defineConfig({
   server: {
     // 固定端口：DemoPreview.vue 的 DEV_DEMO_ORIGIN 依赖它。
     // 端口被占用时先执行 `pnpm run clean:ports`。
-    port: 5174,
+    port: 18080,
     strictPort: true
   },
   plugins: [vue(), vueJsx()],

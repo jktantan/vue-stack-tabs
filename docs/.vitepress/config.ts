@@ -9,8 +9,8 @@ export default defineConfig({
   base,
   vite: {
     server: {
-      // 固定端口，与演示应用的 5174 区分开；端口被占用时先执行 `pnpm run clean:ports`
-      port: 5173,
+      // 固定端口，与演示应用的 18080 区分开；端口被占用时先执行 `pnpm run clean:ports`
+      port: 18081,
       strictPort: true
     },
     resolve: {
@@ -63,6 +63,7 @@ export default defineConfig({
             text: 'Advanced',
             items: [
               { text: 'Transitions', link: '/advance/transition' },
+              { text: 'Theming', link: '/advance/theme' },
               { text: 'Custom Slots', link: '/advance/slot' },
               { text: 'Initial Tabs', link: '/advance/initial' },
               { text: 'i18n', link: '/advance/language' },
@@ -116,6 +117,7 @@ export default defineConfig({
             text: '进阶',
             items: [
               { text: '过渡效果', link: '/zh/advance/transition' },
+              { text: '主题定制', link: '/zh/advance/theme' },
               { text: '自定义插槽', link: '/zh/advance/slot' },
               { text: '初始化页签', link: '/zh/advance/initial' },
               { text: '国际化', link: '/zh/advance/language' },

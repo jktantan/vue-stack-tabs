@@ -218,6 +218,8 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
+@use '../../assets/style/common/var' as *;
+
 .divider {
   position: relative;
   height: 1px;
@@ -231,7 +233,7 @@ onMounted(() => {
   left: 0;
   width: 100%;
   height: 1px;
-  background-image: linear-gradient(to right, transparent, darkgrey, transparent);
+  background-image: linear-gradient(to right, transparent, $stack-tab-divider, transparent);
   content: '';
 }
 </style>

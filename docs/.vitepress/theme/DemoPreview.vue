@@ -28,7 +28,7 @@ const props = withDefaults(
  * 用 `demo-app/` 而不是 `demo/`：后者会与文档页 demo.html 的同名路径撞车。
  */
 const DEMO_BASE = '/vue-stack-tabs/demo-app/'
-const DEV_DEMO_ORIGIN = 'http://localhost:5174'
+const DEV_DEMO_ORIGIN = 'http://localhost:18080'
 
 const isDev = import.meta.env.DEV
 const siteBase = import.meta.env.BASE_URL || '/'

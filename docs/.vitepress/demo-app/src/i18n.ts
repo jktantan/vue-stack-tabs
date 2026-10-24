@@ -35,7 +35,14 @@ const zh = {
     openLoading: '打开 Loading 演示',
     refreshCurrent: '刷新当前',
     refreshAll: '刷新全部',
-    closeAll: '关闭全部'
+    closeAll: '关闭全部',
+    themeGroup: '外观',
+    themeLight: '浅色',
+    themeDark: '深色',
+    accentGroup: '主色',
+    accentBlue: '蓝色',
+    accentGreen: '绿色',
+    accentViolet: '紫色'
   },
   home: {
     eyebrow: '在线演示',
@@ -169,7 +176,14 @@ const en: typeof zh = {
     openLoading: 'Open the loading demo',
     refreshCurrent: 'Refresh active',
     refreshAll: 'Refresh all',
-    closeAll: 'Close all'
+    closeAll: 'Close all',
+    themeGroup: 'Appearance',
+    themeLight: 'Light',
+    themeDark: 'Dark',
+    accentGroup: 'Accent',
+    accentBlue: 'Blue',
+    accentGreen: 'Green',
+    accentViolet: 'Violet'
   },
   home: {
     eyebrow: 'Live demo',

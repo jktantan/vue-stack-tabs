@@ -5,7 +5,7 @@
 .stack-tab {
   display: flex;
   min-height: 300px;
-  background-color: $stack-tab-background-color-base;
+  background-color: $stack-tab-surface;
   flex-direction: column;
   gap: 5px;
 
@@ -41,7 +41,7 @@
 
     .stack-tab__header-button[disabled] & {
       cursor: not-allowed;
-      background-color: $stack-tab-color-disabled;
+      background-color: $stack-tab-text-disabled;
       transition: none;
     }
   }
@@ -57,7 +57,7 @@
     display: flex;
     width: 100%;
     height: $stack-tab-head-height;
-    border-bottom: 1px solid $stack-tab-border-color;
+    border-bottom: 1px solid $stack-tab-border-color-token;
     box-sizing: border-box;
 
     // tab header 上面的按钮
@@ -66,7 +66,7 @@
       height: $stack-tab-head-height;
       width: fit-content;
       overflow: hidden;
-      background-color: $stack-tab-background-color-base;
+      background-color: $stack-tab-surface;
       cursor: pointer;
       display: flex;
       align-items: center;
@@ -76,7 +76,7 @@
 
       // 按钮禁用样式
       &[disabled] {
-        background-color: $stack-tab-background-color-inactive;
+        background-color: $stack-tab-surface-muted;
         box-shadow: none;
         cursor: not-allowed;
       }
@@ -113,7 +113,7 @@
     bottom: 0;
     left: 0;
     height: $stack-tab-scroll-height;
-    background-color: $stack-tab-color-scrollbar;
+    background-color: $stack-tab-scrollbar;
     border-radius: $stack-tab-scroll-border-radius;
     opacity: 0;
     transition: $stack-tab-transition-fast;
@@ -129,7 +129,7 @@
     top: 0;
     left: 0;
     height: 100%;
-    background-color: $stack-tab-color-scrollbar;
+    background-color: $stack-tab-scrollbar;
     border-radius: $stack-tab-scroll-border-radius;
     transition: background-color $stack-tab-transition-duration ease-in-out;
     // 拖拽由 Pointer Events 接管，避免触摸时被浏览器手势打断
@@ -145,7 +145,7 @@
 
     .stack-tab__scrollbar--dragging &,
     &:hover {
-      background-color: $stack-tab-color-primary !important;
+      background-color: $stack-tab-accent !important;
     }
   }
 
@@ -166,11 +166,11 @@
     position: relative;
     display: flex;
     padding: 0 $stack-tab-padding;
-    font-size: $stack-tab-font-size;
-    color: $stack-tab-text-color;
+    font-size: $stack-tab-font-size-token;
+    color: $stack-tab-text;
     cursor: pointer;
-    background-color: $stack-tab-background-color-inactive;
-    border: $stack-tab-border;
+    background-color: $stack-tab-surface-muted;
+    border: $stack-tab-border-token;
     border-left: none;
     border-radius: $stack-tab-tab-radius;
     transition: $stack-tab-transition-fast;
@@ -182,7 +182,7 @@
     margin-top: 5px;
 
     &:first-child {
-      border-left: $stack-tab-border;
+      border-left: $stack-tab-border-token;
     }
 
     &--dragging {
@@ -197,9 +197,9 @@
       bottom: 2px;
       width: 5px;
       content: '';
-      background: $stack-tab-color-primary;
+      background: $stack-tab-accent;
       border-radius: 2px;
-      box-shadow: 0 0 6px rgba($stack-tab-color-primary, 0.8);
+      box-shadow: $stack-tab-shadow-drop;
     }
 
     &--drop-before::before {
@@ -212,21 +212,21 @@
 
     // 激活右键菜单的页签
     &--context-menu {
-      color: $stack-tab-color-black;
+      color: $stack-tab-text-strong;
     }
 
     // 激活的页签
     &--active {
       z-index: 1;
-      background-color: $stack-tab-background-color-base;
-      border-bottom-color: $stack-tab-background-color-base;
-      box-shadow: $stack-tab-shadow-left, $stack-tab-shadow-right;
+      background-color: $stack-tab-surface;
+      border-bottom-color: $stack-tab-surface;
+      box-shadow: $stack-tab-shadow-tab;
       margin-top: unset;
     }
 
     &:hover,
     &--active {
-      color: $stack-tab-color-primary;
+      color: $stack-tab-accent;
     }
 
     // 可关闭标签在悬停/激活时给关闭按钮腾出空间
@@ -300,19 +300,19 @@
       padding: 0.3rem;
       font-size: 0.5rem;
       line-height: 0.4rem;
-      color: $stack-tab-color-white;
+      color: $stack-tab-accent-contrast;
       text-align: center;
-      border: 1px solid $stack-tab-background-color-base;
+      border: 1px solid $stack-tab-surface;
       border-radius: 0.5rem;
       transform: translateX(100%) translateY(-50%);
       box-sizing: border-box;
 
       &--default {
-        background: $stack-tab-color-danger;
+        background: $stack-tab-badge-default;
       }
 
       &--primary {
-        background: $stack-tab-color-primary;
+        background: $stack-tab-badge-primary;
       }
     }
   }
@@ -361,11 +361,11 @@
 
     &-retry,
     &-open {
-      border: $stack-tab-border;
+      border: $stack-tab-border-token;
       padding: 4px 10px;
-      color: $stack-tab-text-color;
+      color: $stack-tab-text;
       cursor: pointer;
-      background: $stack-tab-background-color-base;
+      background: $stack-tab-surface;
       border-radius: 6px;
       font: inherit;
     }
@@ -377,11 +377,11 @@
     z-index: 999;
     min-width: 120px;
     padding: 8px;
-    font-size: $stack-tab-font-size;
-    background: $stack-tab-background-color-base;
-    border: $stack-tab-border;
+    font-size: $stack-tab-font-size-token;
+    background: $stack-tab-surface;
+    border: $stack-tab-border-token;
     border-radius: $stack-tab-contextmenu-radius;
-    box-shadow: $stack-tab-shadow-context-menu;
+    box-shadow: $stack-tab-shadow-menu;
     transform-origin: left top;
 
     &-item {
@@ -396,7 +396,7 @@
       padding: 0 10px;
       line-height: 30px;
       box-sizing: border-box;
-      color: $stack-tab-text-color;
+      color: $stack-tab-text;
       cursor: pointer;
       background: transparent;
       border-radius: $stack-tab-contextmenu-radius;
@@ -409,11 +409,11 @@
       &:hover,
       &:active,
       &:focus-visible {
-        color: $stack-tab-color-white;
-        background-color: $stack-tab-color-primary;
+        color: $stack-tab-accent-contrast;
+        background-color: $stack-tab-accent;
 
         .stack-tab__icon--mask {
-          background-color: $stack-tab-color-white;
+          background-color: $stack-tab-accent-contrast;
         }
       }
 
@@ -422,62 +422,62 @@
       }
 
       &[disabled] {
-        color: $stack-tab-color-disabled;
+        color: $stack-tab-text-disabled;
         pointer-events: none;
         cursor: default;
         background: none;
 
         .stack-tab__icon--mask {
-          background-color: $stack-tab-color-disabled;
+          background-color: $stack-tab-text-disabled;
         }
       }
     }
 
     &-icon {
-      width: $stack-tab-font-size;
-      height: $stack-tab-font-size;
+      width: $stack-tab-font-size-token;
+      height: $stack-tab-font-size-token;
       transition: background-color 0.2s ease-in-out;
 
       &.stack-tab__icon--mask {
-        width: $stack-tab-font-size;
-        height: $stack-tab-font-size;
-        background-color: $stack-tab-text-color;
+        width: $stack-tab-font-size-token;
+        height: $stack-tab-font-size-token;
+        background-color: $stack-tab-icon-mask;
       }
     }
   }
 }
 
 .stack-tab__shadow-left {
-  box-shadow: $stack-tab-shadow-left;
+  box-shadow: $stack-tab-shadow-tab-left;
 }
 
 .stack-tab__shadow-right {
-  box-shadow: $stack-tab-shadow-right;
+  box-shadow: $stack-tab-shadow-tab-right;
 }
 
 // 内阴影
 .stack-tab__shadow-inset {
   &-left {
-    @include inset-shadow($stack-tab-shadow-left-inset);
+    @include inset-shadow($stack-tab-shadow-inset-left);
   }
 
   &-right {
-    @include inset-shadow($stack-tab-shadow-right-inset);
+    @include inset-shadow($stack-tab-shadow-inset-right);
   }
 
   &-all {
-    @include inset-shadow($stack-tab-shadow-left-inset, $stack-tab-shadow-right-inset);
+    @include inset-shadow($stack-tab-shadow-inset-all);
   }
 
   &-top {
-    @include inset-shadow($stack-tab-shadow-top-inset);
+    @include inset-shadow($stack-tab-shadow-inset-top);
   }
 
   &-bottom {
-    @include inset-shadow($stack-tab-shadow-bottom-inset);
+    @include inset-shadow($stack-tab-shadow-inset-bottom);
   }
 
   &-vertical {
-    @include inset-shadow($stack-tab-shadow-top-inset, $stack-tab-shadow-bottom-inset);
+    @include inset-shadow($stack-tab-shadow-inset-vertical);
   }
 }

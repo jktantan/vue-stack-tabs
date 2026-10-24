@@ -1,0 +1,148 @@
+@use 'var' as *;
+
+// ============================================================
+// 主题令牌默认值（浅色）
+//
+// 所有默认值都等于改造前的硬编码值，保证升级后浅色外观零变化。
+// 宿主在 :root 或任意作用域覆盖这些变量即可换肤，无需覆盖内部类名。
+// ============================================================
+
+:root {
+  /* accent */
+  --stack-tab-accent: #{$stack-tab-color-primary};
+  --stack-tab-accent-active: #{$stack-tab-color-primary-activate};
+  --stack-tab-accent-contrast: #{$stack-tab-color-accent-contrast};
+  --stack-tab-accent-shadow: #{rgba($stack-tab-color-primary, 0.8)};
+
+  /* surface */
+  --stack-tab-surface: #{$stack-tab-background-color-base};
+  --stack-tab-surface-muted: #{$stack-tab-background-color-inactive};
+  --stack-tab-overlay: #{$stack-tab-loading-mask-color};
+
+  /* border */
+  --stack-tab-border: #{$stack-tab-border-color};
+  --stack-tab-divider: #{$stack-tab-color-divider};
+
+  /* text / icon */
+  --stack-tab-text: #{$stack-tab-text-color};
+  --stack-tab-text-strong: #{$stack-tab-color-black};
+  --stack-tab-text-disabled: #{$stack-tab-color-disabled};
+  --stack-tab-mask: #{$stack-tab-text-color};
+
+  /* feedback */
+  --stack-tab-scrollbar: #{$stack-tab-color-scrollbar};
+
+  /* shadow：颜色层 */
+  --stack-tab-shadow-color: #{$stack-tab-shadow-color};
+  --stack-tab-shadow-soft: #{$stack-tab-shadow-soft-color};
+
+  /* shadow：整体层（引用颜色层，深色只需覆盖颜色） */
+  --stack-tab-shadow-tab:
+    -5px 0 5px -5px var(--stack-tab-shadow-color), 5px 0 5px -5px var(--stack-tab-shadow-color);
+  --stack-tab-shadow-tab-left: -5px 0 5px -5px var(--stack-tab-shadow-color);
+  --stack-tab-shadow-tab-right: 5px 0 5px -5px var(--stack-tab-shadow-color);
+  --stack-tab-shadow-menu: 5px 5px 5px var(--stack-tab-shadow-soft);
+  --stack-tab-shadow-drop: 0 0 6px var(--stack-tab-accent-shadow);
+
+  /* shadow：inset 工具类 */
+  --stack-tab-shadow-inset-left: inset 5px 0 5px -5px var(--stack-tab-shadow-color);
+  --stack-tab-shadow-inset-right: inset -5px 0 5px -5px var(--stack-tab-shadow-color);
+  --stack-tab-shadow-inset-top: inset 0 5px 5px -5px var(--stack-tab-shadow-color);
+  --stack-tab-shadow-inset-bottom: inset 0 -5px 5px -5px var(--stack-tab-shadow-color);
+  --stack-tab-shadow-inset-vertical:
+    inset 0 5px 5px -5px var(--stack-tab-shadow-color),
+    inset 0 -5px 5px -5px var(--stack-tab-shadow-color);
+  --stack-tab-shadow-inset-all:
+    inset 5px 0 5px -5px var(--stack-tab-shadow-color),
+    inset -5px 0 5px -5px var(--stack-tab-shadow-color);
+
+  /* badge */
+  --stack-tab-badge-default: #{$stack-tab-color-danger};
+  --stack-tab-badge-primary: #{$stack-tab-color-primary};
+
+  /* loading */
+  --stack-tab-loading-accent: #{$stack-tab-loading-color};
+
+  /* iframe（已有变量，这里给出显式默认值） */
+  --stack-tab-iframe-loading-bg: #{$stack-tab-iframe-loading-bg};
+  --stack-tab-iframe-loading-color: #{$stack-tab-iframe-loading-color};
+  --stack-tab-iframe-error-bg: #{$stack-tab-iframe-error-bg};
+  --stack-tab-iframe-error-color: #{$stack-tab-iframe-error-color};
+
+  /* typography */
+  --stack-tab-font-size: #{$stack-tab-font-size};
+}
+
+/**
+ * 深色主题
+ *
+ * 同时支持两种触发方式：
+ * - <html class="dark">（Element Plus / VueUse 生态的常见约定）
+ * - <html data-theme="dark"> 或任意容器 [data-theme="dark"]
+ *
+ * 以下是一套中性深色默认值，宿主可整体覆盖。
+ */
+:root.dark,
+:root[data-theme='dark'],
+[data-theme='dark'] {
+  color-scheme: dark;
+
+  --stack-tab-accent: #6ea8fe;
+  --stack-tab-accent-active: #4d8fe0;
+  --stack-tab-accent-contrast: #0b1120;
+  --stack-tab-accent-shadow: rgb(110 168 254 / 0.8);
+
+  --stack-tab-surface: #111827;
+  --stack-tab-surface-muted: #1f2937;
+  --stack-tab-overlay: rgb(17 24 39 / 0.8);
+
+  --stack-tab-border: #334155;
+  --stack-tab-divider: #475569;
+
+  --stack-tab-text: #e2e8f0;
+  --stack-tab-text-strong: #f8fafc;
+  --stack-tab-text-disabled: #475569;
+  --stack-tab-mask: #94a3b8;
+
+  --stack-tab-scrollbar: rgb(255 255 255 / 0.18);
+
+  /* 深色背景会吞掉纯黑阴影：用描边 + 顶部高光 + 柔和投影表达层次 */
+  --stack-tab-shadow-color: rgb(255 255 255 / 0.55);
+  --stack-tab-shadow-soft: rgb(0 0 0 / 0.45);
+  --stack-tab-shadow-tab:
+    0 0 0 1px var(--stack-tab-border),
+    0 10px 26px color-mix(in srgb, var(--stack-tab-accent) 30%, transparent),
+    inset 0 1px 0 rgb(255 255 255 / 0.08);
+  --stack-tab-shadow-tab-left:
+    0 0 0 1px var(--stack-tab-border),
+    0 10px 26px color-mix(in srgb, var(--stack-tab-accent) 22%, transparent);
+  --stack-tab-shadow-tab-right:
+    0 0 0 1px var(--stack-tab-border),
+    0 10px 26px color-mix(in srgb, var(--stack-tab-accent) 22%, transparent);
+  --stack-tab-shadow-menu:
+    0 0 0 1px var(--stack-tab-border),
+    0 14px 36px color-mix(in srgb, var(--stack-tab-accent) 18%, transparent),
+    0 12px 30px rgb(0 0 0 / 0.5);
+
+  /* inset 阴影在深色下需要更宽的渐变带，颜色仍由 --stack-tab-shadow-color 控制 */
+  --stack-tab-shadow-inset-left: inset 12px 0 12px -12px var(--stack-tab-shadow-color);
+  --stack-tab-shadow-inset-right: inset -12px 0 12px -12px var(--stack-tab-shadow-color);
+  --stack-tab-shadow-inset-top: inset 0 14px 14px -14px var(--stack-tab-shadow-color);
+  --stack-tab-shadow-inset-bottom: inset 0 -14px 14px -14px var(--stack-tab-shadow-color);
+  --stack-tab-shadow-inset-vertical:
+    inset 0 14px 14px -14px var(--stack-tab-shadow-color),
+    inset 0 -14px 14px -14px var(--stack-tab-shadow-color);
+  --stack-tab-shadow-inset-all:
+    inset 12px 0 12px -12px var(--stack-tab-shadow-color),
+    inset -12px 0 12px -12px var(--stack-tab-shadow-color);
+
+  --stack-tab-badge-default: #f87171;
+  --stack-tab-badge-primary: #6ea8fe;
+
+  --stack-tab-loading-accent: #60a5fa;
+
+  --stack-tab-iframe-loading-bg: #0f172a;
+  --stack-tab-iframe-loading-color: #94a3b8;
+  --stack-tab-iframe-error-bg: rgb(17 24 39 / 0.95);
+  --stack-tab-iframe-error-color: #cbd5e1;
+}

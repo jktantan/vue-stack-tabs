@@ -513,6 +513,20 @@ window.addEventListener('message', (ev) => {
 
 ---
 
+## 🎨 主题定制
+
+组件颜色与阴影全部由 CSS 变量控制，浅色默认值与旧版完全一致，升级后无需改动。直接覆盖变量即可换肤：
+
+```css
+:root {
+  --stack-tab-accent: #4f46e5;
+  --stack-tab-accent-active: #4338ca;
+  --stack-tab-accent-contrast: #fff;
+}
+```
+
+深色主题内置，支持 `<html class="dark">`、`<html data-theme="dark">` 或任意 `[data-theme="dark"]` 容器。完整变量清单与覆盖方式见[主题定制文档](https://jktantan.github.io/vue-stack-tabs/zh/advance/theme)。
+
 ## 🌍 国际化
 
 内置语言：`zh-CN`（中文）、`en`（英文）。

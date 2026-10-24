@@ -8,6 +8,9 @@
 $stack-tab-color-white: #fff !default;
 $stack-tab-color-black: #000 !default;
 
+// 主色上的文字/图标（深色主题下会反转为深色）
+$stack-tab-color-accent-contrast: $stack-tab-color-white !default;
+
 // 主色
 $stack-tab-color-primary: #409eff !default;
 $stack-tab-color-primary-invert: #ffac30 !default;
@@ -42,6 +45,7 @@ $stack-tab-iframe-error-bg: rgb(255 255 255 / 92%) !default;
 
 $stack-tab-border-color: #f0f0f0 !default;
 $stack-tab-border: 1px solid $stack-tab-border-color !default;
+$stack-tab-color-divider: #a9a9a9 !default;
 $stack-tab-tab-radius: 8px 8px 0 0 !default;
 $stack-tab-contextmenu-radius: 10px 0 !default;
 
@@ -88,13 +92,14 @@ $stack-tab-transition-slide:
 // ============================================================
 
 $stack-tab-shadow-color: rgb(0 0 0 / 60%) !default;
+$stack-tab-shadow-soft-color: rgb(0 0 0 / 10%) !default;
 $stack-tab-shadow-left: -5px 0 5px -5px $stack-tab-shadow-color !default;
 $stack-tab-shadow-right: 5px 0 5px -5px $stack-tab-shadow-color !default;
 $stack-tab-shadow-right-inset: inset -5px 0 5px -5px $stack-tab-shadow-color !default;
 $stack-tab-shadow-left-inset: inset 5px 0 5px -5px $stack-tab-shadow-color !default;
 $stack-tab-shadow-top-inset: inset 0 5px 5px -5px $stack-tab-shadow-color !default;
 $stack-tab-shadow-bottom-inset: inset 0 -5px 5px -5px $stack-tab-shadow-color !default;
-$stack-tab-shadow-context-menu: 5px 5px 5px rgb(0 0 0 / 10%) !default;
+$stack-tab-shadow-context-menu: 5px 5px 5px $stack-tab-shadow-soft-color !default;
 
 // ============================================================
 // 加载态
@@ -106,3 +111,101 @@ $stack-tab-loading-size: 50px !default;
 $stack-tab-loading-border-width: 8px !default;
 $stack-tab-loading-color: #007bff97 !default;
 $stack-tab-loading-duration: 1s !default;
+
+// ============================================================
+// 主题令牌（运行时 CSS 变量）
+//
+// 规则统一消费这一组变量；默认值定义在 theme.scss 的 :root 中。
+// var() 的 fallback 使用上面的编译期变量，保证单独编译的 scoped
+// 样式或未加载主题入口时仍有正确颜色，同时保留 SCSS 变量定制能力。
+// ============================================================
+
+// accent
+$stack-tab-accent: var(--stack-tab-accent, #{$stack-tab-color-primary}) !default;
+$stack-tab-accent-active: var(
+  --stack-tab-accent-active,
+  #{$stack-tab-color-primary-activate}
+) !default;
+$stack-tab-accent-contrast: var(
+  --stack-tab-accent-contrast,
+  #{$stack-tab-color-accent-contrast}
+) !default;
+$stack-tab-accent-shadow: var(
+  --stack-tab-accent-shadow,
+  #{rgba($stack-tab-color-primary, 0.8)}
+) !default;
+
+// surface
+$stack-tab-surface: var(--stack-tab-surface, #{$stack-tab-background-color-base}) !default;
+$stack-tab-surface-muted: var(
+  --stack-tab-surface-muted,
+  #{$stack-tab-background-color-inactive}
+) !default;
+$stack-tab-overlay: var(--stack-tab-overlay, #{$stack-tab-loading-mask-color}) !default;
+
+// text / icon
+$stack-tab-text: var(--stack-tab-text, #{$stack-tab-text-color}) !default;
+$stack-tab-text-strong: var(--stack-tab-text-strong, #{$stack-tab-color-black}) !default;
+$stack-tab-text-disabled: var(--stack-tab-text-disabled, #{$stack-tab-color-disabled}) !default;
+$stack-tab-icon-mask: var(--stack-tab-mask, #{$stack-tab-text-color}) !default;
+$stack-tab-font-size-token: var(--stack-tab-font-size, #{$stack-tab-font-size}) !default;
+
+// feedback
+$stack-tab-scrollbar: var(--stack-tab-scrollbar, #{$stack-tab-color-scrollbar}) !default;
+
+// border
+$stack-tab-border-color-token: var(--stack-tab-border, #{$stack-tab-border-color}) !default;
+$stack-tab-border-token: 1px solid $stack-tab-border-color-token !default;
+$stack-tab-divider: var(--stack-tab-divider, #{$stack-tab-color-divider}) !default;
+
+// shadow：颜色层
+$stack-tab-shadow-color-token: var(--stack-tab-shadow-color, #{$stack-tab-shadow-color}) !default;
+
+// shadow：整体层
+$stack-tab-shadow-tab: var(
+  --stack-tab-shadow-tab,
+  #{$stack-tab-shadow-left},
+  #{$stack-tab-shadow-right}
+) !default;
+$stack-tab-shadow-tab-left: var(--stack-tab-shadow-tab-left, #{$stack-tab-shadow-left}) !default;
+$stack-tab-shadow-tab-right: var(--stack-tab-shadow-tab-right, #{$stack-tab-shadow-right}) !default;
+$stack-tab-shadow-menu: var(
+  --stack-tab-shadow-menu,
+  5px 5px 5px #{$stack-tab-shadow-soft-color}
+) !default;
+$stack-tab-shadow-drop: var(--stack-tab-shadow-drop, 0 0 6px #{$stack-tab-accent-shadow}) !default;
+
+// shadow：inset 工具类
+$stack-tab-shadow-inset-left: var(
+  --stack-tab-shadow-inset-left,
+  #{$stack-tab-shadow-left-inset}
+) !default;
+$stack-tab-shadow-inset-right: var(
+  --stack-tab-shadow-inset-right,
+  #{$stack-tab-shadow-right-inset}
+) !default;
+$stack-tab-shadow-inset-top: var(
+  --stack-tab-shadow-inset-top,
+  #{$stack-tab-shadow-top-inset}
+) !default;
+$stack-tab-shadow-inset-bottom: var(
+  --stack-tab-shadow-inset-bottom,
+  #{$stack-tab-shadow-bottom-inset}
+) !default;
+$stack-tab-shadow-inset-all: var(
+  --stack-tab-shadow-inset-all,
+  #{$stack-tab-shadow-left-inset},
+  #{$stack-tab-shadow-right-inset}
+) !default;
+$stack-tab-shadow-inset-vertical: var(
+  --stack-tab-shadow-inset-vertical,
+  #{$stack-tab-shadow-top-inset},
+  #{$stack-tab-shadow-bottom-inset}
+) !default;
+
+// badge
+$stack-tab-badge-default: var(--stack-tab-badge-default, #{$stack-tab-color-danger}) !default;
+$stack-tab-badge-primary: var(--stack-tab-badge-primary, #{$stack-tab-color-primary}) !default;
+
+// loading
+$stack-tab-loading-accent: var(--stack-tab-loading-accent, #{$stack-tab-loading-color}) !default;

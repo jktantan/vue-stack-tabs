@@ -56,7 +56,7 @@ describe('ContextMenuItem accessibility', () => {
 
   it('右键菜单项聚焦态复用 hover 视觉并移除原生按钮轮廓', () => {
     expect(stackTabStyles).toMatch(
-      /&:hover,\s*&:active,\s*&:focus-visible\s*\{[\s\S]*background-color:\s*\$stack-tab-color-primary;/
+      /&:hover,\s*&:active,\s*&:focus-visible\s*\{[\s\S]*background-color:\s*\$stack-tab-accent;/
     )
     expect(stackTabStyles).toMatch(/&:focus\s*\{[\s\S]*outline:\s*none;/)
   })

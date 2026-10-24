@@ -35,7 +35,7 @@ docs/.vitepress/
 
 | 命令                     | 作用                                                            |
 | ------------------------ | --------------------------------------------------------------- |
-| `pnpm run docs:dev`      | 并行启动文档（5173）与演示应用（5174）的 dev server             |
+| `pnpm run docs:dev`      | 并行启动文档（18081）与演示应用（18080）的 dev server           |
 | `pnpm run docs:dev:docs` | 只启动文档                                                      |
 | `pnpm run docs:dev:demo` | 只启动演示应用                                                  |
 | `pnpm run docs:build`    | 先构建文档，再把演示应用构建到 `docs/.vitepress/dist/demo-app/` |
@@ -55,7 +55,7 @@ docs/.vitepress/
 ## 端口与路径约定
 
 - 演示应用 base：`/vue-stack-tabs/demo-app/`（`vite.config.docs-demo.ts` 的 `DEMO_BASE`，可用环境变量覆盖）
-- dev 端口：`5174`（与 `DemoPreview.vue` 的 `DEV_DEMO_ORIGIN` 一致）
+- dev 端口：`18080`（与 `DemoPreview.vue` 的 `DEV_DEMO_ORIGIN` 一致）
 - 生产路径：`{vitepress base}demo-app/`
 
 ⚠️ 路径**不要**用 `demo/`：文档站的 `docs/demo.md` 会生成 `demo.html`，静态服务器对 `/demo/` 会优先命中文档页，导致 iframe 里套娃加载自己（已踩过）。

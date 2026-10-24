@@ -8,12 +8,12 @@ pnpm run docs:dev
 
 它会并行启动两个 dev server：
 
-| 服务     | 地址                                           | 说明                       |
-| -------- | ---------------------------------------------- | -------------------------- |
-| 文档站   | http://localhost:5173/vue-stack-tabs/          | VitePress                  |
-| 演示应用 | http://localhost:5174/vue-stack-tabs/demo-app/ | `docs/.vitepress/demo-app` |
+| 服务     | 地址                                            | 说明                       |
+| -------- | ----------------------------------------------- | -------------------------- |
+| 文档站   | http://localhost:18081/vue-stack-tabs/          | VitePress                  |
+| 演示应用 | http://localhost:18080/vue-stack-tabs/demo-app/ | `docs/.vitepress/demo-app` |
 
-文档中的 `<DemoPreview />` 以 iframe 指向演示应用（开发环境指向 5174 端口）。
+文档中的 `<DemoPreview />` 以 iframe 指向演示应用（开发环境指向 18080 端口）。
 
 只想跑其中一个：
 
