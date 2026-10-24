@@ -14,7 +14,10 @@ const root = join(import.meta.dirname, '..')
 async function run(bin, args, cwd = root, env = {}) {
   return new Promise((resolve, reject) => {
     const childEnv = { ...process.env, ...env }
-    const child = spawn(bin, args, { cwd, env: childEnv, stdio: 'inherit', shell: false })
+    // Windows 上 pnpm 是 pnpm.cmd，spawn 需要经 shell 解析；
+    // tar 等真实可执行文件直接 spawn，避免 shell 改写 Windows 路径。
+    const useShell = process.platform === 'win32' && bin === 'pnpm'
+    const child = spawn(bin, args, { cwd, env: childEnv, stdio: 'inherit', shell: useShell })
     child.on('close', (code) => (code === 0 ? resolve() : reject(new Error(`exit ${code}`))))
   })
 }
@@ -73,11 +76,41 @@ off()
           skipLibCheck: false,
           noEmit: true
         },
-        include: ['iframe-bridge-consumer.ts']
+        include: ['iframe-bridge-consumer.ts', 'root-entry-types-consumer.ts']
       },
       null,
       2
     )
+  )
+}
+
+/**
+ * 模拟 Nuxt 模块在宿主 `.nuxt/components.d.ts` 里生成的组件类型引用，
+ * 断言入口 bundle 的声明文件可解析、props 有类型、未知 prop 报错。
+ *
+ * 若类型退化为 any，`@ts-expect-error` 会因未被使用而报 TS2578，从而使校验失败。
+ */
+function writeRootEntryTypeSmokeProject(tempProjectDir) {
+  fs.writeFileSync(
+    join(tempProjectDir, 'root-entry-types-consumer.ts'),
+    `// Nuxt 生成的是去掉 .js 扩展名的相对路径引用
+import type * as Bundle from './node_modules/vue-stack-tabs/dist/vue-stack-tabs.es'
+// 同时覆盖包 specifier 形式（宿主最小复现）
+import type * as PackageBundle from 'vue-stack-tabs/dist/vue-stack-tabs.es'
+
+type RelativeProps = InstanceType<typeof Bundle.VueStackTabs>['$props']
+type PackageProps = InstanceType<typeof PackageBundle.VueStackTabs>['$props']
+
+const relative: RelativeProps = { iframePath: '/x', max: 20, scrollContainer: undefined }
+const fromPackage: PackageProps = { iframePath: '/x', max: 20, scrollContainer: undefined }
+
+// @ts-expect-error 不存在的 prop 必须报错
+const badRelative: RelativeProps = { iframePath: '/x', nope: 1 }
+// @ts-expect-error 不存在的 prop 必须报错
+const badPackage: PackageProps = { iframePath: '/x', nope: 1 }
+
+export { relative, fromPackage, badRelative, badPackage }
+`
   )
 }
 
@@ -164,6 +197,27 @@ function assertNuxtArtifacts() {
   }
 }
 
+/**
+ * 入口 bundle 声明检查：Nuxt addComponent 生成的类型引用指向
+ * dist/vue-stack-tabs.es，该声明必须把类型转发到 dist/index.d.ts，
+ * 否则宿主全局组件类型会退化为 any（被 skipLibCheck 掩盖）。
+ */
+function assertRootEntryTypes() {
+  const entryTypesPath = join(root, 'dist', 'vue-stack-tabs.es.d.ts')
+  const source = fs.readFileSync(entryTypesPath, 'utf8')
+  const indexTypesPath = join(root, 'dist', 'index.d.ts')
+
+  if (!fs.existsSync(indexTypesPath)) {
+    throw new Error(`入口声明的转发目标不存在：${indexTypesPath}`)
+  }
+  if (!/export \* from '\.\/index'/.test(source)) {
+    throw new Error('入口声明未转发 dist/index.d.ts 的类型')
+  }
+  if (!/export \{ default \} from '\.\/index'/.test(source)) {
+    throw new Error('入口声明未转发 dist/index.d.ts 的默认导出')
+  }
+}
+
 async function packPackage(packDir) {
   await run('pnpm', ['pack', '--pack-destination', packDir], root)
 
@@ -179,12 +233,21 @@ async function packPackage(packDir) {
   return tarballs[0]
 }
 
+/**
+ * GNU tar 会把 Windows 路径开头的盘符当成远程主机（`Cannot connect to C:`），
+ * `--force-local` 让它按本地文件处理；bsdtar（macOS）没有该选项，故仅 Windows 添加。
+ */
+function withTarCompat(args) {
+  return process.platform === 'win32' ? ['--force-local', ...args] : args
+}
+
 async function assertPackedFileList(tarballPath) {
-  const fileList = await runCapture('tar', ['-tf', tarballPath], root)
+  const fileList = await runCapture('tar', withTarCompat(['-tf', tarballPath]), root)
   const packedFiles = new Set(fileList.trim().split(/\r?\n/).filter(Boolean))
   const requiredPackedFiles = [
     'package/package.json',
     'package/dist/vue-stack-tabs.es.js',
+    'package/dist/vue-stack-tabs.es.d.ts',
     'package/dist/style.css',
     'package/dist/iframe-bridge.mjs',
     'package/dist/iframe-bridge.d.ts',
@@ -203,7 +266,9 @@ async function assertPackedFileList(tarballPath) {
 async function extractTarballForSmoke(tempProjectDir, tarballPath) {
   const packageDir = join(tempProjectDir, 'node_modules', 'vue-stack-tabs')
   fs.mkdirSync(packageDir, { recursive: true })
-  await run('tar', ['-xzf', tarballPath, '--strip-components', '1', '-C', packageDir], root)
+  // 不用 -C：MSYS/GNU tar 在 Windows 上无法解析带盘符的 -C 目录，
+  // 改为把工作目录切到目标目录（-f 的盘符路径已由 --force-local 处理）。
+  await run('tar', withTarCompat(['-xzf', tarballPath, '--strip-components', '1']), packageDir)
   return packageDir
 }
 
@@ -231,6 +296,7 @@ async function verifyPackageExportsFromTarball(tarballPath) {
     linkRuntimeDependency(tempProjectDir, 'mitt')
     linkRuntimeDependency(tempProjectDir, 'vue-i18n-lite')
     writeIframeBridgeTypeSmokeProject(tempProjectDir)
+    writeRootEntryTypeSmokeProject(tempProjectDir)
     writeNuxtSmokeStubs(tempProjectDir)
 
     await run('pnpm', ['exec', 'tsc', '--noEmit', '--pretty', 'false'], tempProjectDir)
@@ -288,6 +354,7 @@ async function main() {
     console.log('[1/3] 检查 dist 入口文件...')
     const requiredDistFiles = [
       ['root ESM', join(root, 'dist', 'vue-stack-tabs.es.js')],
+      ['root entry types', join(root, 'dist', 'vue-stack-tabs.es.d.ts')],
       ['root CSS', join(root, 'dist', 'style.css')],
       ['iframe bridge ESM', join(root, 'dist', 'iframe-bridge.mjs')],
       ['iframe bridge types', join(root, 'dist', 'iframe-bridge.d.ts')],
@@ -305,6 +372,7 @@ async function main() {
     }
 
     assertNuxtArtifacts()
+    assertRootEntryTypes()
 
     console.log('\n[2/3] pnpm pack 并验证 tarball 文件清单...')
     const packDir = join(tempRoot, 'pack')

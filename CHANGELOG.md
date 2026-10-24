@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.6.2 (2026-10-24)
+
+### 修复
+
+- Nuxt 模块自动注册的全局组件 `<VueStackTabs>` 在宿主中丢失类型：Nuxt 根据 `addComponent({ filePath })` 生成的类型引用指向 `dist/vue-stack-tabs.es`，但发布产物缺少同名声明文件，导致 props 无提示、无法跳转（宿主 `skipLibCheck: true` 会掩盖 TS2307）。构建时现在生成 `dist/vue-stack-tabs.es.d.ts` 并转发 `index.d.ts`，`exports` 同步开放该入口，宿主无需再写 `declare module` 桥接。
+
+### 工程
+
+- `verify-packaged.mjs` 新增宿主侧类型 smoke（Nuxt 风格相对路径 + 包 specifier，校验 props 解析与未知 prop 报错），并兼容 Windows 下的 `pnpm` 与 GNU tar 调用。
+- devDependencies 补丁升级（Vue 3.5.44、Vite 8.3.5、Vitest 4.1.12、ESLint 10.13.0 等）。
+
 ## 2.6.1 (2026-10-24)
 
 ### 修复
