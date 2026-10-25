@@ -28,8 +28,11 @@
   &--maximum {
     position: fixed;
     inset: 0;
-    width: 100vw !important;
-    height: 100vh !important;
+    // 宽高交给 inset 拉伸，不能用 100vw / 100vh：
+    // 这两个单位包含宿主滚动条的占位，会撑出水平滚动条并把底部挤出视口，
+    // 导致内容区底部的滚动阴影被裁剪/遮挡（看起来像“下阴影不见了”）。
+    width: auto !important;
+    height: auto !important;
   }
 
   // 蒙版按钮

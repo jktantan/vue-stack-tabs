@@ -4,6 +4,8 @@
 
 ### 修复
 
+- 最大化时内容区底部的滚动阴影被裁剪：`stack-tab--maximum` 原先用 `100vw / 100vh` 拉伸，这两个单位包含宿主滚动条的占位，宿主页面有竖向滚动条时会撑出水平滚动条并把内容区底部挤出视口。现在改为由 `inset: 0` 拉伸（`width / height: auto`），最大化后正好贴合可视区域。
+- 内容区底部滚动阴影离底边保留 2px 空隙（`shadow-inset-bottom` / `-vertical`），避免最大化时阴影紧贴视口下边缘、看起来像被裁掉。
 - Nuxt 模块自动注册的全局组件 `<VueStackTabs>` 在宿主中丢失类型：Nuxt 根据 `addComponent({ filePath })` 生成的类型引用指向 `dist/vue-stack-tabs.es`，但发布产物缺少同名声明文件，导致 props 无提示、无法跳转（宿主 `skipLibCheck: true` 会掩盖 TS2307）。构建时现在生成 `dist/vue-stack-tabs.es.d.ts` 并转发 `index.d.ts`，`exports` 同步开放该入口，宿主无需再写 `declare module` 桥接。
 
 ### 工程
