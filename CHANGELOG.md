@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.6.3 (2026-10-26)
+
+### 工程
+
+- 接入 Stylelint（`stylelint-config-standard-scss` + `stylelint-config-recommended-vue`），新增 `lint:style` / `lint:style:check` 脚本与 CI 检查；统一现有 CSS / SCSS / Vue 样式写法（现代颜色与媒体查询语法、BEM 命名、属性简写与分组空行等），并删除无用的空 `<style scoped>` 块。
+- VS Code 推荐插件新增 `stylelint.vscode-stylelint`；`AGENTS.md` / `CONTRIBUTING.md` 同步验证流程。
+
 ## 2.6.2 (2026-10-24)
 
 ### 修复
