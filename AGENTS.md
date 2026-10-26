@@ -80,6 +80,7 @@ pnpm run test
 
 # 3. 代码规范
 pnpm run lint
+pnpm run lint:style:check
 
 # 4. 格式化检查（可选）
 pnpm run format:check

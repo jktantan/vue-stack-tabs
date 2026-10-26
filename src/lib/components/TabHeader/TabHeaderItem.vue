@@ -132,5 +132,3 @@ const handleTabKeydown = (event: KeyboardEvent) => {
   }
 }
 </script>
-
-<style lang="scss" scoped></style>

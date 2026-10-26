@@ -295,7 +295,7 @@ const refreshActive = () => {
   margin-left: 8px;
 }
 
-@media (max-width: 720px) {
+@media (width <= 720px) {
   .demo-console {
     padding: 12px;
   }

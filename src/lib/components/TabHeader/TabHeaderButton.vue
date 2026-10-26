@@ -51,5 +51,3 @@ const resolvedAriaLabel = computed<string>(() => {
   return props.ariaLabel || props.title
 })
 </script>
-
-<style scoped></style>

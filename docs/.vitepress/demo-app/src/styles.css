@@ -13,7 +13,7 @@
   --demo-muted: #5c6b7a;
   --demo-border: #e2e8f0;
   --demo-bg: #f7f9fc;
-  --demo-surface: #ffffff;
+  --demo-surface: #fff;
   --demo-surface-2: #eef2f8;
   --demo-danger: #d94b4b;
   --demo-radius: 10px;
@@ -395,7 +395,7 @@ kbd {
   margin-bottom: 0;
 }
 
-@media (max-width: 640px) {
+@media (width <= 640px) {
   .page {
     padding: 20px 18px 30px;
   }

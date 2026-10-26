@@ -10,7 +10,7 @@
   --vp-c-brand-1: #377dff;
   --vp-c-brand-2: #2b68db;
   --vp-c-brand-3: #245bc4;
-  --vp-c-brand-soft: rgba(55, 125, 255, 0.14);
+  --vp-c-brand-soft: rgb(55 125 255 / 0.14);
 
   /* 自定义 token：hero 与演示入口共用 */
   --docs-accent: #00d797;
@@ -26,7 +26,7 @@
   --vp-c-brand-1: #79a7ff;
   --vp-c-brand-2: #6b93ea;
   --vp-c-brand-3: #5c82d6;
-  --vp-c-brand-soft: rgba(121, 167, 255, 0.16);
+  --vp-c-brand-soft: rgb(121 167 255 / 0.16);
 }
 
 /* ---------- 正文排版 ---------- */
@@ -108,7 +108,7 @@
   line-height: 1.7;
 }
 
-@media (min-width: 960px) {
+@media (width >= 960px) {
   /* 让出足够宽度承载 CSS 绘制的「标签栈」示意 */
   .VPHero .image {
     flex-grow: 0;

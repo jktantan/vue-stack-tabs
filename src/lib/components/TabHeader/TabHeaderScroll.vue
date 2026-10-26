@@ -340,5 +340,3 @@ const isInView = (el: HTMLElement) => {
 
 defineExpose({ scrollIntoView, isInView })
 </script>
-
-<style scoped></style>

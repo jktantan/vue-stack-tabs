@@ -47,6 +47,9 @@ jobs:
       - name: Lint
         run: pnpm run lint:check
 
+      - name: Stylelint
+        run: pnpm run lint:style:check
+
       - name: Format check
         run: pnpm run format:check
 

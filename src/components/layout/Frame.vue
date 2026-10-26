@@ -22,5 +22,3 @@ const homeTab: ITabData = {
     session-prefix="light"
   />
 </template>
-
-<style scoped></style>
