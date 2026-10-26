@@ -8,16 +8,33 @@ Configure the module in `nuxt.config.ts`:
 export default defineNuxtConfig({
   modules: ['vue-stack-tabs/nuxt'],
   vueStackTabs: {
-    locale: 'zh-CN' // or 'en'
+    locale: 'zh-CN', // or 'en'
+    // Extra locales beyond the built-in packs; same shape as the plugin options
+    messages: [
+      {
+        locale: 'zh-TW',
+        messages: {
+          VueStackTab: {
+            close: '關閉',
+            closeLeft: '關閉左側',
+            closeAll: '關閉所有'
+          }
+        }
+      }
+    ]
   }
 })
 ```
+
+`messages` is merged with the built-in packs; missing keys fall back to the built-in
+`zh-CN` / `en` packs. The module only registers locales during installation — runtime
+switching still uses `<VueStackTabs :i18n="...">` with the current locale.
 
 The module automatically:
 
 - Registers the global `VueStackTabs` component via Nuxt's `addComponent` API (no need to import manually)
 - Auto-imports composables (`useTabActions`, `useTabRouter`, `useTabLoading`)
-- Applies the configured `locale` to vue-stack-tabs' internal i18n instance via `applyStackTabsLocale`
+- Applies the configured `locale` and `messages` to vue-stack-tabs' internal i18n instance
 
 Nuxt apps also support only one `<VueStackTabs>` instance.
 

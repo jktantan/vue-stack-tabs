@@ -150,7 +150,9 @@ refreshTab('about')
 export default defineNuxtConfig({
   modules: ['vue-stack-tabs/nuxt'],
   vueStackTabs: {
-    locale: 'zh-CN' // встроенные варианты: 'zh-CN' | 'en'
+    locale: 'zh-CN', // встроенные варианты: 'zh-CN' | 'en'
+    // дополнительные языки через messages, формат как у опций плагина
+    messages: [{ locale: 'zh-TW', messages: { VueStackTab: { close: '關閉' } } }]
   },
   css: ['vue-stack-tabs/dist/style.css']
 })

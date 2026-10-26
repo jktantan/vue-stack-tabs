@@ -8,15 +8,33 @@
 export default defineNuxtConfig({
   modules: ['vue-stack-tabs/nuxt'],
   vueStackTabs: {
-    locale: 'zh-CN' // 内置可选 'zh-CN' | 'en'
+    locale: 'zh-CN', // 内置可选 'zh-CN' | 'en'
+    // 内置语言包之外的语言在这里补充，格式与插件选项一致
+    messages: [
+      {
+        locale: 'zh-TW',
+        messages: {
+          VueStackTab: {
+            close: '關閉',
+            closeLeft: '關閉左側',
+            closeAll: '關閉所有'
+          }
+        }
+      }
+    ]
   }
 })
 ```
+
+`messages` 会与内置语言包合并，未提供的键回退到内置 `zh-CN` / `en`。
+模块只负责在安装时注册语言包；运行时切换语言仍通过
+`<VueStackTabs :i18n="...">` 传入当前 locale。
 
 模块会自动完成以下配置：
 
 - 注册 VueStackTabs 组件
 - 自动导入 `useTabActions`、`useTabRouter`、`useTabLoading` 等 composables
+- 把 `locale` 与 `messages` 传给 vue-stack-tabs 内部 i18n 实例
 
 ## 方式二：手动引入插件
 

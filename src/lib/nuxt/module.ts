@@ -5,10 +5,19 @@
  * 注册全局组件 <VueStackTabs>，并通过 runtimeConfig 传递 locale 配置。
  */
 import { addComponent, addImports, addPlugin, createResolver, defineNuxtModule } from 'nuxt/kit'
+import type { LocaleMessageOption } from '../i18n'
 
 export interface ModuleOptions {
   /** 默认语言 */
   locale?: string
+  /**
+   * 额外语言包，格式与插件选项一致。
+   *
+   * 内置只有 zh-CN / en；需要其他语言时在这里补充，模块会把它们
+   * 与 { locale } 一起传给 VueStackTabs 插件。运行时仍可通过
+   * <VueStackTabs :i18n="..."> 切换语言。
+   */
+  messages?: LocaleMessageOption[]
 }
 
 export default defineNuxtModule<ModuleOptions>({
@@ -23,7 +32,8 @@ export default defineNuxtModule<ModuleOptions>({
     const { resolve } = createResolver(import.meta.url)
 
     nuxt.options.runtimeConfig.public.vueStackTabs = {
-      locale: options.locale
+      locale: options.locale,
+      messages: options.messages ?? []
     }
 
     addPlugin({
