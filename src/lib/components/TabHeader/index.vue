@@ -362,5 +362,3 @@ const handleActivateTab = (
     })
 }
 </script>
-
-<style scoped></style>

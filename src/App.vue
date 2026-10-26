@@ -143,5 +143,3 @@ onUnmounted(() => {
     </el-container>
   </el-container>
 </template>
-
-<style scoped></style>

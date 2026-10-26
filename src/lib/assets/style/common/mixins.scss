@@ -49,6 +49,7 @@
   height: $icon-size;
   margin-left: $icon-margin;
   background-color: $stack-tab-icon-mask;
+
   @include mask-icon($icon-url);
 
   &:hover {

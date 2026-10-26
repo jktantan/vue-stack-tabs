@@ -7,8 +7,8 @@
   overflow: hidden;
   background: var(--vp-c-bg);
   box-shadow:
-    0 1px 2px rgba(15, 23, 42, 0.04),
-    0 14px 36px -20px rgba(15, 23, 42, 0.3);
+    0 1px 2px rgb(15 23 42 / 0.04),
+    0 14px 36px -20px rgb(15 23 42 / 0.3);
 }
 
 .demo-preview__bar {
@@ -91,7 +91,7 @@
   font-size: 12px;
 }
 
-@media (max-width: 640px) {
+@media (width <= 640px) {
   .demo-preview__stage {
     height: 460px !important;
   }

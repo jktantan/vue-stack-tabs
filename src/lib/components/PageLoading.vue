@@ -49,4 +49,3 @@ onUnmounted(() => {
   emitter.off(TabEventType.PAGE_LOADING, handleLoadingEvent)
 })
 </script>
-<style scoped></style>

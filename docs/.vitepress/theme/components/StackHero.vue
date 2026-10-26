@@ -85,6 +85,7 @@ onBeforeUnmount(stop)
 <style scoped>
 .stack-hero {
   --hero-accent: #00d797;
+
   width: 100%;
   max-width: 400px;
   margin: 0 auto;
@@ -172,10 +173,7 @@ onBeforeUnmount(stop)
 
 .stack-hero__page {
   position: absolute;
-  top: 34px;
-  right: 16px;
-  bottom: 14px;
-  left: 16px;
+  inset: 34px 16px 14px;
   display: flex;
   flex-direction: column;
   gap: 11px;
@@ -184,7 +182,7 @@ onBeforeUnmount(stop)
   border-top: 2px solid var(--vp-c-brand-1);
   border-radius: 9px;
   background: var(--vp-c-bg);
-  box-shadow: 0 12px 28px -18px rgba(15, 23, 42, 0.45);
+  box-shadow: 0 12px 28px -18px rgb(15 23 42 / 0.45);
   animation: stack-hero-enter 0.4s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
@@ -234,6 +232,7 @@ onBeforeUnmount(stop)
     opacity: 0;
     transform: translateY(7px) scale(0.985);
   }
+
   to {
     opacity: 1;
     transform: none;

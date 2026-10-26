@@ -107,7 +107,7 @@ export default defineNuxtConfig({
 2. **工具函数**：放在 `utils/`，命名清晰
 3. **样式**：使用 `assets/style/` 下 SCSS，变量和 mixins 在 `common/`
 4. **不破坏对外 API**：`useTabActions`、`useTabRouter`、`useTabLoading`、`IFrame`、`VueStackTabs` 的导出名和签名保持兼容
-5. **代码风格**：遵循 ESLint + Prettier 配置，提交前执行 `pnpm run lint` 和 `pnpm run format:check`
+5. **代码风格**：遵循 ESLint + Stylelint + Prettier 配置，提交前执行 `pnpm run lint`、`pnpm run lint:style:check` 和 `pnpm run format:check`
 
 ---
 
@@ -124,6 +124,7 @@ pnpm run test
 
 # 3. 代码规范（自动修复）
 pnpm run lint
+pnpm run lint:style
 
 # 4. 库构建
 pnpm run lib:build
@@ -155,6 +156,7 @@ pnpm run test:packaged
 | `test:prepack`  | 打包前验证（单元 + Vue + Nuxt 源码） |
 | `test:packaged` | 打包后验证（Vue + Nuxt 使用 dist）   |
 | `lint`          | ESLint 检查并修复                    |
+| `lint:style`    | Stylelint 检查并修复样式             |
 | `format`        | Prettier 格式化                      |
 | `docs:dev`      | 文档本地预览                         |
 
@@ -172,7 +174,7 @@ pnpm run test:packaged
 
 1. Fork 仓库
 2. 创建分支（如 `feat/xxx`、`fix/xxx`、`docs/xxx`）
-3. 修改代码，确保 `type-check`、`test`、`lint` 通过
+3. 修改代码，确保 `type-check`、`test`、`lint`、`lint:style` 通过
 4. 若有重大改动，建议执行 `test:prepack` 和 `test:packaged`
 5. 提交 PR，描述修改内容与动机
 

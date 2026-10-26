@@ -106,6 +106,7 @@ const forwardCross = () => {
 .test-page {
   padding: 20px;
 }
+
 .btn-group .el-button {
   margin-top: 10px;
   margin-right: 10px;

@@ -41,5 +41,3 @@ export default {
     <el-button @click="resetTest">重置</el-button>
   </div>
 </template>
-
-<style scoped></style>

@@ -6,6 +6,7 @@
   &__mask {
     @include absolute-fill;
     @include flex-center;
+
     background-color: $stack-tab-overlay;
     opacity: $stack-tab-loading-mask-opacity;
   }

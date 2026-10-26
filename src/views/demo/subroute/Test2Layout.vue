@@ -34,6 +34,7 @@ const { forward } = useTabRouter()
   flex-direction: column;
   overflow: hidden;
 }
+
 .test2-layout__nav {
   flex-shrink: 0;
   padding: 8px 12px;
@@ -43,10 +44,12 @@ const { forward } = useTabRouter()
   align-items: center;
   gap: 12px;
 }
+
 .test2-layout__label {
   font-size: 12px;
   color: #888;
 }
+
 .test2-layout__link {
   padding: 4px 10px;
   font-size: 13px;
@@ -55,9 +58,11 @@ const { forward } = useTabRouter()
   border-radius: 4px;
   cursor: pointer;
 }
+
 .test2-layout__link:hover {
   background: #f5f5f5;
 }
+
 .test2-layout__content {
   flex: 1;
   overflow: auto;

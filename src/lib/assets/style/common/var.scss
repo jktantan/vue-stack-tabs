@@ -28,7 +28,7 @@ $stack-tab-color-grey: #4d4d4d !default;
 $stack-tab-color-disabled: #aaa !default;
 $stack-tab-color-text-secondary: #666 !default;
 $stack-tab-color-text-tertiary: #999 !default;
-$stack-tab-color-scrollbar: rgb(0 0 0 / 10%) !default;
+$stack-tab-color-scrollbar: rgb(0 0 0 / 0.1) !default;
 
 // ============================================================
 // 背景
@@ -37,7 +37,7 @@ $stack-tab-color-scrollbar: rgb(0 0 0 / 10%) !default;
 $stack-tab-background-color-base: #fff !default;
 $stack-tab-background-color-inactive: #fafafa !default;
 $stack-tab-iframe-loading-bg: #f5f5f5 !default;
-$stack-tab-iframe-error-bg: rgb(255 255 255 / 92%) !default;
+$stack-tab-iframe-error-bg: rgb(255 255 255 / 0.92) !default;
 
 // ============================================================
 // 边框与圆角
@@ -92,8 +92,8 @@ $stack-tab-transition-slide:
 // 阴影
 // ============================================================
 
-$stack-tab-shadow-color: rgb(0 0 0 / 60%) !default;
-$stack-tab-shadow-soft-color: rgb(0 0 0 / 10%) !default;
+$stack-tab-shadow-color: rgb(0 0 0 / 0.6) !default;
+$stack-tab-shadow-soft-color: rgb(0 0 0 / 0.1) !default;
 $stack-tab-shadow-left: -5px 0 5px -5px $stack-tab-shadow-color !default;
 $stack-tab-shadow-right: 5px 0 5px -5px $stack-tab-shadow-color !default;
 $stack-tab-shadow-right-inset: inset -5px 0 5px -5px $stack-tab-shadow-color !default;
