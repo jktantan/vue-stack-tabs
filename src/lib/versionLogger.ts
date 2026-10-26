@@ -8,7 +8,7 @@ const CONSOLE_LOGO_VIEWBOX = '60 70 280 220'
 /** logo 显示尺寸（px），实际由 padding 的一半撑出 */
 const LOGO_SIZE = 48
 /** logo 存在时，第二行文字相对 logo 右侧的缩进（logo 宽度 + 间距） */
-const TEXT_INDENT = LOGO_SIZE + 8
+// const TEXT_INDENT = LOGO_SIZE + 8
 /** 品牌副标题 */
 const SUBTITLE = 'Vue Router multi-tab manager'
 
