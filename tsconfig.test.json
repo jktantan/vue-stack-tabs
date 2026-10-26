@@ -11,7 +11,10 @@
     "moduleResolution": "Bundler",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      // 自引用（如 src/lib/nuxt/runtime/plugin.ts）在类型检查时解析到源码，
+      // 不要依赖 dist/：dist 不入库，CI 干净 checkout 中不存在。
+      "vue-stack-tabs": ["./src/lib/index.ts"]
     }
   }
 }
