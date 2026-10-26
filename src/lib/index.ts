@@ -43,6 +43,8 @@ export type {
   StackTabsScrollMetrics,
   StackTabsScrollPosition
 } from './model/ScrollAdapter'
+export { tabPageContextKey, resolveTabPageContext } from './hooks/tabPageContext'
+export type { TabPageContext } from './hooks/tabPageContext'
 export default {
   install(Vue: App, options?: VueStackTabsPluginOptions): void {
     logVersion(import.meta.env.PACKAGE_VERSION)
