@@ -1,3 +1,7 @@
+/* eslint-disable vue/one-component-per-file --
+ * 本文件内的 PageShell 与 cacheComponent 均在工厂中按 cacheName 动态生成，
+ * name 与依赖全部来自闭包，无法拆分为独立文件：拆分会破坏封装，且文件名
+ * 也无法对应运行时生成的动态 name。 */
 /**
  * 页面缓存组件工厂。
  *
