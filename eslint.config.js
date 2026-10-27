@@ -19,7 +19,9 @@ export default tseslint.config(
       '**/*.d.ts',
       'docs/.vitepress/cache',
       '*.config.js',
-      '*.config.ts'
+      '*.config.ts',
+      'test',
+      'docs'
     ]
   },
   eslint.configs.recommended,
