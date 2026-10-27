@@ -14,6 +14,7 @@ import IFrame from './iframe.vue'
 import useTabLoading from './hooks/useTabLoading'
 import useTabRouter from './hooks/useTabRouter'
 import useTabActions from './hooks/useTabActions'
+import useTabScrollShadow from './hooks/useTabScrollShadow'
 import TabHeaderButton from './components/TabHeader/TabHeaderButton.vue'
 import './assets/style/index.scss'
 
@@ -31,6 +32,7 @@ export {
   useTabActions,
   useTabLoading,
   useTabRouter,
+  useTabScrollShadow,
   TabHeaderButton,
   StackTab,
   StackTab as VueStackTabs
@@ -43,6 +45,10 @@ export type {
   StackTabsScrollMetrics,
   StackTabsScrollPosition
 } from './model/ScrollAdapter'
+export type {
+  TabScrollShadowController,
+  TabScrollShadowState
+} from './hooks/tabScrollShadowContext'
 export { tabPageContextKey, resolveTabPageContext } from './hooks/tabPageContext'
 export type { TabPageContext } from './hooks/tabPageContext'
 export default {

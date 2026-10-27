@@ -76,6 +76,7 @@ const open = (tab: ITabData) => {
 const openReportList = () => open({ id: 'report', title: t('Demo.tabs.report'), path: '/report' })
 const openForm = () => open({ id: 'form', title: t('Demo.tabs.form'), path: '/form' })
 const openScroll = () => open({ id: 'scroll', title: t('Demo.tabs.scroll'), path: '/scroll' })
+const openShadow = () => open({ id: 'shadow', title: t('Demo.tabs.shadow'), path: '/shadow' })
 const openNotice = () => open({ id: 'notice', title: t('Demo.tabs.notice'), path: '/notice' })
 const openLoading = () => open({ id: 'loading', title: t('Demo.tabs.loading'), path: '/loading' })
 
@@ -135,6 +136,9 @@ const refreshActive = () => {
           </button>
           <button class="demo-btn" type="button" @click="openScroll">
             {{ t('Demo.tabs.scroll') }}
+          </button>
+          <button class="demo-btn" type="button" @click="openShadow">
+            {{ t('Demo.tabs.shadow') }}
           </button>
           <button class="demo-btn" type="button" @click="openNotice">
             {{ t('Demo.tabs.notice') }}

@@ -2,7 +2,13 @@
  * @vitest-environment happy-dom
  */
 import { describe, expect, it } from 'vitest'
-import { resolveTabPageContext, tabPageContextKey, type TabPageContext } from '@/lib/index'
+import {
+  resolveTabPageContext,
+  tabPageContextKey,
+  useTabScrollShadow,
+  type TabPageContext,
+  type TabScrollShadowState
+} from '@/lib/index'
 
 describe('public exports - tab page context', () => {
   it('导出页面上下文 key 与解析函数，供宿主的非页面组件 inject', () => {
@@ -15,5 +21,12 @@ describe('public exports - tab page context', () => {
     const context: TabPageContext = { tabId: 'tab', pageId: 'page' }
 
     expect(context).toEqual({ tabId: 'tab', pageId: 'page' })
+  })
+
+  it('导出 useTabScrollShadow 与阴影状态类型', () => {
+    expect(typeof useTabScrollShadow).toBe('function')
+
+    const state: TabScrollShadowState = 'both'
+    expect(state).toBe('both')
   })
 })

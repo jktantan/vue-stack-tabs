@@ -98,3 +98,50 @@ export interface StackTabsScrollAdapter {
 ```
 
 `getPosition` / `setPosition` are used for position memory, `getMetrics` / `onScroll` for the scroll shadow. Any missing capability falls back to the native `scrollElement`; if none is available the shadow is simply disabled.
+
+## Shadow visibility and state
+
+The library computes the top/bottom content shadows from the main scroll container. Disable them globally:
+
+```vue:line-numbers
+<vue-stack-tabs iframe-path="/iframe" :scroll-shadow="false" />
+```
+
+Any component inside a cached page — including a layout wrapper around the page content — can read the current direction and override visibility:
+
+```vue:line-numbers
+<script setup lang="ts">
+import { useTabScrollShadow } from 'vue-stack-tabs'
+
+const shadow = useTabScrollShadow()
+
+// 'none' | 'top' | 'bottom' | 'both'
+console.log(shadow.state.value)
+
+// Hide library-rendered shadows for this page; state keeps updating
+shadow.setEnabled(false)
+
+// Restore automatic rendering
+shadow.reset()
+
+// Callback subscription; returns an unsubscribe function
+const stop = shadow.onStateChange((state) => {
+  console.log(state)
+})
+</script>
+```
+
+`state` is **which side should currently show a shadow**, not the scroll direction:
+
+| Value      | Meaning                                            | Rendering              |
+| ---------- | -------------------------------------------------- | ---------------------- |
+| `'none'`   | Content fits in one screen, or an edge is reached  | No shadow              |
+| `'top'`    | There is content above (usually left the top)      | Top shadow only        |
+| `'bottom'` | There is content below (usually not at the bottom) | Bottom shadow only     |
+| `'both'`   | There is content above and below                   | Top and bottom shadows |
+
+> The edge threshold defaults to 5px: within 5px of an edge counts as reaching it, so that side's shadow is hidden.
+
+- `setEnabled(false)` only stops the library from rendering shadows; `state` still tracks the scroll position, so you can draw your own shadows or scrollbar.
+- `setEnabled(true)` / `reset()` restore library rendering. Page-level settings take precedence over the global `scroll-shadow` prop.
+- `useTabScrollShadow()` must be used inside a cached page; non-page components in the same subtree can inject it as well.

@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h, nextTick, provide, ref, type DefineComponent } from 'vue'
 import { createPageComponentFactory } from '@/lib/hooks/tabPanel/pageComponentFactory'
 import { createTabPanelScroll } from '@/lib/hooks/tabPanel/scroll'
+import useTabScrollShadow from '@/lib/hooks/useTabScrollShadow'
 import {
   createStackTabsRuntimeContext,
   stackTabsContextKey,
@@ -70,6 +71,38 @@ const mountPage = (
 afterEach(() => {
   document.body.replaceChildren()
 })
+
+const waitFrame = () =>
+  new Promise<void>((resolve) => {
+    requestAnimationFrame(() => setTimeout(resolve, 0))
+  })
+
+/** 页面工厂的阴影类挂在 pageRoot 的父元素上；测试补一层 panel 模拟真实结构。 */
+const mountPageWithPanel = (
+  page: DefineComponent,
+  runtimeContext: StackTabsRuntimeContext,
+  vnode = h('div', { class: 'page-content' }, 'page')
+) => {
+  const Host = defineComponent({
+    name: 'PageComponentFactoryPanelHost',
+    setup() {
+      provide(stackTabsContextKey, runtimeContext)
+      provide(tabEmitterKey, runtimeContext.eventBus)
+      return () => h('div', { class: 'test-panel' }, [h(page, { vnode })])
+    }
+  })
+  return mount(Host)
+}
+
+const setScrollMetrics = (element: HTMLElement, scrollTop: number) => {
+  Object.defineProperty(element, 'scrollTop', {
+    value: scrollTop,
+    writable: true,
+    configurable: true
+  })
+  Object.defineProperty(element, 'clientHeight', { value: 100, configurable: true })
+  Object.defineProperty(element, 'scrollHeight', { value: 300, configurable: true })
+}
 
 describe('pageComponentFactory scrollContainer', () => {
   it('不传 scrollContainer 时保持默认 wrapper 结构与 #W id', async () => {
@@ -183,5 +216,78 @@ describe('pageComponentFactory scrollContainer', () => {
     scroll.restoreScroller('page-imperative')
 
     expect(position).toEqual({ top: 42, left: 4 })
+  })
+})
+
+describe('pageComponentFactory scroll shadow API', () => {
+  it('页面内组件可读取阴影状态并手动开关阴影', async () => {
+    const runtimeContext = createStackTabsRuntimeContext({ scrollShadow: true })
+    const { factory } = createHarness(runtimeContext)
+    let shadowApi!: ReturnType<typeof useTabScrollShadow>
+
+    const Inner = defineComponent({
+      name: 'PageShadowConsumer',
+      setup() {
+        shadowApi = useTabScrollShadow()
+        return () => h('div', { class: 'inner' })
+      }
+    })
+
+    const page = factory.resolvePageComponent({ cacheName: 'page-shadow', tabInfo })
+    const wrapper = mountPageWithPanel(page, runtimeContext, h(Inner))
+    await nextTick()
+
+    const pageWrapper = wrapper.get('.stack-tab__cache-page-wrapper').element as HTMLElement
+    const panel = wrapper.get('.test-panel').element as HTMLElement
+    setScrollMetrics(pageWrapper, 100)
+    pageWrapper.dispatchEvent(new Event('scroll'))
+    await waitFrame()
+
+    expect(shadowApi.getState()).toBe('both')
+    expect(shadowApi.state.value).toBe('both')
+    expect(panel.classList.contains('stack-tab__shadow-inset-vertical')).toBe(true)
+
+    shadowApi.setEnabled(false)
+    await waitFrame()
+    expect(panel.classList.contains('stack-tab__shadow-inset-vertical')).toBe(false)
+    // 关闭渲染不影响状态计算，业务仍可据此绘制自己的阴影。
+    expect(shadowApi.getState()).toBe('both')
+
+    shadowApi.reset()
+    await waitFrame()
+    expect(panel.classList.contains('stack-tab__shadow-inset-vertical')).toBe(true)
+  })
+
+  it('全局 scrollShadow=false 时仍计算状态，但不渲染阴影', async () => {
+    const runtimeContext = createStackTabsRuntimeContext({ scrollShadow: false })
+    const { factory } = createHarness(runtimeContext)
+    let shadowApi!: ReturnType<typeof useTabScrollShadow>
+
+    const Inner = defineComponent({
+      name: 'PageShadowConsumerDisabled',
+      setup() {
+        shadowApi = useTabScrollShadow()
+        return () => h('div', { class: 'inner' })
+      }
+    })
+
+    const page = factory.resolvePageComponent({ cacheName: 'page-shadow-off', tabInfo })
+    const wrapper = mountPageWithPanel(page, runtimeContext, h(Inner))
+    await nextTick()
+
+    const pageWrapper = wrapper.get('.stack-tab__cache-page-wrapper').element as HTMLElement
+    const panel = wrapper.get('.test-panel').element as HTMLElement
+    setScrollMetrics(pageWrapper, 100)
+    pageWrapper.dispatchEvent(new Event('scroll'))
+    await waitFrame()
+
+    expect(shadowApi.enabled.value).toBe(false)
+    expect(shadowApi.getState()).toBe('both')
+    expect(panel.classList.contains('stack-tab__shadow-inset-vertical')).toBe(false)
+
+    // 页面级开关优先于全局配置。
+    shadowApi.setEnabled(true)
+    await waitFrame()
+    expect(panel.classList.contains('stack-tab__shadow-inset-vertical')).toBe(true)
   })
 })

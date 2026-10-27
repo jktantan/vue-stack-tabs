@@ -358,6 +358,50 @@ fetchData().finally(() => closeTabLoading())
 
 ---
 
+### useTabScrollShadow
+
+Per-page shadow control. **Can be used in the page component and any nested component**, including a layout wrapper around the page content.
+
+```ts
+import { useTabScrollShadow } from 'vue-stack-tabs'
+
+const shadow = useTabScrollShadow()
+
+// Current direction: 'none' | 'top' | 'bottom' | 'both'
+console.log(shadow.state.value)
+
+// Hide or restore library-rendered shadows for this page
+shadow.setEnabled(false)
+shadow.reset()
+
+// Subscribe to direction changes
+const stop = shadow.onStateChange((state) => {
+  console.log(state)
+})
+```
+
+`state` is **which side should currently show a shadow**, not the scroll direction:
+
+| Value      | Meaning                                            | Rendering              |
+| ---------- | -------------------------------------------------- | ---------------------- |
+| `'none'`   | Content fits in one screen, or an edge is reached  | No shadow              |
+| `'top'`    | There is content above (usually left the top)      | Top shadow only        |
+| `'bottom'` | There is content below (usually not at the bottom) | Bottom shadow only     |
+| `'both'`   | There is content above and below                   | Top and bottom shadows |
+
+> The edge threshold defaults to 5px: within 5px of an edge counts as reaching it, so that side's shadow is hidden.
+
+| Member              | Description                                                           |
+| ------------------- | --------------------------------------------------------------------- |
+| `state`             | Which side should show a shadow (reactive; values above)              |
+| `enabled`           | Whether the library may render shadows for this page (reactive)       |
+| `setEnabled(bool)`  | Toggle library-rendered shadows; `state` keeps updating when disabled |
+| `reset()`           | Clear the manual override and fall back to the `scroll-shadow` prop   |
+| `getState()`        | Read the current direction synchronously                              |
+| `onStateChange(cb)` | Subscribe to direction changes; returns an unsubscribe function       |
+
+---
+
 ## Props
 
 `<VueStackTabs>` component properties:
@@ -382,6 +426,7 @@ fetchData().finally(() => closeTabLoading())
 | `height`               | `string`                    | `'100%'`                                                                   | Container height                                                                                                                                                                      |
 | `i18n`                 | `string`                    | `'zh-CN'`                                                                  | i18n locale, built-in `'zh-CN'` / `'en'`                                                                                                                                              |
 | `globalScroll`         | `boolean`                   | `false`                                                                    | Enable page-level scroll memory                                                                                                                                                       |
+| `scrollShadow`         | `boolean`                   | `true`                                                                     | Render top/bottom content shadows; per-page override via `useTabScrollShadow`                                                                                                         |
 | `sessionPrefix`        | `string`                    | `''`                                                                       | sessionStorage key prefix; useful for multiple instances on the same origin                                                                                                           |
 | `iframeAllowedOrigins` | `string[]`                  | `[]` (plus current origin)                                                 | Allowed origins for iframe postMessage openTab                                                                                                                                        |
 

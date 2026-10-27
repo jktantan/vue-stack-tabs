@@ -16,7 +16,8 @@
  *  - 阴影类可以挂到另一个不参与 transform 的元素上：滚动容器的 ::after 一旦
  *    跟随 transform（例如页面刷新动画），绝对定位的包含块就会变化，阴影会错位/消失
  */
-import { onScopeDispose, type Ref } from 'vue'
+import { onScopeDispose, ref, type Ref } from 'vue'
+import type { TabScrollShadowState } from './tabScrollShadowContext'
 
 const SHADOW_TOP_CLASS = 'stack-tab__shadow-inset-top'
 const SHADOW_BOTTOM_CLASS = 'stack-tab__shadow-inset-bottom'
@@ -53,6 +54,11 @@ export interface UseScrollShadowOptions {
    * 返回取消订阅函数。`target` 可以为 null（例如纯 transform 驱动的滚动组件）。
    */
   onScroll?: (listener: () => void) => () => void
+  /**
+   * 是否允许把阴影类写到 DOM（可选，默认 true）。
+   * 关闭时仍然计算并输出 `state`，只是不再渲染阴影，供业务自行决定如何展示。
+   */
+  enabled?: Ref<boolean> | (() => boolean)
 }
 
 export interface UseScrollShadowReturn {
@@ -64,6 +70,8 @@ export interface UseScrollShadowReturn {
   sync: (force?: boolean) => void
   /** 移除阴影类并取消待执行的 rAF（用于 keep-alive 失活） */
   clear: () => void
+  /** 当前应该显示哪个方向的阴影（与是否真正渲染无关） */
+  state: Ref<TabScrollShadowState>
 }
 
 const resolveTarget = (
@@ -71,8 +79,10 @@ const resolveTarget = (
 ): HTMLElement | null => (typeof target === 'function' ? target() : target.value)
 
 export const useScrollShadow = (options: UseScrollShadowOptions): UseScrollShadowReturn => {
+  const state = ref<TabScrollShadowState>('none')
+
   if (typeof document === 'undefined') {
-    return { sync: () => undefined, clear: () => undefined }
+    return { sync: () => undefined, clear: () => undefined, state }
   }
 
   const watchResize = options.watchResize !== false
@@ -83,6 +93,12 @@ export const useScrollShadow = (options: UseScrollShadowOptions): UseScrollShado
   let scrollCleanup: (() => void) | null = null
   let classElement: HTMLElement | null = null
   let resizeObserver: ResizeObserver | null = null
+
+  /** 是否允许渲染阴影；关闭时仍然计算 state。 */
+  const resolveEnabled = (): boolean => {
+    if (!options.enabled) return true
+    return typeof options.enabled === 'function' ? options.enabled() : options.enabled.value
+  }
 
   const clearClasses = (element: HTMLElement | null): void => {
     if (!element) return
@@ -114,7 +130,11 @@ export const useScrollShadow = (options: UseScrollShadowOptions): UseScrollShado
             clientHeight: attached.clientHeight
           }
         : null)
-    if (!metrics) return
+    if (!metrics) {
+      state.value = 'none'
+      clearClasses(classElement)
+      return
+    }
 
     const { scrollTop, scrollHeight, clientHeight } = metrics
     const distanceToTop = scrollTop
@@ -123,6 +143,19 @@ export const useScrollShadow = (options: UseScrollShadowOptions): UseScrollShado
     // 底部阴影：表示下方还有内容，离开底部（距离底部 > 阈值）时显示。
     const showTopShadow = distanceToTop > edgeThreshold
     const showBottomShadow = distanceToBottom > edgeThreshold
+    // 状态与是否渲染解耦：即使业务关闭了阴影，也要持续输出方向。
+    state.value =
+      showTopShadow && showBottomShadow
+        ? 'both'
+        : showTopShadow
+          ? 'top'
+          : showBottomShadow
+            ? 'bottom'
+            : 'none'
+    if (!resolveEnabled()) {
+      clearClasses(classElement)
+      return
+    }
     // 注意：-top / -bottom 是两个独立 CSS 规则、作用在同一个 ::after 上，
     // 同时加会互相覆盖（后定义的 -bottom 胜出）。因此这里互斥地只加一个类：
     // 两侧都有内容用 -vertical，只有一侧用 -top / -bottom，贴边时都不加。
@@ -188,6 +221,7 @@ export const useScrollShadow = (options: UseScrollShadowOptions): UseScrollShado
   const clear = (): void => {
     clearClasses(classElement)
     classElement = null
+    state.value = 'none'
     cancelScheduled()
   }
 
@@ -211,6 +245,7 @@ export const useScrollShadow = (options: UseScrollShadowOptions): UseScrollShado
     attached = null
     clearClasses(classElement)
     classElement = null
+    state.value = 'none'
     cancelScheduled()
   }
 
@@ -219,5 +254,5 @@ export const useScrollShadow = (options: UseScrollShadowOptions): UseScrollShado
 
   onScopeDispose(detach)
 
-  return { sync, clear }
+  return { sync, clear, state }
 }

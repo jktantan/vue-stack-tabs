@@ -6,6 +6,7 @@
  */
 import {
   cloneVNode,
+  computed,
   defineComponent,
   h,
   nextTick,
@@ -29,6 +30,7 @@ import {
 import PageLoading from '../../components/PageLoading.vue'
 import type { StackTabsRuntimeContext } from '../stackTabsContext'
 import { tabPageContextKey } from '../tabPageContext'
+import { tabScrollShadowKey, type TabScrollShadowState } from '../tabScrollShadowContext'
 import { useScrollShadow } from '../useScrollShadow'
 
 interface PageComponentFactoryOptions {
@@ -170,6 +172,8 @@ export const createPageComponentFactory = (options: PageComponentFactoryOptions)
         /** 自定义滚动组件的实例（expose proxy），用于解析滚动适配器。 */
         const scrollContainerRef = ref<unknown>(null)
         const customScrollAdapter = shallowRef<StackTabsScrollAdapter | null>(null)
+        /** 页面级手动开关；null 表示回退到 StackTabs 的全局配置。 */
+        const shadowEnabledOverride = ref<boolean | null>(null)
         /**
          * 实际渲染的刷新版本。
          *
@@ -224,7 +228,48 @@ export const createPageComponentFactory = (options: PageComponentFactoryOptions)
           target: () => getScrollAdapter()?.scrollElement ?? null,
           classTarget: () => pageRoot.value?.parentElement ?? null,
           getMetrics: () => readAdapterScrollMetrics(getScrollAdapter()),
-          onScroll: subscribeAdapterScroll
+          onScroll: subscribeAdapterScroll,
+          // 页面级开关优先；未设置时跟随 StackTabs 的全局配置。
+          enabled: () => shadowEnabledOverride.value ?? runtimeContext.scrollShadow.value
+        })
+
+        const shadowEnabled = computed(
+          () => shadowEnabledOverride.value ?? runtimeContext.scrollShadow.value
+        )
+        const shadowStateListeners = new Set<(state: TabScrollShadowState) => void>()
+
+        /** 手动设置当前页是否显示阴影；状态仍会继续计算。 */
+        const setShadowEnabled = (enabled: boolean): void => {
+          shadowEnabledOverride.value = enabled
+          scrollShadow.sync()
+        }
+
+        /** 清除手动开关，回退到全局配置。 */
+        const resetShadowEnabled = (): void => {
+          shadowEnabledOverride.value = null
+          scrollShadow.sync()
+        }
+
+        const onShadowStateChange = (
+          listener: (state: TabScrollShadowState) => void
+        ): (() => void) => {
+          shadowStateListeners.add(listener)
+          return () => shadowStateListeners.delete(listener)
+        }
+
+        // 状态广播给页面内的订阅者；响应式 `state` 仍然可以直接 watch。
+        watch(scrollShadow.state, (next) => {
+          for (const listener of shadowStateListeners) listener(next)
+        })
+
+        // 页面内任意层级的组件都可以通过 useTabScrollShadow() 注入这份控制器。
+        provide(tabScrollShadowKey, {
+          state: scrollShadow.state,
+          enabled: shadowEnabled,
+          setEnabled: setShadowEnabled,
+          reset: resetShadowEnabled,
+          getState: () => scrollShadow.state.value,
+          onStateChange: onShadowStateChange
         })
 
         /**
@@ -424,7 +469,16 @@ export const createPageComponentFactory = (options: PageComponentFactoryOptions)
           clearRefreshTimer()
           removeRefreshClasses()
         })
-        onUnmounted(() => removeScroller(cacheName))
+        onUnmounted(() => {
+          shadowStateListeners.clear()
+          removeScroller(cacheName)
+        })
+
+        // 运行时切换全局阴影开关：立即重算，不需要重建缓存页。
+        watch(
+          () => runtimeContext.scrollShadow.value,
+          () => scrollShadow.sync()
+        )
 
         // 运行时切换滚动组件：只重新解析适配器并重新同步阴影，不重建缓存页。
         watch(

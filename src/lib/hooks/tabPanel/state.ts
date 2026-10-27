@@ -25,6 +25,8 @@ export interface TabPanelRuntimeState {
   iframeRefreshKeys: Ref<Record<string, number>>
   maxTabCount: Ref<number>
   useGlobalScroll: Ref<boolean>
+  /** 是否允许库渲染内容区上下阴影；页面内可再通过 useTabScrollShadow 覆盖。 */
+  scrollShadow: Ref<boolean>
   sessionPrefix: Ref<string>
 }
 
@@ -43,5 +45,6 @@ export const createTabPanelRuntimeState = (): TabPanelRuntimeState => ({
   iframeRefreshKeys: ref<Record<string, number>>({}),
   maxTabCount: ref<number>(0),
   useGlobalScroll: ref<boolean>(false),
+  scrollShadow: ref<boolean>(true),
   sessionPrefix: ref<string>('')
 })

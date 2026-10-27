@@ -71,6 +71,11 @@ const props = withDefaults(
     space?: number
     globalScroll?: boolean
     /**
+     * 是否允许库渲染内容区上下阴影（默认 true）。
+     * 页面内组件还可以通过 `useTabScrollShadow().setEnabled()` 单独覆盖。
+     */
+    scrollShadow?: boolean
+    /**
      * 可选的自定义滚动组件，用于承载每个页签内容区的滚动。
      *
      * 组件需要渲染默认插槽、根元素填满父容器，并通过 `expose` 暴露
@@ -100,6 +105,7 @@ const props = withDefaults(
     i18n: undefined,
     space: 300,
     globalScroll: false,
+    scrollShadow: true,
     sessionPrefix: '',
     iframeAllowedOrigins: () => [],
     iframeSandbox: 'allow-scripts allow-forms allow-popups allow-downloads allow-same-origin',
@@ -126,6 +132,7 @@ const runtimeContext =
     iframePath: props.iframePath,
     maxTabCount: props.max,
     useGlobalScroll: props.globalScroll,
+    scrollShadow: props.scrollShadow,
     scrollContainer: props.scrollContainer,
     sessionPrefix: props.sessionPrefix
   })
@@ -181,6 +188,7 @@ const { setIFramePath, openTab, openInNewWindow } = tabActions
 if (isRuntimeContextOwner) {
   setIFramePath(props.iframePath)
   setGlobalScroll(props.globalScroll)
+  runtimeContext.scrollShadow.value = props.scrollShadow
   setScrollContainer(props.scrollContainer)
   setMaxSize(props.max)
   applyStackTabsLocale(changeLocale, props.i18n)
@@ -194,6 +202,12 @@ if (isRuntimeContextOwner) {
   watch(
     () => props.globalScroll,
     (value) => setGlobalScroll(value)
+  )
+  watch(
+    () => props.scrollShadow,
+    (value) => {
+      runtimeContext.scrollShadow.value = value
+    }
   )
   watch(
     () => props.scrollContainer,

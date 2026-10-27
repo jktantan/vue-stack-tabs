@@ -125,6 +125,11 @@ const router = createRouter({
           component: () => import('@/views/test_cases/ScrollTest.vue')
         },
         {
+          path: 'shadow',
+          name: 'shadow',
+          component: () => import('@/views/demo/ShadowTest.vue')
+        },
+        {
           path: 'iframe',
           name: 'iframe',
           component: IFrame

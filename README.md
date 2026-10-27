@@ -362,6 +362,50 @@ fetchData().finally(() => closeTabLoading())
 
 ---
 
+### useTabScrollShadow
+
+页面内阴影控制，**只能在标签内的页面组件及其子组件中使用**（包括包在 page 内容外的布局组件）。
+
+```ts
+import { useTabScrollShadow } from 'vue-stack-tabs'
+
+const shadow = useTabScrollShadow()
+
+// 当前应该显示哪个方向：'none' | 'top' | 'bottom' | 'both'
+console.log(shadow.state.value)
+
+// 手动关闭/恢复当前页阴影
+shadow.setEnabled(false)
+shadow.reset()
+
+// 订阅方向变化
+const stop = shadow.onStateChange((state) => {
+  console.log(state)
+})
+```
+
+`state` 传的是**当前应该显示哪一侧的阴影**，不是滚动方向：
+
+| 值         | 含义                             | 显示效果           |
+| ---------- | -------------------------------- | ------------------ |
+| `'none'`   | 内容不足一屏，或已经贴边         | 不显示阴影         |
+| `'top'`    | 上方还有内容（通常已离开顶部）   | 只显示顶部阴影     |
+| `'bottom'` | 下方还有内容（通常尚未滚到底部） | 只显示底部阴影     |
+| `'both'`   | 上下都有内容                     | 顶部和底部同时显示 |
+
+> 判定阈值默认 5px：距离边界 ≤ 5px 视为已贴边，不显示该侧阴影。
+
+| 成员                | 说明                                          |
+| ------------------- | --------------------------------------------- |
+| `state`             | 当前应显示哪一侧的阴影（响应式，取值见上表）  |
+| `enabled`           | 当前页是否允许库渲染阴影（响应式）            |
+| `setEnabled(bool)`  | 手动开关当前页阴影；关闭后 `state` 仍会更新   |
+| `reset()`           | 清除手动开关，回退到 `scroll-shadow` 全局配置 |
+| `getState()`        | 同步读取当前方向                              |
+| `onStateChange(cb)` | 订阅方向变化，返回取消订阅函数                |
+
+---
+
 ## ⚙️ Props
 
 `<VueStackTabs>` 组件属性：
@@ -386,6 +430,7 @@ fetchData().finally(() => closeTabLoading())
 | `height`               | `string`                    | `'100%'`                                                                   | 容器高度                                                                                                          |
 | `i18n`                 | `string`                    | `'zh-CN'`                                                                  | 国际化语言，内置 `'zh-CN'` / `'en'`                                                                               |
 | `globalScroll`         | `boolean`                   | `false`                                                                    | 是否使用页面级滚动记忆                                                                                            |
+| `scrollShadow`         | `boolean`                   | `true`                                                                     | 是否显示内容区上下阴影；页面内可用 `useTabScrollShadow` 覆盖                                                      |
 | `sessionPrefix`        | `string`                    | `''`                                                                       | sessionStorage 键前缀；同一 origin 多实例时用于隔离                                                               |
 | `iframeAllowedOrigins` | `string[]`                  | `[]`（叠加当前 origin）                                                    | 允许 iframe postMessage 调用 openTab 的来源列表                                                                   |
 

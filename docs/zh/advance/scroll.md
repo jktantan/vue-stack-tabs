@@ -102,3 +102,50 @@ export interface StackTabsScrollAdapter {
 ```
 
 位置记忆使用 `getPosition` / `setPosition`，滚动阴影使用 `getMetrics` / `onScroll`。缺失的能力会回退到原生 `scrollElement`；两者都不可用时仅关闭阴影，不影响页面渲染。
+
+## 阴影开关与状态
+
+内容区上下阴影由库根据主滚动容器自动计算。可以通过组件属性统一关闭：
+
+```vue:line-numbers
+<vue-stack-tabs iframe-path="/iframe" :scroll-shadow="false" />
+```
+
+页面内的任意组件（包括包在 page 内容外的布局组件）都可以读取当前应该显示哪个方向的阴影，并手动覆盖开关：
+
+```vue:line-numbers
+<script setup lang="ts">
+import { useTabScrollShadow } from 'vue-stack-tabs'
+
+const shadow = useTabScrollShadow()
+
+// 'none' | 'top' | 'bottom' | 'both'
+console.log(shadow.state.value)
+
+// 手动关闭当前页阴影；state 仍会继续更新
+shadow.setEnabled(false)
+
+// 恢复自动计算
+shadow.reset()
+
+// 回调订阅，返回取消订阅函数
+const stop = shadow.onStateChange((state) => {
+  console.log(state)
+})
+</script>
+```
+
+`state` 传的是**当前应该显示哪一侧的阴影**，不是滚动方向：
+
+| 值         | 含义                             | 显示效果           |
+| ---------- | -------------------------------- | ------------------ |
+| `'none'`   | 内容不足一屏，或已经贴边         | 不显示阴影         |
+| `'top'`    | 上方还有内容（通常已离开顶部）   | 只显示顶部阴影     |
+| `'bottom'` | 下方还有内容（通常尚未滚到底部） | 只显示底部阴影     |
+| `'both'`   | 上下都有内容                     | 顶部和底部同时显示 |
+
+> 判定阈值默认 5px：距离边界 ≤ 5px 视为已贴边，不显示该侧阴影。
+
+- `setEnabled(false)` 只关闭库的阴影渲染，`state` 仍然按滚动位置更新，适合业务自绘滚动条或阴影。
+- `setEnabled(true)` / `reset()` 恢复由库渲染；页面级设置优先于 `scroll-shadow` 全局配置。
+- `useTabScrollShadow()` 只能在 `<VueStackTabs>` 的缓存页内部使用，非页面组件同样可以 inject。

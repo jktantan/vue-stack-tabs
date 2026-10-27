@@ -108,4 +108,38 @@ describe('useScrollShadow', () => {
 
     wrapper.unmount()
   })
+
+  it('enabled 关闭时不写阴影类，但仍然输出 state', async () => {
+    const scroller = ref<HTMLElement | null>(null)
+    const classTarget = ref<HTMLElement | null>(null)
+    const enabled = ref(false)
+    let api!: ReturnType<typeof useScrollShadow>
+
+    const Host = defineComponent({
+      name: 'ToggleableScrollShadowHost',
+      setup() {
+        api = useScrollShadow({ target: scroller, classTarget, enabled })
+        return () =>
+          h('div', { ref: classTarget }, [h('div', { ref: scroller, 'data-test': 'scroller' })])
+      }
+    })
+
+    const wrapper = mount(Host)
+    const scrollerEl = wrapper.get('[data-test="scroller"]').element as HTMLElement
+    const classEl = wrapper.get('div').element as HTMLElement
+
+    setScrollMetrics(scrollerEl, { scrollTop: 100, clientHeight: 100, scrollHeight: 300 })
+    api.sync()
+    scrollerEl.dispatchEvent(new Event('scroll'))
+    await waitFrame()
+
+    expect(api.state.value).toBe('both')
+    expect(classEl.classList.contains('stack-tab__shadow-inset-vertical')).toBe(false)
+
+    enabled.value = true
+    api.sync()
+    await waitFrame()
+
+    expect(classEl.classList.contains('stack-tab__shadow-inset-vertical')).toBe(true)
+  })
 })

@@ -33,6 +33,8 @@ export interface StackTabsRuntimeContext {
   iframeRefreshKeys: Ref<Record<string, number>>
   maxTabCount: Ref<number>
   useGlobalScroll: Ref<boolean>
+  /** 是否允许库渲染内容区上下阴影；页面内可再通过 useTabScrollShadow 覆盖。 */
+  scrollShadow: Ref<boolean>
   /**
    * 宿主提供的自定义滚动组件（可选）。
    * 传入后每个缓存页的内容区由该组件承载滚动，库通过其 expose 的适配器
@@ -48,6 +50,7 @@ export interface CreateStackTabsRuntimeContextOptions {
   iframePath?: string
   maxTabCount?: number
   useGlobalScroll?: boolean
+  scrollShadow?: boolean
   scrollContainer?: Component
   sessionPrefix?: string
 }
@@ -78,6 +81,7 @@ export const createStackTabsRuntimeContext = (
     ...state,
     maxTabCount: ref(options.maxTabCount ?? state.maxTabCount.value),
     useGlobalScroll: ref(options.useGlobalScroll ?? state.useGlobalScroll.value),
+    scrollShadow: ref(options.scrollShadow ?? state.scrollShadow.value),
     // 组件定义不应被深度响应式代理，使用 shallowRef。
     scrollContainer: shallowRef<Component | null>(options.scrollContainer ?? null),
     sessionPrefix: ref(options.sessionPrefix ?? state.sessionPrefix.value),

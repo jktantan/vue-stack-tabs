@@ -110,6 +110,9 @@ onUnmounted(() => {
             <el-menu-item index="i4" @click="handleOpen('/demo/scroll', '滚动条精读')"
               >极长内容页面还原</el-menu-item
             >
+            <el-menu-item index="i5" @click="handleOpen('/demo/shadow', '阴影状态测试')"
+              >外部组件读取阴影状态</el-menu-item
+            >
           </el-sub-menu>
 
           <el-sub-menu index="iframes">

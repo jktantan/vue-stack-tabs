@@ -13,6 +13,7 @@ import ReportPage from './pages/ReportPage.vue'
 import DetailPage from './pages/DetailPage.vue'
 import FormPage from './pages/FormPage.vue'
 import ScrollPage from './pages/ScrollPage.vue'
+import ShadowPage from './pages/ShadowPage.vue'
 import NoticePage from './pages/NoticePage.vue'
 import LoadingPage from './pages/LoadingPage.vue'
 import NotFoundPage from './pages/NotFoundPage.vue'
@@ -31,6 +32,7 @@ export const router = createRouter({
         { path: 'report/:id', name: 'report-detail', component: DetailPage },
         { path: 'form', name: 'form', component: FormPage },
         { path: 'scroll', name: 'scroll', component: ScrollPage },
+        { path: 'shadow', name: 'shadow', component: ShadowPage },
         { path: 'notice', name: 'notice', component: NoticePage },
         { path: 'loading', name: 'loading', component: LoadingPage },
         // iframe 占位路由：与 <VueStackTabs iframe-path="/iframe"> 保持一致
