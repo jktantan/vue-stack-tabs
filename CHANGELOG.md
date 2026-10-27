@@ -1,5 +1,25 @@
 # Changelog
 
+## 2.7.0 (2026-10-27)
+
+### 新增
+
+- `<VueStackTabs>` 新增 `scrollShadow` 属性，默认 `true`；传 `false` 可关闭内容区上下阴影。
+- 新增 `useTabScrollShadow()`，页面内任意组件（包括包在 page 内容外的布局组件）都可以：
+  - 通过 `state` / `getState()` / `onStateChange()` 读取当前应该显示哪一侧的阴影：`none`、`top`、`bottom`、`both`；
+  - 通过 `setEnabled(false)` / `reset()` 手动关闭或恢复库渲染的阴影。
+- 关闭阴影渲染后，`state` 仍会按滚动位置持续更新，便于业务自绘滚动条或阴影。
+- 导出 `TabScrollShadowController`、`TabScrollShadowState` 类型。
+
+### 文档
+
+- 三份 README 与中英文滚动文档补充 `scrollShadow`、`useTabScrollShadow` 和 `state` 四态说明。
+- 主演示与 VitePress 演示新增「阴影状态」页面，验证外层组件读取和控制阴影。
+
+### 工程
+
+- `useScrollShadow` 新增 `state` 输出与 `enabled` 开关，并补充单元测试。
+
 ## 2.6.3 (2026-10-26)
 
 ### 工程
