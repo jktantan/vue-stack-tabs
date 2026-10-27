@@ -6,11 +6,12 @@
  * 容器的兼容调用（例如旧的单元测试），绝不能承载某个 Vue App 的状态。
  * 每个 Vue app 只允许注册一个 <VueStackTabs> 实例。
  */
-import type { App, Component, DefineComponent, InjectionKey, Ref, ShallowRef } from 'vue'
+import type { App, DefineComponent, InjectionKey, Ref, ShallowRef } from 'vue'
 import { hasInjectionContext, inject, ref, shallowRef } from 'vue'
 import type { Emitter } from 'mitt'
 import mitt from 'mitt'
 import type { ITabItem } from '../model/TabModel'
+import type { StackTabsPageScroll } from '../model/PageScroll'
 import type { TabEventPayloadMap } from './useTabEventBus'
 import { createTabPanelRuntimeState } from './tabPanel/state'
 import type { ScrollPosition } from './tabPanel/state'
@@ -32,15 +33,10 @@ export interface StackTabsRuntimeContext {
   isInitialized: Ref<boolean>
   iframeRefreshKeys: Ref<Record<string, number>>
   maxTabCount: Ref<number>
-  useGlobalScroll: Ref<boolean>
+  /** 内容区滚动策略：native / none / 自定义滚动组件。 */
+  pageScroll: Ref<StackTabsPageScroll>
   /** 是否允许库渲染内容区上下阴影；页面内可再通过 useTabScrollShadow 覆盖。 */
   scrollShadow: Ref<boolean>
-  /**
-   * 宿主提供的自定义滚动组件（可选）。
-   * 传入后每个缓存页的内容区由该组件承载滚动，库通过其 expose 的适配器
-   * 读写滚动位置与计算阴影；未传入时保持内建 `overflow: auto` 行为。
-   */
-  scrollContainer: Ref<Component | null>
   sessionPrefix: Ref<string>
   iframePath: Ref<string>
   eventBus: Emitter<TabEventPayloadMap>
@@ -49,9 +45,10 @@ export interface StackTabsRuntimeContext {
 export interface CreateStackTabsRuntimeContextOptions {
   iframePath?: string
   maxTabCount?: number
-  useGlobalScroll?: boolean
+  /** 内容区滚动策略：native / none / 自定义滚动组件。 */
+  pageScroll?: StackTabsPageScroll
+  /** 是否允许库渲染内容区上下阴影。 */
   scrollShadow?: boolean
-  scrollContainer?: Component
   sessionPrefix?: string
 }
 
@@ -80,10 +77,8 @@ export const createStackTabsRuntimeContext = (
   return {
     ...state,
     maxTabCount: ref(options.maxTabCount ?? state.maxTabCount.value),
-    useGlobalScroll: ref(options.useGlobalScroll ?? state.useGlobalScroll.value),
+    pageScroll: shallowRef<StackTabsPageScroll>(options.pageScroll ?? state.pageScroll.value),
     scrollShadow: ref(options.scrollShadow ?? state.scrollShadow.value),
-    // 组件定义不应被深度响应式代理，使用 shallowRef。
-    scrollContainer: shallowRef<Component | null>(options.scrollContainer ?? null),
     sessionPrefix: ref(options.sessionPrefix ?? state.sessionPrefix.value),
     iframePath: ref(options.iframePath ?? ''),
     eventBus: mitt<TabEventPayloadMap>()

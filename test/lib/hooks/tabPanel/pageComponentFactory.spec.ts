@@ -1,9 +1,10 @@
 // @vitest-environment happy-dom
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { defineComponent, h, nextTick, provide, ref, type DefineComponent } from 'vue'
+import { defineComponent, h, nextTick, onMounted, provide, ref, type DefineComponent } from 'vue'
 import { createPageComponentFactory } from '@/lib/hooks/tabPanel/pageComponentFactory'
 import { createTabPanelScroll } from '@/lib/hooks/tabPanel/scroll'
+import useTabPageScroll from '@/lib/hooks/useTabPageScroll'
 import useTabScrollShadow from '@/lib/hooks/useTabScrollShadow'
 import {
   createStackTabsRuntimeContext,
@@ -104,8 +105,8 @@ const setScrollMetrics = (element: HTMLElement, scrollTop: number) => {
   Object.defineProperty(element, 'scrollHeight', { value: 300, configurable: true })
 }
 
-describe('pageComponentFactory scrollContainer', () => {
-  it('不传 scrollContainer 时保持默认 wrapper 结构与 #W id', async () => {
+describe('pageComponentFactory pageScroll', () => {
+  it('pageScroll 默认 none 时 wrapper 使用 overflow: hidden', async () => {
     const runtimeContext = createStackTabsRuntimeContext()
     const { factory } = createHarness(runtimeContext)
     const page = factory.resolvePageComponent({ cacheName: 'page-default', tabInfo })
@@ -120,7 +121,20 @@ describe('pageComponentFactory scrollContainer', () => {
     expect(pageWrapper.find('.page-content').exists()).toBe(true)
   })
 
-  it('传入 scrollContainer 时在 wrapper 内渲染宿主组件并传递默认插槽', async () => {
+  it('pageScroll: native 时 wrapper 使用原生滚动', async () => {
+    const runtimeContext = createStackTabsRuntimeContext({ pageScroll: 'native' })
+    const { factory } = createHarness(runtimeContext)
+    const page = factory.resolvePageComponent({ cacheName: 'page-native', tabInfo })
+
+    const wrapper = mountPage(page, runtimeContext)
+    await nextTick()
+
+    expect(wrapper.find('.stack-tab__cache-page-wrapper').attributes('style')).toContain(
+      'overflow: auto'
+    )
+  })
+
+  it('传入 pageScroll 组件时在 wrapper 内渲染宿主组件并传递默认插槽', async () => {
     const ScrollHost = defineComponent({
       name: 'TestScrollHost',
       setup(_, { slots, expose }) {
@@ -133,7 +147,7 @@ describe('pageComponentFactory scrollContainer', () => {
       }
     })
 
-    const runtimeContext = createStackTabsRuntimeContext({ scrollContainer: ScrollHost })
+    const runtimeContext = createStackTabsRuntimeContext({ pageScroll: ScrollHost })
     const { factory } = createHarness(runtimeContext)
     const page = factory.resolvePageComponent({ cacheName: 'page-custom', tabInfo })
 
@@ -167,7 +181,7 @@ describe('pageComponentFactory scrollContainer', () => {
       }
     })
 
-    const runtimeContext = createStackTabsRuntimeContext({ scrollContainer: ScrollHost })
+    const runtimeContext = createStackTabsRuntimeContext({ pageScroll: ScrollHost })
     const { factory, scroll } = createHarness(runtimeContext)
     const page = factory.resolvePageComponent({ cacheName: 'page-scroll', tabInfo })
 
@@ -203,7 +217,7 @@ describe('pageComponentFactory scrollContainer', () => {
       }
     })
 
-    const runtimeContext = createStackTabsRuntimeContext({ scrollContainer: ScrollHost })
+    const runtimeContext = createStackTabsRuntimeContext({ pageScroll: ScrollHost })
     const { factory, scroll } = createHarness(runtimeContext)
     const page = factory.resolvePageComponent({ cacheName: 'page-imperative', tabInfo })
 
@@ -217,11 +231,57 @@ describe('pageComponentFactory scrollContainer', () => {
 
     expect(position).toEqual({ top: 42, left: 4 })
   })
+
+  it('pageScroll: none 时页面可以通过 useTabPageScroll 注册滚动源', async () => {
+    const runtimeContext = createStackTabsRuntimeContext({ pageScroll: 'none' })
+    const { factory, scroll } = createHarness(runtimeContext)
+    let pageScrollApi!: ReturnType<typeof useTabPageScroll>
+    let shadowApi!: ReturnType<typeof useTabScrollShadow>
+
+    const Inner = defineComponent({
+      name: 'PageOwnScrollConsumer',
+      setup() {
+        pageScrollApi = useTabPageScroll()
+        shadowApi = useTabScrollShadow()
+        const scrollElement = ref<HTMLElement | null>(null)
+        onMounted(() => pageScrollApi.attach(scrollElement.value))
+        return () =>
+          h(
+            'div',
+            { ref: scrollElement, class: 'inner-scroll' },
+            h('div', { class: 'inner-content' }, 'content')
+          )
+      }
+    })
+
+    const page = factory.resolvePageComponent({ cacheName: 'page-own-scroll', tabInfo })
+    const wrapper = mountPageWithPanel(page, runtimeContext, h(Inner))
+    await nextTick()
+
+    const inner = wrapper.get('.inner-scroll').element as HTMLElement
+    const panel = wrapper.get('.test-panel').element as HTMLElement
+    setScrollMetrics(inner, 100)
+    inner.dispatchEvent(new Event('scroll'))
+    await waitFrame()
+
+    expect(shadowApi.getState()).toBe('both')
+    expect(panel.classList.contains('stack-tab__shadow-inset-vertical')).toBe(true)
+
+    inner.scrollTop = 120
+    scroll.saveScroller('page-own-scroll')
+    inner.scrollTop = 0
+    scroll.restoreScroller('page-own-scroll')
+
+    expect(inner.scrollTop).toBe(120)
+  })
 })
 
 describe('pageComponentFactory scroll shadow API', () => {
   it('页面内组件可读取阴影状态并手动开关阴影', async () => {
-    const runtimeContext = createStackTabsRuntimeContext({ scrollShadow: true })
+    const runtimeContext = createStackTabsRuntimeContext({
+      pageScroll: 'native',
+      scrollShadow: true
+    })
     const { factory } = createHarness(runtimeContext)
     let shadowApi!: ReturnType<typeof useTabScrollShadow>
 
@@ -259,7 +319,10 @@ describe('pageComponentFactory scroll shadow API', () => {
   })
 
   it('全局 scrollShadow=false 时仍计算状态，但不渲染阴影', async () => {
-    const runtimeContext = createStackTabsRuntimeContext({ scrollShadow: false })
+    const runtimeContext = createStackTabsRuntimeContext({
+      pageScroll: 'native',
+      scrollShadow: false
+    })
     const { factory } = createHarness(runtimeContext)
     let shadowApi!: ReturnType<typeof useTabScrollShadow>
 

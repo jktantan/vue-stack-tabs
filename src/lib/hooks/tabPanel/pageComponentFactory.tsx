@@ -22,6 +22,7 @@ import {
 } from 'vue'
 import type { DefineComponent, PropType, VNode } from 'vue'
 import type { ITabBase } from '../../model/TabModel'
+import { isPageScrollComponent } from '../../model/PageScroll'
 import {
   readAdapterScrollMetrics,
   resolveScrollAdapter,
@@ -30,6 +31,7 @@ import {
 import PageLoading from '../../components/PageLoading.vue'
 import type { StackTabsRuntimeContext } from '../stackTabsContext'
 import { tabPageContextKey } from '../tabPageContext'
+import { tabPageScrollKey } from '../tabPageScrollContext'
 import { tabScrollShadowKey, type TabScrollShadowState } from '../tabScrollShadowContext'
 import { useScrollShadow } from '../useScrollShadow'
 
@@ -172,6 +174,8 @@ export const createPageComponentFactory = (options: PageComponentFactoryOptions)
         /** 自定义滚动组件的实例（expose proxy），用于解析滚动适配器。 */
         const scrollContainerRef = ref<unknown>(null)
         const customScrollAdapter = shallowRef<StackTabsScrollAdapter | null>(null)
+        /** 页面内注册的主滚动源；优先于 pageScroll 全局策略。 */
+        const pageScrollAdapter = shallowRef<StackTabsScrollAdapter | null>(null)
         /** 页面级手动开关；null 表示回退到 StackTabs 的全局配置。 */
         const shadowEnabledOverride = ref<boolean | null>(null)
         /**
@@ -183,25 +187,28 @@ export const createPageComponentFactory = (options: PageComponentFactoryOptions)
          */
         const renderedRefreshVersion = ref(props.refreshVersion ?? 0)
 
-        const hasCustomScrollContainer = (): boolean =>
-          Boolean(runtimeContext.scrollContainer.value)
+        const isCustomPageScroll = (): boolean =>
+          isPageScrollComponent(runtimeContext.pageScroll.value)
+        const isNativePageScroll = (): boolean => runtimeContext.pageScroll.value === 'native'
 
         /**
          * 当前页面的主滚动适配器。
          *
-         * 未传 `scrollContainer` 时把 wrapper 本身当作适配器，默认路径行为保持不变；
-         * 传入时读取自定义组件 expose 的能力，解析不到则按「无滚动容器」处理。
+         * 优先级：页面内注册的滚动源 > 自定义滚动组件 > 原生 wrapper。
+         * `pageScroll: 'none'` 且没有注册滚动源时返回 null。
          */
         const getScrollAdapter = (): StackTabsScrollAdapter | null => {
-          if (!hasCustomScrollContainer()) {
+          if (pageScrollAdapter.value) return pageScrollAdapter.value
+          if (isCustomPageScroll()) return customScrollAdapter.value
+          if (isNativePageScroll()) {
             return pageRoot.value ? { scrollElement: pageRoot.value } : null
           }
-          return customScrollAdapter.value
+          return null
         }
 
-        /** 重新解析自定义滚动组件的适配器（运行时切换容器后也会调用）。 */
+        /** 重新解析自定义滚动组件的适配器（运行时切换策略后也会调用）。 */
         const syncScrollAdapter = (): void => {
-          customScrollAdapter.value = hasCustomScrollContainer()
+          customScrollAdapter.value = isCustomPageScroll()
             ? resolveScrollAdapter(scrollContainerRef.value)
             : null
         }
@@ -273,18 +280,43 @@ export const createPageComponentFactory = (options: PageComponentFactoryOptions)
         })
 
         /**
-         * 同步主滚动容器的注册方式：
-         * - 默认路径：保持 `#W-<cacheName>` 选择器，行为与旧版本一致；
-         * - 自定义路径：改用适配器读写位置，跳过 wrapper 的注册。
+         * 同步主滚动源的注册方式：
+         * - 页面内注册了滚动源：优先使用它；
+         * - 自定义滚动组件：改用适配器读写位置；
+         * - native：注册 `#W-<cacheName>`，由 wrapper 原生滚动；
+         * - none：不注册主滚动源，由页面自己处理。
          */
         const syncScrollRegistration = (): void => {
-          if (hasCustomScrollContainer()) {
+          if (pageScrollAdapter.value) {
+            setPageScrollAdapter(cacheName, () => pageScrollAdapter.value)
+            return
+          }
+          if (isCustomPageScroll()) {
             setPageScrollAdapter(cacheName, () => customScrollAdapter.value)
             return
           }
-          addPageScroller(cacheName, `#W-${cacheName}`)
           setPageScrollAdapter(cacheName, null)
+          if (isNativePageScroll()) {
+            addPageScroller(cacheName, `#W-${cacheName}`)
+          }
         }
+
+        /**
+         * 页面内组件把真实滚动源注册进来。
+         *
+         * 适用于 `pageScroll="none"` 的页面自己处理滚动的场景，也可以覆盖默认策略。
+         */
+        const setPageScrollSource = (source: HTMLElement | StackTabsScrollAdapter | null): void => {
+          pageScrollAdapter.value = source ? resolveScrollAdapter(source) : null
+          syncScrollRegistration()
+          restoreScroller(cacheName)
+          scrollShadow.sync(true)
+        }
+
+        provide(tabPageScrollKey, {
+          attach: setPageScrollSource,
+          detach: () => setPageScrollSource(null)
+        })
 
         let refreshDisposed = false
         let isFlushingRefresh = false
@@ -455,6 +487,7 @@ export const createPageComponentFactory = (options: PageComponentFactoryOptions)
         })
         onActivated(() => {
           context.emit('onLoaded')
+          syncScrollRegistration()
           syncScrollAdapter()
           restoreScroller(cacheName)
           scrollShadow.sync(true)
@@ -470,6 +503,7 @@ export const createPageComponentFactory = (options: PageComponentFactoryOptions)
           removeRefreshClasses()
         })
         onUnmounted(() => {
+          pageScrollAdapter.value = null
           shadowStateListeners.clear()
           removeScroller(cacheName)
         })
@@ -480,11 +514,10 @@ export const createPageComponentFactory = (options: PageComponentFactoryOptions)
           () => scrollShadow.sync()
         )
 
-        // 运行时切换滚动组件：只重新解析适配器并重新同步阴影，不重建缓存页。
+        // 运行时切换页面滚动策略：保存旧位置，重新注册滚动源并恢复。
         watch(
-          () => runtimeContext.scrollContainer.value,
+          () => runtimeContext.pageScroll.value,
           () => {
-            // 切换前保存旧容器的主滚动位置，切换后由新容器 / 默认 wrapper 恢复。
             saveScroller(cacheName)
             void nextTick(() => {
               if (refreshDisposed) return
@@ -509,7 +542,10 @@ export const createPageComponentFactory = (options: PageComponentFactoryOptions)
             lastBackParams.value = backParams
           }
 
-          const scrollContainer = runtimeContext.scrollContainer.value
+          const pageScroll = runtimeContext.pageScroll.value
+          const scrollComponent = isPageScrollComponent(pageScroll) ? pageScroll : null
+          // 页面内注册了滚动源时，即使策略是 native，也不让 wrapper 再滚一层。
+          const useWrapperScroll = pageScroll === 'native' && !pageScrollAdapter.value
           const pageContent = lastCloned.value ? (
             <PageShell
               key={`${cacheName}-${renderedRefreshVersion.value}`}
@@ -523,17 +559,15 @@ export const createPageComponentFactory = (options: PageComponentFactoryOptions)
               class="stack-tab__cache-page-wrapper"
               id={`W-${cacheName}`}
               style={[
-                // 自定义滚动容器优先：wrapper 不再承担滚动，避免出现两层滚动条。
+                // native 且没有页面内滚动源时由 wrapper 滚；其余情况 wrapper 只负责裁剪。
                 // 动画作用于 wrapper 本身，页面内容不会相对滚动容器位移，
                 // 因此无需临时隐藏 overflow，避免动画期间滚动条消失导致内容宽度跳动。
-                !scrollContainer && runtimeContext.useGlobalScroll.value
-                  ? 'overflow:auto'
-                  : 'overflow:hidden',
+                useWrapperScroll ? 'overflow:auto' : 'overflow:hidden',
                 'height: 100%'
               ]}
             >
-              {scrollContainer
-                ? h(scrollContainer, { ref: scrollContainerRef }, { default: () => pageContent })
+              {scrollComponent
+                ? h(scrollComponent, { ref: scrollContainerRef }, { default: () => pageContent })
                 : pageContent}
               {/* PageLoading 必须在滚动容器外层：它是覆盖整个内容区的遮罩。 */}
               <PageLoading tabId={tabInfo.id!} />

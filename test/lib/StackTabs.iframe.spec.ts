@@ -12,8 +12,7 @@ const iframeRefreshKeys = ref<Record<string, number>>({})
 const destroyMock = vi.fn()
 const initializeMock = vi.fn()
 const setMaxSizeMock = vi.fn()
-const setGlobalScrollMock = vi.fn()
-const setScrollContainerMock = vi.fn()
+const setPageScrollMock = vi.fn()
 const setSessionPrefixMock = vi.fn()
 const setIFramePathMock = vi.fn()
 const openTabMock = vi.fn()
@@ -45,8 +44,7 @@ vi.mock('@/lib/hooks/useTabPanel', () => ({
     destroy: destroyMock,
     initialize: initializeMock,
     setMaxSize: setMaxSizeMock,
-    setGlobalScroll: setGlobalScrollMock,
-    setScrollContainer: setScrollContainerMock,
+    setPageScroll: setPageScrollMock,
     setSessionPrefix: setSessionPrefixMock
   })
 }))
@@ -116,8 +114,7 @@ beforeEach(() => {
   destroyMock.mockReset()
   initializeMock.mockReset()
   setMaxSizeMock.mockReset()
-  setGlobalScrollMock.mockReset()
-  setScrollContainerMock.mockReset()
+  setPageScrollMock.mockReset()
   setSessionPrefixMock.mockReset()
   setIFramePathMock.mockReset()
   openTabMock.mockReset()

@@ -24,7 +24,7 @@ describe('stackTabsContext', () => {
     const context = createStackTabsRuntimeContext({
       iframePath: '/iframe',
       maxTabCount: 20,
-      useGlobalScroll: true,
+      pageScroll: 'native',
       sessionPrefix: 'admin:'
     })
 
@@ -38,7 +38,7 @@ describe('stackTabsContext', () => {
     expect(context.isInitialized.value).toBe(false)
     expect(context.iframeRefreshKeys.value).toEqual({})
     expect(context.maxTabCount.value).toBe(20)
-    expect(context.useGlobalScroll.value).toBe(true)
+    expect(context.pageScroll.value).toBe('native')
     expect(context.sessionPrefix.value).toBe('admin:')
     expect(context.iframePath.value).toBe('/iframe')
     expect(typeof context.eventBus.emit).toBe('function')

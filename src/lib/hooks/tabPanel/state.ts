@@ -7,6 +7,7 @@
 import type { DefineComponent, Ref, ShallowRef } from 'vue'
 import { ref, shallowRef } from 'vue'
 import type { ITabItem } from '../../model/TabModel'
+import type { StackTabsPageScroll } from '../../model/PageScroll'
 
 export interface ScrollPosition {
   top: number
@@ -24,7 +25,8 @@ export interface TabPanelRuntimeState {
   isInitialized: Ref<boolean>
   iframeRefreshKeys: Ref<Record<string, number>>
   maxTabCount: Ref<number>
-  useGlobalScroll: Ref<boolean>
+  /** 内容区滚动策略：native / none / 自定义滚动组件。 */
+  pageScroll: Ref<StackTabsPageScroll>
   /** 是否允许库渲染内容区上下阴影；页面内可再通过 useTabScrollShadow 覆盖。 */
   scrollShadow: Ref<boolean>
   sessionPrefix: Ref<string>
@@ -44,7 +46,7 @@ export const createTabPanelRuntimeState = (): TabPanelRuntimeState => ({
   isInitialized: ref<boolean>(false),
   iframeRefreshKeys: ref<Record<string, number>>({}),
   maxTabCount: ref<number>(0),
-  useGlobalScroll: ref<boolean>(false),
+  pageScroll: shallowRef<StackTabsPageScroll>('none'),
   scrollShadow: ref<boolean>(true),
   sessionPrefix: ref<string>('')
 })

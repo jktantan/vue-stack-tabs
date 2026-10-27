@@ -2,15 +2,67 @@
 
 When scroll targets are set, cached tabs will restore their scroll position when reactivated.
 
-## Global Scroll
+## Scroll Strategy
 
-By default, global scroll is off. Enable it with `global-scroll`:
+`pageScroll` decides who owns the content scrolling for each tab. The default is `'none'`:
+
+| Value       | Behavior                                                  |
+| ----------- | --------------------------------------------------------- |
+| `'native'`  | The library wrapper uses native scroll (`overflow: auto`) |
+| `'none'`    | The library does not own scrolling; the page handles it   |
+| `Component` | A custom scroll component owns scrolling                  |
+
+### Library native scroll
 
 ```vue:line-numbers
+<vue-stack-tabs iframe-path="/iframe" page-scroll="native" />
+```
+
+Use this when content is rendered directly in the page and the library should own position memory.
+
+### Page-managed scroll
+
+With the default `'none'`, the wrapper is `overflow: hidden` and the library does not listen to a main scroll source. The page can mark native scroll containers with `data-stack-tab-scroll` / `addScrollTarget`; if it uses a custom scroll component, register the real scroll source with `useTabPageScroll` so position memory and shadows keep working.
+
+```vue:line-numbers
+<script setup lang="ts">
+import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { useTabPageScroll } from 'vue-stack-tabs'
+
+const pageScroll = useTabPageScroll()
+const scrollElement = ref<HTMLElement | null>(null)
+
+onMounted(() => pageScroll.attach(scrollElement.value))
+onBeforeUnmount(() => pageScroll.detach())
+</script>
+
 <template>
-  <vue-stack-tabs iframe-path="/iframe" global-scroll />
+  <div ref="scrollElement" class="page-scroll">
+    <slot />
+  </div>
 </template>
 ```
+
+Virtual scrolling and imperative components can register an adapter instead:
+
+```ts
+pageScroll.attach({
+  getPosition: () => ({ top, left }),
+  setPosition: (position) => {
+    top = position.top
+    left = position.left
+  },
+  getMetrics: () => ({ scrollTop: top, scrollHeight, clientHeight }),
+  onScroll: (listener) => {
+    // subscribe to your own scroll events
+    return () => {
+      // unsubscribe
+    }
+  }
+})
+```
+
+A page-level source has the highest priority: `useTabPageScroll` > `pageScroll` component > native wrapper.
 
 ## Page Scroll Targets
 
@@ -46,9 +98,9 @@ const { addScrollTarget } = useTabRouter()
 addScrollTarget('.custom-scroller-1', '.custom-scroller-2')
 ```
 
-## Custom Scroll Container
+## Custom Scroll Component
 
-Pass a component through `scroll-container` to let your own scroll component (for example Element Plus `ElScrollbar`) host the content area of every tab. It is an opt-in extension point: when the prop is omitted, the built-in `overflow: auto` wrapper behaves exactly as before. The component is rendered **inside each cached page wrapper**, so every tab keeps its own scroll position.
+Pass a component through `page-scroll` to let your own scroll component (for example Element Plus `ElScrollbar`) host the content area of every tab. The component is rendered **inside each cached page wrapper**, so every tab keeps its own scroll position.
 
 ```vue:line-numbers
 <!-- PageScroll.vue -->
@@ -72,7 +124,7 @@ defineExpose({
 ```
 
 ```vue:line-numbers
-<vue-stack-tabs iframe-path="/iframe" :scroll-container="PageScroll" />
+<vue-stack-tabs iframe-path="/iframe" :page-scroll="PageScroll" />
 ```
 
 Requirements for a custom scroll component:
@@ -81,7 +133,7 @@ Requirements for a custom scroll component:
 2. Fill the parent (`height: 100%`).
 3. Expose the real scrolling element as `scrollElement`.
 
-When `scroll-container` is set, the wrapper always uses `overflow: hidden` and `global-scroll` only affects the default (no custom container) path. `PageLoading` stays outside the scroll container so the overlay always covers the whole content area.
+When the component is set, the wrapper always uses `overflow: hidden`. `PageLoading` stays outside the scroll container so the overlay always covers the whole content area.
 
 ### Imperative scroll components
 
@@ -145,3 +197,4 @@ const stop = shadow.onStateChange((state) => {
 - `setEnabled(false)` only stops the library from rendering shadows; `state` still tracks the scroll position, so you can draw your own shadows or scrollbar.
 - `setEnabled(true)` / `reset()` restore library rendering. Page-level settings take precedence over the global `scroll-shadow` prop.
 - `useTabScrollShadow()` must be used inside a cached page; non-page components in the same subtree can inject it as well.
+- With `pageScroll="none"` and no registered source, `state` stays `none`; registering a source with `useTabPageScroll` makes it recalculate.

@@ -29,7 +29,7 @@ export interface TabPanelScrollApi {
    * 注册页面的自定义滚动适配器。
    *
    * 传 null 表示该页面回退到默认 wrapper（`#W-<cacheName>`）路径。
-   * getter 而不是适配器实例：运行时切换 `scrollContainer` 时，
+   * getter 而不是适配器实例：运行时切换 `pageScroll` 时，
    * 位置保存/恢复总是读取最新的适配器。
    */
   setPageScrollAdapter: (

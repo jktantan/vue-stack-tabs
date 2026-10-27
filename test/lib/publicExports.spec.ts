@@ -5,14 +5,17 @@ import { describe, expect, it } from 'vitest'
 import {
   resolveTabPageContext,
   tabPageContextKey,
+  useTabPageScroll,
   useTabScrollShadow,
+  type StackTabsPageScroll,
+  type StackTabsPageScrollMode,
   type TabPageContext,
   type TabScrollShadowState
 } from '@/lib/index'
 
 describe('public exports - tab page context', () => {
   it('导出页面上下文 key 与解析函数，供宿主的非页面组件 inject', () => {
-    // 例：宿主自定义 scrollContainer 需要 tabId / pageId，但本身不在页面组件内。
+    // 例：宿主自定义滚动组件需要 tabId / pageId，但本身不在页面组件内。
     expect(typeof tabPageContextKey).toBe('symbol')
     expect(typeof resolveTabPageContext).toBe('function')
   })
@@ -28,5 +31,13 @@ describe('public exports - tab page context', () => {
 
     const state: TabScrollShadowState = 'both'
     expect(state).toBe('both')
+  })
+
+  it('导出 useTabPageScroll 与 pageScroll 类型', () => {
+    expect(typeof useTabPageScroll).toBe('function')
+
+    const config: StackTabsPageScroll = 'native'
+    const mode: StackTabsPageScrollMode = 'native'
+    expect(config).toBe(mode)
   })
 })

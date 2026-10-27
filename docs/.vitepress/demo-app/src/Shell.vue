@@ -115,7 +115,7 @@ const refreshActive = () => {
       iframe-path="/iframe"
       :home-tab="homeTab"
       :max="12"
-      global-scroll
+      page-scroll="native"
       session-prefix="docs-demo"
     />
 

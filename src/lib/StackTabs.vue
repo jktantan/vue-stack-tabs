@@ -22,11 +22,12 @@ import {
   toRef,
   watch
 } from 'vue'
-import type { Component, TransitionProps } from 'vue'
+import type { TransitionProps } from 'vue'
 import { getMaxZIndex, invalidateZIndexCache } from './utils/scrollUtils'
 import { isAllowedTabUrl } from './utils/urlParser'
 import { applyStackTabsLocale } from './i18n/stackTabsLocale'
 import { type ITabData, TabScrollMode } from './model/TabModel'
+import type { StackTabsPageScroll } from './model/PageScroll'
 import TabHeader from './components/TabHeader/index.vue'
 import StackKeepAlive from './components/StackKeepAlive/StackKeepAlive.vue'
 import useTabPanel from './hooks/useTabPanel'
@@ -69,20 +70,20 @@ const props = withDefaults(
     height?: string
     i18n?: string
     space?: number
-    globalScroll?: boolean
+    /**
+     * 内容区滚动策略：
+     * - `'native'`：由库内 wrapper 使用原生滚动；
+     * - `'none'`：库不接管滚动，由页面自己处理；
+     * - `Component`：由传入的滚动组件接管。
+     *
+     * 默认 `'none'`。
+     */
+    pageScroll?: StackTabsPageScroll
     /**
      * 是否允许库渲染内容区上下阴影（默认 true）。
      * 页面内组件还可以通过 `useTabScrollShadow().setEnabled()` 单独覆盖。
      */
     scrollShadow?: boolean
-    /**
-     * 可选的自定义滚动组件，用于承载每个页签内容区的滚动。
-     *
-     * 组件需要渲染默认插槽、根元素填满父容器，并通过 `expose` 暴露
-     * `scrollElement`（或实现 `StackTabsScrollAdapter` 的可选方法）。
-     * 传入后 wrapper 恒为 `overflow: hidden`，`globalScroll` 仅对默认路径生效。
-     */
-    scrollContainer?: Component
     iframePath: string
     sessionPrefix?: string
     iframeAllowedOrigins?: string[]
@@ -104,7 +105,7 @@ const props = withDefaults(
     height: '100%',
     i18n: undefined,
     space: 300,
-    globalScroll: false,
+    pageScroll: 'none',
     scrollShadow: true,
     sessionPrefix: '',
     iframeAllowedOrigins: () => [],
@@ -131,9 +132,8 @@ const runtimeContext =
   createStackTabsRuntimeContext({
     iframePath: props.iframePath,
     maxTabCount: props.max,
-    useGlobalScroll: props.globalScroll,
+    pageScroll: props.pageScroll,
     scrollShadow: props.scrollShadow,
-    scrollContainer: props.scrollContainer,
     sessionPrefix: props.sessionPrefix
   })
 const stackTabsApp = getCurrentInstance()?.appContext.app
@@ -163,8 +163,7 @@ const panelApi = isRuntimeContextOwner
       destroy: () => undefined,
       initialize: () => undefined,
       setMaxSize: () => undefined,
-      setGlobalScroll: () => undefined,
-      setScrollContainer: () => undefined,
+      setPageScroll: () => undefined,
       setSessionPrefix: () => undefined
     }
 const {
@@ -173,8 +172,7 @@ const {
   destroy,
   initialize,
   setMaxSize,
-  setGlobalScroll,
-  setScrollContainer,
+  setPageScroll,
   setSessionPrefix
 } = panelApi
 const tabActions = isRuntimeContextOwner
@@ -187,9 +185,8 @@ const tabActions = isRuntimeContextOwner
 const { setIFramePath, openTab, openInNewWindow } = tabActions
 if (isRuntimeContextOwner) {
   setIFramePath(props.iframePath)
-  setGlobalScroll(props.globalScroll)
+  setPageScroll(props.pageScroll)
   runtimeContext.scrollShadow.value = props.scrollShadow
-  setScrollContainer(props.scrollContainer)
   setMaxSize(props.max)
   applyStackTabsLocale(changeLocale, props.i18n)
 
@@ -200,18 +197,14 @@ if (isRuntimeContextOwner) {
     (value) => setMaxSize(value)
   )
   watch(
-    () => props.globalScroll,
-    (value) => setGlobalScroll(value)
+    () => props.pageScroll,
+    (value) => setPageScroll(value)
   )
   watch(
     () => props.scrollShadow,
     (value) => {
       runtimeContext.scrollShadow.value = value
     }
-  )
-  watch(
-    () => props.scrollContainer,
-    (value) => setScrollContainer(value)
   )
   watch(
     () => props.sessionPrefix,

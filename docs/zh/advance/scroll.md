@@ -2,15 +2,67 @@
 
 通过设置滚动元素，已经缓存的页签在重新激活时，将会保持滚动位置。
 
-## 全局滚动
+## 滚动策略
 
-VueStackTabs 默认不开启全局滚动，如需全局滚动请设置`global-scroll`
+`pageScroll` 决定每个页签内容区由谁负责滚动，默认 `'none'`：
+
+| 值          | 行为                                          |
+| ----------- | --------------------------------------------- |
+| `'native'`  | 库内 wrapper 使用原生滚动（`overflow: auto`） |
+| `'none'`    | 库不接管滚动，由页面自己处理（默认）          |
+| `Component` | 传入自定义滚动组件，由它接管滚动              |
+
+### 库内原生滚动
 
 ```vue:line-numbers
+<vue-stack-tabs iframe-path="/iframe" page-scroll="native" />
+```
+
+适合内容直接铺在页面里、由库统一保存滚动位置的场景。
+
+### 页面自己处理滚动
+
+默认 `'none'`：wrapper 为 `overflow: hidden`，库不监听主滚动源。页面可以用 `data-stack-tab-scroll` / `addScrollTarget` 标记原生滚动容器；如果页面里是自定义滚动组件，用 `useTabPageScroll` 把真实滚动源注册给库，位置记忆和阴影才会继续工作。
+
+```vue:line-numbers
+<script setup lang="ts">
+import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { useTabPageScroll } from 'vue-stack-tabs'
+
+const pageScroll = useTabPageScroll()
+const scrollElement = ref<HTMLElement | null>(null)
+
+onMounted(() => pageScroll.attach(scrollElement.value))
+onBeforeUnmount(() => pageScroll.detach())
+</script>
+
 <template>
-  <vue-stack-tabs iframe-path="/iframe" global-scroll />
+  <div ref="scrollElement" class="page-scroll">
+    <slot />
+  </div>
 </template>
 ```
+
+虚拟滚动、BetterScroll 等命令式组件可以直接注册适配器：
+
+```ts
+pageScroll.attach({
+  getPosition: () => ({ top, left }),
+  setPosition: (position) => {
+    top = position.top
+    left = position.left
+  },
+  getMetrics: () => ({ scrollTop: top, scrollHeight, clientHeight }),
+  onScroll: (listener) => {
+    // 订阅自己的滚动事件
+    return () => {
+      // 取消订阅
+    }
+  }
+})
+```
+
+页面内注册的滚动源优先级最高：`useTabPageScroll` > `pageScroll` 组件 > 原生 wrapper。
 
 ## 页面滚动元素
 
@@ -50,9 +102,9 @@ const { addScrollTarget } = useTabRouter()
 addScrollTarget('.custom-scroller-1', '.custom-scroller-2')
 ```
 
-## 自定义滚动容器
+## 自定义滚动组件
 
-通过 `scroll-container` 传入自己的滚动组件（例如 Element Plus 的 `ElScrollbar`），由它承载每个页签的内容区滚动。这是一个可选的扩展点：不传该属性时，内建 `overflow: auto` 的 wrapper 行为与旧版本完全一致。组件渲染在**每个缓存页 wrapper 内部**，因此每个页签仍然独立记忆滚动位置。
+通过 `page-scroll` 传入自己的滚动组件（例如 Element Plus 的 `ElScrollbar`），由它承载每个页签的内容区滚动。组件渲染在**每个缓存页 wrapper 内部**，因此每个页签仍然独立记忆滚动位置。
 
 ```vue:line-numbers
 <!-- PageScroll.vue -->
@@ -76,7 +128,7 @@ defineExpose({
 ```
 
 ```vue:line-numbers
-<vue-stack-tabs iframe-path="/iframe" :scroll-container="PageScroll" />
+<vue-stack-tabs iframe-path="/iframe" :page-scroll="PageScroll" />
 ```
 
 自定义滚动组件需要满足：
@@ -85,7 +137,7 @@ defineExpose({
 2. 根元素填满父容器（`height: 100%`）。
 3. 通过 `expose` 暴露真实滚动元素 `scrollElement`。
 
-传入 `scroll-container` 后 wrapper 恒为 `overflow: hidden`，`global-scroll` 只对默认（未传自定义容器）路径生效。`PageLoading` 位于滚动容器外层，保证遮罩覆盖整个内容区。
+传入滚动组件后 wrapper 恒为 `overflow: hidden`。`PageLoading` 位于滚动容器外层，保证遮罩覆盖整个内容区。
 
 ### 命令式滚动组件
 
@@ -149,3 +201,4 @@ const stop = shadow.onStateChange((state) => {
 - `setEnabled(false)` 只关闭库的阴影渲染，`state` 仍然按滚动位置更新，适合业务自绘滚动条或阴影。
 - `setEnabled(true)` / `reset()` 恢复由库渲染；页面级设置优先于 `scroll-shadow` 全局配置。
 - `useTabScrollShadow()` 只能在 `<VueStackTabs>` 的缓存页内部使用，非页面组件同样可以 inject。
+- `pageScroll="none"` 且没有注册滚动源时，阴影状态保持 `none`；用 `useTabPageScroll` 注册后会重新计算。

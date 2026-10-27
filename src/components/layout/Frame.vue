@@ -18,7 +18,7 @@ const homeTab: ITabData = {
   <vue-stack-tabs
     :home-tab="homeTab"
     iframe-path="/demo/iframe"
-    global-scroll
+    page-scroll="native"
     session-prefix="light"
   />
 </template>

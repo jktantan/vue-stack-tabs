@@ -182,7 +182,7 @@ describe('StackTabs refresh cache reproduction', () => {
           defaultTabs: [tab],
           pageTransition: transitionName,
           pageTransitionBack: `${transitionName}-back`,
-          globalScroll: true
+          pageScroll: 'native'
         },
         global: { plugins: [router] }
       })

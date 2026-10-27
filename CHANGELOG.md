@@ -1,5 +1,16 @@
 # Changelog
 
+## 3.0.0 (2026-10-27)
+
+### 破坏性变更
+
+- `globalScroll` / `scrollContainer` 合并为 `pageScroll: 'native' | 'none' | Component`，默认 `'none'`：
+  - `'native'`：库内 wrapper 使用原生滚动；
+  - `'none'`：库不接管滚动，由页面自己处理；
+  - `Component`：传入自定义滚动组件接管滚动。
+- 新增 `useTabPageScroll()`：`pageScroll="none"` 时页面可把真实滚动元素或 `StackTabsScrollAdapter` 注册给库；页面内滚动源优先于 `pageScroll` 策略。
+- `pageScroll="none"` 且未注册滚动源时，库不再监听 wrapper，阴影状态保持 `none`。
+
 ## 2.7.0 (2026-10-27)
 
 ### 新增

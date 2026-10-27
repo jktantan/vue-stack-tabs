@@ -13,7 +13,7 @@
  */
 import type { ITabBase, ITabData, ITabItem, ITabPage } from '../model/TabModel'
 import { computed, ref } from 'vue'
-import type { Component, DefineComponent, VNode } from 'vue'
+import type { DefineComponent, VNode } from 'vue'
 import { isNavigationFailure, useRouter } from 'vue-router'
 import type { RouteLocationNormalizedLoaded } from 'vue-router'
 import { encodeTabInfo, createId, createPageId, decodeTabInfo } from '../utils/tabInfoEncoder'
@@ -31,6 +31,7 @@ import {
 } from '../utils/urlParser'
 import { TabEventType, useTabEmitter } from './useTabEventBus'
 import { runNavigationTransaction } from './tabPanel/navigationTransaction'
+import type { StackTabsPageScroll } from '../model/PageScroll'
 import { useI18n } from 'vue-i18n-lite'
 
 import { resolveStackTabsRuntimeContext, type StackTabsRuntimeContext } from './stackTabsContext'
@@ -818,11 +819,8 @@ const createTabPanelApi = (runtimeContext: StackTabsRuntimeContext) => {
     refreshAllTabs,
     iframeRefreshKeys,
     addPageScroller,
-    setGlobalScroll: (value: boolean) => {
-      runtimeContext.useGlobalScroll.value = value
-    },
-    setScrollContainer: (value: Component | null | undefined) => {
-      runtimeContext.scrollContainer.value = value ?? null
+    setPageScroll: (value: StackTabsPageScroll) => {
+      runtimeContext.pageScroll.value = value
     },
     clearSession,
     setSessionPrefix: (value: string) => {
