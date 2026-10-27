@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.0.1 (2026-10-27)
+
+### 修复
+
+- Nuxt 模块自动注册的 `<VueStackTabs>` 在 WebStorm / JetBrains 中仍然无法跳转、props 无提示：入口声明 `vue-stack-tabs.es.d.ts` 只 re-export `index.d.ts`，而 `index.d.ts` 的 `VueStackTabs` 来自 `.vue.d.ts`，IDE 无法沿「re-export → `.vue.d.ts`」解析组件声明。构建时现在把入口引用的组件声明复制为普通 `.d.ts`，并让入口显式导出 `VueStackTabs`，类型链不再依赖 `.vue` 扩展名；运行时产物不变。
+
 ## 3.0.0 (2026-10-27)
 
 ### 破坏性变更

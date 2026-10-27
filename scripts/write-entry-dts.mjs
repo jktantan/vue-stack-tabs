@@ -2,19 +2,48 @@
 /**
  * 为入口 bundle 补一个同名声明文件。
  *
- * vite-plugin-dts 按源文件产出声明，不会为 `dist/vue-stack-tabs.es.js`
- * 产出 `dist/vue-stack-tabs.es.d.ts`。而 Nuxt 模块的
- * `addComponent({ filePath })` 会让宿主生成
- * `typeof import('.../dist/vue-stack-tabs.es')['VueStackTabs']` 的类型引用，
- * 文件缺失时宿主 `<VueStackTabs>` 的类型退化为 any（TS2307 被 skipLibCheck 掩盖）。
- *
- * 因此这里把入口声明转发到已有的 `dist/index.d.ts`（含 GlobalComponents 声明）。
+ * 背景：
+ * - Nuxt 模块的 `addComponent({ filePath })` 会让宿主生成
+ *   `typeof import('.../dist/vue-stack-tabs.es')['VueStackTabs']`。
+ * - 入口声明原先只 `export * from './index'`，而 `index.d.ts` 的
+ *   `VueStackTabs` 又来自 `./StackTabs.vue`（vite-plugin-dts 产出的
+ *   `.vue.d.ts`）。JetBrains/WebStorm 的 Vue 语言服务无法沿
+ *   「re-export + .vue.d.ts」这条链解析组件声明，宿主里
+ *   `<VueStackTabs>` 就会提示看不到声明。
+ * - 这里把组件声明复制成普通 `.d.ts`，并把 `index.d.ts` 的 `.vue` 导入
+ *   改成无扩展名导入，让入口类型链完全由普通 TypeScript 声明组成。
+ *   运行时产物不受影响。
  */
-import { writeFileSync } from 'node:fs'
+import { copyFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 
-const distEntry = join(import.meta.dirname, '..', 'dist', 'vue-stack-tabs.es.d.ts')
+const distDir = join(import.meta.dirname, '..', 'dist')
 
+/** 入口声明会直接或间接引用的 .vue 声明，复制为同名普通 .d.ts。 */
+const componentDeclarations = [
+  ['StackTabs.vue.d.ts', 'StackTabs.d.ts'],
+  ['iframe.vue.d.ts', 'iframe.d.ts'],
+  ['components/TabHeader/TabHeaderButton.vue.d.ts', 'components/TabHeader/TabHeaderButton.d.ts']
+]
+
+for (const [sourceName, targetName] of componentDeclarations) {
+  const source = join(distDir, sourceName)
+  if (!existsSync(source)) continue
+  copyFileSync(source, join(distDir, targetName))
+}
+
+const indexPath = join(distDir, 'index.d.ts')
+let index = readFileSync(indexPath, 'utf8')
+index = index
+  .replace(/(['"])\.\/StackTabs\.vue\1/g, '$1./StackTabs$1')
+  .replace(/(['"])\.\/iframe\.vue\1/g, '$1./iframe$1')
+  .replace(
+    /(['"])\.\/components\/TabHeader\/TabHeaderButton\.vue\1/g,
+    '$1./components/TabHeader/TabHeaderButton$1'
+  )
+writeFileSync(indexPath, index)
+
+const distEntry = join(distDir, 'vue-stack-tabs.es.d.ts')
 writeFileSync(
   distEntry,
   [
@@ -22,6 +51,8 @@ writeFileSync(
     '// 供 Nuxt addComponent({ filePath }) 生成的类型引用解析入口 bundle。',
     "export * from './index'",
     "export { default } from './index'",
+    '// 显式导出组件，避免 IDE 沿 ./index 的重导出链解析 .vue 声明',
+    "export { default as VueStackTabs } from './StackTabs'",
     ''
   ].join('\n')
 )
