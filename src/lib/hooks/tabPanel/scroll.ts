@@ -235,7 +235,11 @@ export const createTabPanelScroll = (context: StackTabsRuntimeContext): TabPanel
     }
     const positions = scrollPositionsByPageId.get(pageCacheId)!
     for (const selector of selectorIds) {
-      positions.set(selector, { top: 0, left: 0 })
+      // 只补齐缺失的注册项。页面每次激活都会重新注册滚动容器，
+      // 若这里无条件写 0，会把滚动过程中记录的位置覆盖掉，切换标签后就无法恢复。
+      if (!positions.has(selector)) {
+        positions.set(selector, { top: 0, left: 0 })
+      }
     }
   }
 

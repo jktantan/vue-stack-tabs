@@ -152,6 +152,32 @@ describe('tabPanel scroll', () => {
     expect(root.scrollTop).toBe(0)
   })
 
+  it('页面激活时重新注册主滚动容器不会清空已保存的位置', () => {
+    const pageId = 'page-native-reactivate'
+    const root = document.createElement('div')
+    root.id = `W-${pageId}`
+    document.body.append(root)
+
+    const scroll = createTabPanelScroll(createStackTabsRuntimeContext({ pageScroll: 'native' }))
+    scroll.addPageScroller(pageId, `#W-${pageId}`)
+
+    root.scrollTop = 320
+    root.scrollLeft = 32
+    scroll.recordMainScroller(pageId)
+
+    // 模拟 keep-alive 停用：DOM 位置被归零，saveScroller 保留滚动过程中的记录。
+    root.scrollTop = 0
+    root.scrollLeft = 0
+    scroll.saveScroller(pageId)
+
+    // 模拟 onActivated 再次注册主滚动容器并恢复位置。
+    scroll.addPageScroller(pageId, `#W-${pageId}`)
+    scroll.restoreScroller(pageId)
+
+    expect(root.scrollTop).toBe(320)
+    expect(root.scrollLeft).toBe(32)
+  })
+
   it('自定义滚动容器在停用后读到 0 时同样保留实时记录的位置', () => {
     const pageId = 'page-custom-keep-alive'
     let position = { top: 0, left: 0 }
