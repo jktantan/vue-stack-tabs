@@ -153,11 +153,17 @@ export interface StackTabsScrollAdapter {
 
 ## Shadow visibility and state
 
-The library computes the top/bottom content shadows from the main scroll container. Disable them globally:
+The library computes the top/bottom content shadows from the main scroll container. `scroll-shadow` defaults to `true`: pass `false` to disable both sides, or an object to disable only one side (an omitted side stays enabled):
 
 ```vue:line-numbers
+<!-- Disable both sides -->
 <vue-stack-tabs iframe-path="/iframe" :scroll-shadow="false" />
+
+<!-- Disable only the top shadow; the bottom shadow is still rendered -->
+<vue-stack-tabs iframe-path="/iframe" :scroll-shadow="{ top: false }" />
 ```
+
+> Replace the object to trigger an update; mutating the same object's properties is not observed.
 
 Any component inside a cached page — including a layout wrapper around the page content — can read the current direction and override visibility:
 
@@ -172,6 +178,12 @@ console.log(shadow.state.value)
 
 // Hide library-rendered shadows for this page; state keeps updating
 shadow.setEnabled(false)
+
+// Disable only the bottom shadow; the top shadow is still rendered
+shadow.setEnabled({ bottom: false })
+
+// Read the resolved per-side switches
+console.log(shadow.enabledSides.value) // { top: true, bottom: false }
 
 // Restore automatic rendering
 shadow.reset()
@@ -194,7 +206,8 @@ const stop = shadow.onStateChange((state) => {
 
 > The edge threshold defaults to 5px: within 5px of an edge counts as reaching it, so that side's shadow is hidden.
 
-- `setEnabled(false)` only stops the library from rendering shadows; `state` still tracks the scroll position, so you can draw your own shadows or scrollbar.
-- `setEnabled(true)` / `reset()` restore library rendering. Page-level settings take precedence over the global `scroll-shadow` prop.
+- `setEnabled(false)` / `setEnabled({ top: false })` only stops the library from rendering shadows; `state` still tracks the scroll position, so you can draw your own shadows or scrollbar.
+- `setEnabled(true)` / `setEnabled({ top: true, bottom: true })` / `reset()` restore library rendering. Page-level settings take precedence over the global `scroll-shadow` prop.
+- `enabled` is `true` when either side is enabled; read `enabledSides` (`{ top, bottom }`) to check a specific side.
 - `useTabScrollShadow()` must be used inside a cached page; non-page components in the same subtree can inject it as well.
 - With `pageScroll="none"` and no registered source, `state` stays `none`; registering a source with `useTabPageScroll` makes it recalculate.

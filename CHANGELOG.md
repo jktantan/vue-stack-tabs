@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.1.0 (2026-10-29)
+
+### 新增
+
+- `scrollShadow` 支持分侧配置：除 `boolean` 外可传 `{ top?: boolean; bottom?: boolean }`，单独关闭顶部或底部阴影；未声明的一侧保持启用。
+- `useTabScrollShadow().setEnabled()` 同步支持 `boolean | { top?, bottom? }`，并新增只读 `enabledSides` 读取解析后的两侧开关，便于业务精确判断。
+- 导出 `TabScrollShadowConfig`、`TabScrollShadowSides` 类型。
+
 ## 3.0.2 (2026-10-28)
 
 ### 修复

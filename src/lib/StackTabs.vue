@@ -28,6 +28,7 @@ import { isAllowedTabUrl } from './utils/urlParser'
 import { applyStackTabsLocale } from './i18n/stackTabsLocale'
 import { type ITabData, TabScrollMode } from './model/TabModel'
 import type { StackTabsPageScroll } from './model/PageScroll'
+import type { TabScrollShadowConfig } from './hooks/tabScrollShadowContext'
 import TabHeader from './components/TabHeader/index.vue'
 import StackKeepAlive from './components/StackKeepAlive/StackKeepAlive.vue'
 import useTabPanel from './hooks/useTabPanel'
@@ -80,10 +81,12 @@ const props = withDefaults(
      */
     pageScroll?: StackTabsPageScroll
     /**
-     * 是否允许库渲染内容区上下阴影（默认 true）。
+     * 内容区上下阴影开关（默认 true）。
+     * 传 `false` 同时关闭两侧；传对象可单独关闭某一侧，例如 `{ top: false }`。
      * 页面内组件还可以通过 `useTabScrollShadow().setEnabled()` 单独覆盖。
+     * 对象需整体替换才会生效（直接修改对象属性不会触发更新）。
      */
-    scrollShadow?: boolean
+    scrollShadow?: TabScrollShadowConfig
     iframePath: string
     sessionPrefix?: string
     iframeAllowedOrigins?: string[]

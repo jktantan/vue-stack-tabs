@@ -394,6 +394,12 @@ console.log(shadow.state.value)
 shadow.setEnabled(false)
 shadow.reset()
 
+// 也可以只关闭某一侧
+shadow.setEnabled({ top: false })
+
+// 当前两侧的渲染开关（已解析为布尔值）
+console.log(shadow.enabledSides.value) // { top: true, bottom: false }
+
 // 订阅方向变化
 const stop = shadow.onStateChange((state) => {
   console.log(state)
@@ -411,14 +417,15 @@ const stop = shadow.onStateChange((state) => {
 
 > 判定阈值默认 5px：距离边界 ≤ 5px 视为已贴边，不显示该侧阴影。
 
-| 成员                | 说明                                          |
-| ------------------- | --------------------------------------------- |
-| `state`             | 当前应显示哪一侧的阴影（响应式，取值见上表）  |
-| `enabled`           | 当前页是否允许库渲染阴影（响应式）            |
-| `setEnabled(bool)`  | 手动开关当前页阴影；关闭后 `state` 仍会更新   |
-| `reset()`           | 清除手动开关，回退到 `scroll-shadow` 全局配置 |
-| `getState()`        | 同步读取当前方向                              |
-| `onStateChange(cb)` | 订阅方向变化，返回取消订阅函数                |
+| 成员                 | 说明                                                         |
+| -------------------- | ------------------------------------------------------------ |
+| `state`              | 当前应显示哪一侧的阴影（响应式，取值见上表）                 |
+| `enabled`            | 当前页是否允许库渲染阴影；任一侧启用即为 `true`（响应式）    |
+| `enabledSides`       | 当前页上下两侧的渲染开关（响应式 `{ top, bottom }`）         |
+| `setEnabled(config)` | 手动开关当前页阴影；`boolean` 控制两侧，对象可单独控制某一侧 |
+| `reset()`            | 清除手动开关，回退到 `scroll-shadow` 全局配置                |
+| `getState()`         | 同步读取当前方向                                             |
+| `onStateChange(cb)`  | 订阅方向变化，返回取消订阅函数                               |
 
 ---
 
@@ -426,29 +433,29 @@ const stop = shadow.onStateChange((state) => {
 
 `<VueStackTabs>` 组件属性：
 
-| Prop                   | 类型                              | 默认值                                                                     | 说明                                                                                                              |
-| ---------------------- | --------------------------------- | -------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `iframePath`           | `string`                          | **必填**                                                                   | iframe 占位路由的路径                                                                                             |
-| `iframeSandbox`        | `string`                          | `allow-scripts allow-forms allow-popups allow-downloads allow-same-origin` | iframe sandbox 策略；默认兼容优先不是强隔离，强隔离请移除 `allow-same-origin`；传空字符串可关闭 sandbox（不推荐） |
-| `iframeReferrerPolicy` | `ReferrerPolicy`                  | `strict-origin-when-cross-origin`                                          | iframe referrerpolicy 属性                                                                                        |
-| `iframeAllow`          | `string`                          | `''`                                                                       | iframe allow 属性，例如 `fullscreen`                                                                              |
-| `iframeLoadTimeout`    | `number`                          | `15000`                                                                    | iframe 加载超时时间，单位 ms                                                                                      |
-| `defaultTabs`          | `ITabData[]`                      | `[]`                                                                       | 初始标签列表                                                                                                      |
-| `homeTab`              | `ITabData`                        | —                                                                          | 固定首页：始终第一位、不可关闭、不可拖动；其他标签不能排到它前面；不配置时保持原行为                              |
-| `max`                  | `number`                          | `20`                                                                       | 最大标签数量                                                                                                      |
-| `contextmenu`          | `boolean \| object`               | `true`                                                                     | 是否启用右键菜单                                                                                                  |
-| `pageTransition`       | `string`                          | `'stack-tab-swap'`                                                         | 前进时的页面转场动画名                                                                                            |
-| `pageTransitionBack`   | `string`                          | `'stack-tab-swap-back'`                                                    | 后退时的页面转场动画名                                                                                            |
-| `tabTransition`        | `string \| TransitionProps`       | `'stack-tab-zoom'`                                                         | 标签增删时的过渡效果                                                                                              |
-| `tabScrollMode`        | `TabScrollMode`                   | `'both'`                                                                   | 标签栏滚动方式：`'wheel'` / `'button'` / `'both'`                                                                 |
-| `space`                | `number`                          | `300`                                                                      | 标签栏滚动一步的像素距离                                                                                          |
-| `width`                | `string`                          | `'100%'`                                                                   | 容器宽度                                                                                                          |
-| `height`               | `string`                          | `'100%'`                                                                   | 容器高度                                                                                                          |
-| `i18n`                 | `string`                          | `'zh-CN'`                                                                  | 国际化语言，内置 `'zh-CN'` / `'en'`                                                                               |
-| `pageScroll`           | `'native' \| 'none' \| Component` | `'none'`                                                                   | 内容区滚动策略：库内 wrapper 原生滚动 / 页面自行处理 / 自定义滚动组件                                             |
-| `scrollShadow`         | `boolean`                         | `true`                                                                     | 是否显示内容区上下阴影；页面内可用 `useTabScrollShadow` 覆盖                                                      |
-| `sessionPrefix`        | `string`                          | `''`                                                                       | sessionStorage 键前缀；同一 origin 多实例时用于隔离                                                               |
-| `iframeAllowedOrigins` | `string[]`                        | `[]`（叠加当前 origin）                                                    | 允许 iframe postMessage 调用 openTab 的来源列表                                                                   |
+| Prop                   | 类型                                             | 默认值                                                                     | 说明                                                                                                              |
+| ---------------------- | ------------------------------------------------ | -------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `iframePath`           | `string`                                         | **必填**                                                                   | iframe 占位路由的路径                                                                                             |
+| `iframeSandbox`        | `string`                                         | `allow-scripts allow-forms allow-popups allow-downloads allow-same-origin` | iframe sandbox 策略；默认兼容优先不是强隔离，强隔离请移除 `allow-same-origin`；传空字符串可关闭 sandbox（不推荐） |
+| `iframeReferrerPolicy` | `ReferrerPolicy`                                 | `strict-origin-when-cross-origin`                                          | iframe referrerpolicy 属性                                                                                        |
+| `iframeAllow`          | `string`                                         | `''`                                                                       | iframe allow 属性，例如 `fullscreen`                                                                              |
+| `iframeLoadTimeout`    | `number`                                         | `15000`                                                                    | iframe 加载超时时间，单位 ms                                                                                      |
+| `defaultTabs`          | `ITabData[]`                                     | `[]`                                                                       | 初始标签列表                                                                                                      |
+| `homeTab`              | `ITabData`                                       | —                                                                          | 固定首页：始终第一位、不可关闭、不可拖动；其他标签不能排到它前面；不配置时保持原行为                              |
+| `max`                  | `number`                                         | `20`                                                                       | 最大标签数量                                                                                                      |
+| `contextmenu`          | `boolean \| object`                              | `true`                                                                     | 是否启用右键菜单                                                                                                  |
+| `pageTransition`       | `string`                                         | `'stack-tab-swap'`                                                         | 前进时的页面转场动画名                                                                                            |
+| `pageTransitionBack`   | `string`                                         | `'stack-tab-swap-back'`                                                    | 后退时的页面转场动画名                                                                                            |
+| `tabTransition`        | `string \| TransitionProps`                      | `'stack-tab-zoom'`                                                         | 标签增删时的过渡效果                                                                                              |
+| `tabScrollMode`        | `TabScrollMode`                                  | `'both'`                                                                   | 标签栏滚动方式：`'wheel'` / `'button'` / `'both'`                                                                 |
+| `space`                | `number`                                         | `300`                                                                      | 标签栏滚动一步的像素距离                                                                                          |
+| `width`                | `string`                                         | `'100%'`                                                                   | 容器宽度                                                                                                          |
+| `height`               | `string`                                         | `'100%'`                                                                   | 容器高度                                                                                                          |
+| `i18n`                 | `string`                                         | `'zh-CN'`                                                                  | 国际化语言，内置 `'zh-CN'` / `'en'`                                                                               |
+| `pageScroll`           | `'native' \| 'none' \| Component`                | `'none'`                                                                   | 内容区滚动策略：库内 wrapper 原生滚动 / 页面自行处理 / 自定义滚动组件                                             |
+| `scrollShadow`         | `boolean \| { top?: boolean; bottom?: boolean }` | `true`                                                                     | 内容区上下阴影开关；`false` 关闭两侧，对象可单独关闭某一侧；页面内可用 `useTabScrollShadow` 覆盖                  |
+| `sessionPrefix`        | `string`                                         | `''`                                                                       | sessionStorage 键前缀；同一 origin 多实例时用于隔离                                                               |
+| `iframeAllowedOrigins` | `string[]`                                       | `[]`（叠加当前 origin）                                                    | 允许 iframe postMessage 调用 openTab 的来源列表                                                                   |
 
 ---
 

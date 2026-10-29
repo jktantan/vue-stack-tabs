@@ -36,7 +36,12 @@ import PageLoading from '../../components/PageLoading.vue'
 import type { StackTabsRuntimeContext } from '../stackTabsContext'
 import { tabPageContextKey } from '../tabPageContext'
 import { tabPageScrollKey } from '../tabPageScrollContext'
-import { tabScrollShadowKey, type TabScrollShadowState } from '../tabScrollShadowContext'
+import {
+  resolveTabScrollShadowSides,
+  tabScrollShadowKey,
+  type TabScrollShadowConfig,
+  type TabScrollShadowState
+} from '../tabScrollShadowContext'
 import { useScrollShadow } from '../useScrollShadow'
 
 interface PageComponentFactoryOptions {
@@ -181,7 +186,7 @@ export const createPageComponentFactory = (options: PageComponentFactoryOptions)
         /** 页面内注册的主滚动源；优先于 pageScroll 全局策略。 */
         const pageScrollAdapter = shallowRef<StackTabsScrollAdapter | null>(null)
         /** 页面级手动开关；null 表示回退到 StackTabs 的全局配置。 */
-        const shadowEnabledOverride = ref<boolean | null>(null)
+        const shadowEnabledOverride = ref<TabScrollShadowConfig | null>(null)
         /**
          * 实际渲染的刷新版本。
          *
@@ -244,13 +249,20 @@ export const createPageComponentFactory = (options: PageComponentFactoryOptions)
           enabled: () => shadowEnabledOverride.value ?? runtimeContext.scrollShadow.value
         })
 
-        const shadowEnabled = computed(
-          () => shadowEnabledOverride.value ?? runtimeContext.scrollShadow.value
+        const shadowSides = computed(() =>
+          resolveTabScrollShadowSides(
+            shadowEnabledOverride.value ?? runtimeContext.scrollShadow.value
+          )
         )
+        /** 任一侧启用即视为“允许渲染阴影”，保持旧版 boolean 语义。 */
+        const shadowEnabled = computed(() => shadowSides.value.top || shadowSides.value.bottom)
         const shadowStateListeners = new Set<(state: TabScrollShadowState) => void>()
 
-        /** 手动设置当前页是否显示阴影；状态仍会继续计算。 */
-        const setShadowEnabled = (enabled: boolean): void => {
+        /**
+         * 手动设置当前页是否显示阴影；状态仍会继续计算。
+         * 传 `boolean` 同时控制上下两侧；传对象可单独控制某一侧。
+         */
+        const setShadowEnabled = (enabled: TabScrollShadowConfig): void => {
           shadowEnabledOverride.value = enabled
           scrollShadow.sync()
         }
@@ -277,6 +289,7 @@ export const createPageComponentFactory = (options: PageComponentFactoryOptions)
         provide(tabScrollShadowKey, {
           state: scrollShadow.state,
           enabled: shadowEnabled,
+          enabledSides: shadowSides,
           setEnabled: setShadowEnabled,
           reset: resetShadowEnabled,
           getState: () => scrollShadow.state.value,

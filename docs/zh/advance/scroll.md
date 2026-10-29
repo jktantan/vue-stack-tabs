@@ -157,11 +157,17 @@ export interface StackTabsScrollAdapter {
 
 ## 阴影开关与状态
 
-内容区上下阴影由库根据主滚动容器自动计算。可以通过组件属性统一关闭：
+内容区上下阴影由库根据主滚动容器自动计算。`scroll-shadow` 默认 `true`；传 `false` 同时关闭上下两侧，也可以传对象单独关闭某一侧（未声明的一侧默认启用）：
 
 ```vue:line-numbers
+<!-- 上下两侧都关闭 -->
 <vue-stack-tabs iframe-path="/iframe" :scroll-shadow="false" />
+
+<!-- 只关闭顶部阴影，底部阴影仍由库渲染 -->
+<vue-stack-tabs iframe-path="/iframe" :scroll-shadow="{ top: false }" />
 ```
+
+> 对象配置需要整体替换才会触发更新；直接修改同一个对象的属性不会被侦听。
 
 页面内的任意组件（包括包在 page 内容外的布局组件）都可以读取当前应该显示哪个方向的阴影，并手动覆盖开关：
 
@@ -176,6 +182,12 @@ console.log(shadow.state.value)
 
 // 手动关闭当前页阴影；state 仍会继续更新
 shadow.setEnabled(false)
+
+// 只关闭底部阴影，顶部阴影仍由库渲染
+shadow.setEnabled({ bottom: false })
+
+// 读取当前两侧的渲染开关（已解析为确定的布尔值）
+console.log(shadow.enabledSides.value) // { top: true, bottom: false }
 
 // 恢复自动计算
 shadow.reset()
@@ -198,7 +210,8 @@ const stop = shadow.onStateChange((state) => {
 
 > 判定阈值默认 5px：距离边界 ≤ 5px 视为已贴边，不显示该侧阴影。
 
-- `setEnabled(false)` 只关闭库的阴影渲染，`state` 仍然按滚动位置更新，适合业务自绘滚动条或阴影。
-- `setEnabled(true)` / `reset()` 恢复由库渲染；页面级设置优先于 `scroll-shadow` 全局配置。
+- `setEnabled(false)` / `setEnabled({ top: false })` 只关闭库的阴影渲染，`state` 仍然按滚动位置更新，适合业务自绘滚动条或阴影。
+- `setEnabled(true)` / `setEnabled({ top: true, bottom: true })` / `reset()` 恢复由库渲染；页面级设置优先于 `scroll-shadow` 全局配置。
+- `enabled` 在任一侧启用时为 `true`；需要精确判断某一侧时读取 `enabledSides`（`{ top, bottom }`）。
 - `useTabScrollShadow()` 只能在 `<VueStackTabs>` 的缓存页内部使用，非页面组件同样可以 inject。
 - `pageScroll="none"` 且没有注册滚动源时，阴影状态保持 `none`；用 `useTabPageScroll` 注册后会重新计算。

@@ -20,13 +20,42 @@ import type { InjectionKey, Ref } from 'vue'
  */
 export type TabScrollShadowState = 'none' | 'top' | 'bottom' | 'both'
 
+/**
+ * 内容区上下阴影的开关配置。
+ *
+ * - `boolean`：同时控制上下两侧，`false` 表示两侧都不渲染；
+ * - `{ top?, bottom? }`：单独控制某一侧，未声明的一侧默认启用。
+ *
+ * 只影响库是否渲染阴影，不影响 `state` 的方向计算。
+ */
+export type TabScrollShadowConfig = boolean | { top?: boolean; bottom?: boolean }
+
+/** 解析后的分侧开关，`top` / `bottom` 均为确定的布尔值。 */
+export interface TabScrollShadowSides {
+  top: boolean
+  bottom: boolean
+}
+
+/** 把 `TabScrollShadowConfig` 归一化为分侧布尔值（缺省侧视为启用）。 */
+export const resolveTabScrollShadowSides = (
+  config: TabScrollShadowConfig | null | undefined
+): TabScrollShadowSides => {
+  if (typeof config === 'boolean') return { top: config, bottom: config }
+  return { top: config?.top ?? true, bottom: config?.bottom ?? true }
+}
+
 export interface TabScrollShadowController {
   /** 当前应该显示哪个方向的阴影（只读）。 */
   state: Readonly<Ref<TabScrollShadowState>>
-  /** 当前页是否允许库渲染阴影；受全局配置与页面手动开关共同控制。 */
+  /** 当前页是否允许库渲染阴影；任一侧启用即为 `true`。 */
   enabled: Readonly<Ref<boolean>>
-  /** 手动设置当前页是否显示阴影（覆盖全局配置）。 */
-  setEnabled: (enabled: boolean) => void
+  /** 当前页上下两侧是否允许库渲染阴影（只读）。 */
+  enabledSides: Readonly<Ref<TabScrollShadowSides>>
+  /**
+   * 手动设置当前页是否显示阴影（覆盖全局配置）。
+   * 传 `boolean` 同时控制上下两侧；传对象可单独控制某一侧。
+   */
+  setEnabled: (enabled: TabScrollShadowConfig) => void
   /** 清除手动开关，回退到全局配置。 */
   reset: () => void
   /** 同步读取当前阴影方向。 */

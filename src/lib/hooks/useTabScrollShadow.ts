@@ -15,11 +15,18 @@
 import { hasInjectionContext, inject } from 'vue'
 import {
   tabScrollShadowKey,
+  type TabScrollShadowConfig,
   type TabScrollShadowController,
+  type TabScrollShadowSides,
   type TabScrollShadowState
 } from './tabScrollShadowContext'
 
-export type { TabScrollShadowController, TabScrollShadowState }
+export type {
+  TabScrollShadowConfig,
+  TabScrollShadowController,
+  TabScrollShadowSides,
+  TabScrollShadowState
+}
 
 export const TAB_SCROLL_SHADOW_UNAVAILABLE_MESSAGE =
   'useTabScrollShadow() must be used inside a cached page of <VueStackTabs>; the page scope provides the shadow controller.'

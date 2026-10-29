@@ -17,7 +17,12 @@
  *    跟随 transform（例如页面刷新动画），绝对定位的包含块就会变化，阴影会错位/消失
  */
 import { onScopeDispose, ref, type Ref } from 'vue'
-import type { TabScrollShadowState } from './tabScrollShadowContext'
+import {
+  resolveTabScrollShadowSides,
+  type TabScrollShadowConfig,
+  type TabScrollShadowSides,
+  type TabScrollShadowState
+} from './tabScrollShadowContext'
 
 const SHADOW_TOP_CLASS = 'stack-tab__shadow-inset-top'
 const SHADOW_BOTTOM_CLASS = 'stack-tab__shadow-inset-bottom'
@@ -57,8 +62,9 @@ export interface UseScrollShadowOptions {
   /**
    * 是否允许把阴影类写到 DOM（可选，默认 true）。
    * 关闭时仍然计算并输出 `state`，只是不再渲染阴影，供业务自行决定如何展示。
+   * 传 `{ top: false }` / `{ bottom: false }` 可只关闭某一侧。
    */
-  enabled?: Ref<boolean> | (() => boolean)
+  enabled?: Ref<TabScrollShadowConfig> | (() => TabScrollShadowConfig)
 }
 
 export interface UseScrollShadowReturn {
@@ -95,9 +101,11 @@ export const useScrollShadow = (options: UseScrollShadowOptions): UseScrollShado
   let resizeObserver: ResizeObserver | null = null
 
   /** 是否允许渲染阴影；关闭时仍然计算 state。 */
-  const resolveEnabled = (): boolean => {
-    if (!options.enabled) return true
-    return typeof options.enabled === 'function' ? options.enabled() : options.enabled.value
+  const resolveEnabled = (): TabScrollShadowSides => {
+    if (!options.enabled) return { top: true, bottom: true }
+    return resolveTabScrollShadowSides(
+      typeof options.enabled === 'function' ? options.enabled() : options.enabled.value
+    )
   }
 
   const clearClasses = (element: HTMLElement | null): void => {
@@ -152,16 +160,19 @@ export const useScrollShadow = (options: UseScrollShadowOptions): UseScrollShado
           : showBottomShadow
             ? 'bottom'
             : 'none'
-    if (!resolveEnabled()) {
+    const enabledSides = resolveEnabled()
+    const renderTopShadow = showTopShadow && enabledSides.top
+    const renderBottomShadow = showBottomShadow && enabledSides.bottom
+    if (!renderTopShadow && !renderBottomShadow) {
       clearClasses(classElement)
       return
     }
     // 注意：-top / -bottom 是两个独立 CSS 规则、作用在同一个 ::after 上，
     // 同时加会互相覆盖（后定义的 -bottom 胜出）。因此这里互斥地只加一个类：
     // 两侧都有内容用 -vertical，只有一侧用 -top / -bottom，贴边时都不加。
-    classElement.classList.toggle(SHADOW_VERTICAL_CLASS, showTopShadow && showBottomShadow)
-    classElement.classList.toggle(SHADOW_TOP_CLASS, showTopShadow && !showBottomShadow)
-    classElement.classList.toggle(SHADOW_BOTTOM_CLASS, !showTopShadow && showBottomShadow)
+    classElement.classList.toggle(SHADOW_VERTICAL_CLASS, renderTopShadow && renderBottomShadow)
+    classElement.classList.toggle(SHADOW_TOP_CLASS, renderTopShadow && !renderBottomShadow)
+    classElement.classList.toggle(SHADOW_BOTTOM_CLASS, !renderTopShadow && renderBottomShadow)
   }
 
   const schedule = (): void => {

@@ -390,6 +390,12 @@ console.log(shadow.state.value)
 shadow.setEnabled(false)
 shadow.reset()
 
+// Or disable only one side
+shadow.setEnabled({ top: false })
+
+// Resolved per-side switches
+console.log(shadow.enabledSides.value) // { top: true, bottom: false }
+
 // Subscribe to direction changes
 const stop = shadow.onStateChange((state) => {
   console.log(state)
@@ -407,14 +413,15 @@ const stop = shadow.onStateChange((state) => {
 
 > The edge threshold defaults to 5px: within 5px of an edge counts as reaching it, so that side's shadow is hidden.
 
-| Member              | Description                                                           |
-| ------------------- | --------------------------------------------------------------------- |
-| `state`             | Which side should show a shadow (reactive; values above)              |
-| `enabled`           | Whether the library may render shadows for this page (reactive)       |
-| `setEnabled(bool)`  | Toggle library-rendered shadows; `state` keeps updating when disabled |
-| `reset()`           | Clear the manual override and fall back to the `scroll-shadow` prop   |
-| `getState()`        | Read the current direction synchronously                              |
-| `onStateChange(cb)` | Subscribe to direction changes; returns an unsubscribe function       |
+| Member               | Description                                                                         |
+| -------------------- | ----------------------------------------------------------------------------------- |
+| `state`              | Which side should show a shadow (reactive; values above)                            |
+| `enabled`            | Whether the library may render shadows; `true` when either side is enabled          |
+| `enabledSides`       | Resolved per-side switches (reactive `{ top, bottom }`)                             |
+| `setEnabled(config)` | Toggle library-rendered shadows; boolean controls both, an object controls one side |
+| `reset()`            | Clear the manual override and fall back to the `scroll-shadow` prop                 |
+| `getState()`         | Read the current direction synchronously                                            |
+| `onStateChange(cb)`  | Subscribe to direction changes; returns an unsubscribe function                     |
 
 ---
 
@@ -422,29 +429,29 @@ const stop = shadow.onStateChange((state) => {
 
 `<VueStackTabs>` component properties:
 
-| Prop                   | Type                              | Default                                                                    | Description                                                                                                                                                                           |
-| ---------------------- | --------------------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `iframePath`           | `string`                          | **Required**                                                               | Path of the iframe placeholder route                                                                                                                                                  |
-| `iframeSandbox`        | `string`                          | `allow-scripts allow-forms allow-popups allow-downloads allow-same-origin` | iframe sandbox policy; default is compatibility-first, not strict isolation — remove `allow-same-origin` for strict isolation; pass empty string to disable sandbox (not recommended) |
-| `iframeReferrerPolicy` | `ReferrerPolicy`                  | `strict-origin-when-cross-origin`                                          | iframe referrerpolicy attribute                                                                                                                                                       |
-| `iframeAllow`          | `string`                          | `''`                                                                       | iframe allow attribute, e.g. `fullscreen`                                                                                                                                             |
-| `iframeLoadTimeout`    | `number`                          | `15000`                                                                    | iframe load timeout in ms                                                                                                                                                             |
-| `defaultTabs`          | `ITabData[]`                      | `[]`                                                                       | Initial tab list                                                                                                                                                                      |
-| `homeTab`              | `ITabData`                        | —                                                                          | Pinned home tab: always first, non-closable and non-draggable; other tabs cannot move before it. Omit to keep the previous behavior.                                                  |
-| `max`                  | `number`                          | `20`                                                                       | Maximum number of tabs                                                                                                                                                                |
-| `contextmenu`          | `boolean \| object`               | `true`                                                                     | Enable context menu                                                                                                                                                                   |
-| `pageTransition`       | `string`                          | `'stack-tab-swap'`                                                         | Page transition animation name for forward navigation                                                                                                                                 |
-| `pageTransitionBack`   | `string`                          | `'stack-tab-swap-back'`                                                    | Page transition animation name for backward navigation                                                                                                                                |
-| `tabTransition`        | `string \| TransitionProps`       | `'stack-tab-zoom'`                                                         | Transition effect for tab add/remove                                                                                                                                                  |
-| `tabScrollMode`        | `TabScrollMode`                   | `'both'`                                                                   | Tab bar scroll mode: `'wheel'` / `'button'` / `'both'`                                                                                                                                |
-| `space`                | `number`                          | `300`                                                                      | Pixel distance scrolled per tab bar step                                                                                                                                              |
-| `width`                | `string`                          | `'100%'`                                                                   | Container width                                                                                                                                                                       |
-| `height`               | `string`                          | `'100%'`                                                                   | Container height                                                                                                                                                                      |
-| `i18n`                 | `string`                          | `'zh-CN'`                                                                  | i18n locale, built-in `'zh-CN'` / `'en'`                                                                                                                                              |
-| `pageScroll`           | `'native' \| 'none' \| Component` | `'none'`                                                                   | Content scroll strategy: library wrapper native scroll / page-managed / custom scroll component                                                                                       |
-| `scrollShadow`         | `boolean`                         | `true`                                                                     | Render top/bottom content shadows; per-page override via `useTabScrollShadow`                                                                                                         |
-| `sessionPrefix`        | `string`                          | `''`                                                                       | sessionStorage key prefix; useful for multiple instances on the same origin                                                                                                           |
-| `iframeAllowedOrigins` | `string[]`                        | `[]` (plus current origin)                                                 | Allowed origins for iframe postMessage openTab                                                                                                                                        |
+| Prop                   | Type                                             | Default                                                                    | Description                                                                                                                                                                           |
+| ---------------------- | ------------------------------------------------ | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `iframePath`           | `string`                                         | **Required**                                                               | Path of the iframe placeholder route                                                                                                                                                  |
+| `iframeSandbox`        | `string`                                         | `allow-scripts allow-forms allow-popups allow-downloads allow-same-origin` | iframe sandbox policy; default is compatibility-first, not strict isolation — remove `allow-same-origin` for strict isolation; pass empty string to disable sandbox (not recommended) |
+| `iframeReferrerPolicy` | `ReferrerPolicy`                                 | `strict-origin-when-cross-origin`                                          | iframe referrerpolicy attribute                                                                                                                                                       |
+| `iframeAllow`          | `string`                                         | `''`                                                                       | iframe allow attribute, e.g. `fullscreen`                                                                                                                                             |
+| `iframeLoadTimeout`    | `number`                                         | `15000`                                                                    | iframe load timeout in ms                                                                                                                                                             |
+| `defaultTabs`          | `ITabData[]`                                     | `[]`                                                                       | Initial tab list                                                                                                                                                                      |
+| `homeTab`              | `ITabData`                                       | —                                                                          | Pinned home tab: always first, non-closable and non-draggable; other tabs cannot move before it. Omit to keep the previous behavior.                                                  |
+| `max`                  | `number`                                         | `20`                                                                       | Maximum number of tabs                                                                                                                                                                |
+| `contextmenu`          | `boolean \| object`                              | `true`                                                                     | Enable context menu                                                                                                                                                                   |
+| `pageTransition`       | `string`                                         | `'stack-tab-swap'`                                                         | Page transition animation name for forward navigation                                                                                                                                 |
+| `pageTransitionBack`   | `string`                                         | `'stack-tab-swap-back'`                                                    | Page transition animation name for backward navigation                                                                                                                                |
+| `tabTransition`        | `string \| TransitionProps`                      | `'stack-tab-zoom'`                                                         | Transition effect for tab add/remove                                                                                                                                                  |
+| `tabScrollMode`        | `TabScrollMode`                                  | `'both'`                                                                   | Tab bar scroll mode: `'wheel'` / `'button'` / `'both'`                                                                                                                                |
+| `space`                | `number`                                         | `300`                                                                      | Pixel distance scrolled per tab bar step                                                                                                                                              |
+| `width`                | `string`                                         | `'100%'`                                                                   | Container width                                                                                                                                                                       |
+| `height`               | `string`                                         | `'100%'`                                                                   | Container height                                                                                                                                                                      |
+| `i18n`                 | `string`                                         | `'zh-CN'`                                                                  | i18n locale, built-in `'zh-CN'` / `'en'`                                                                                                                                              |
+| `pageScroll`           | `'native' \| 'none' \| Component`                | `'none'`                                                                   | Content scroll strategy: library wrapper native scroll / page-managed / custom scroll component                                                                                       |
+| `scrollShadow`         | `boolean \| { top?: boolean; bottom?: boolean }` | `true`                                                                     | Top/bottom content shadow switch; `false` disables both sides, an object disables one side; per-page override via `useTabScrollShadow`                                                |
+| `sessionPrefix`        | `string`                                         | `''`                                                                       | sessionStorage key prefix; useful for multiple instances on the same origin                                                                                                           |
+| `iframeAllowedOrigins` | `string[]`                                       | `[]` (plus current origin)                                                 | Allowed origins for iframe postMessage openTab                                                                                                                                        |
 
 ---
 

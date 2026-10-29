@@ -12,6 +12,7 @@ import type { Emitter } from 'mitt'
 import mitt from 'mitt'
 import type { ITabItem } from '../model/TabModel'
 import type { StackTabsPageScroll } from '../model/PageScroll'
+import type { TabScrollShadowConfig } from './tabScrollShadowContext'
 import type { TabEventPayloadMap } from './useTabEventBus'
 import { createTabPanelRuntimeState } from './tabPanel/state'
 import type { ScrollPosition } from './tabPanel/state'
@@ -35,8 +36,8 @@ export interface StackTabsRuntimeContext {
   maxTabCount: Ref<number>
   /** 内容区滚动策略：native / none / 自定义滚动组件。 */
   pageScroll: Ref<StackTabsPageScroll>
-  /** 是否允许库渲染内容区上下阴影；页面内可再通过 useTabScrollShadow 覆盖。 */
-  scrollShadow: Ref<boolean>
+  /** 内容区上下阴影开关；boolean 同时控制两侧，对象可单独控制。页面内可再通过 useTabScrollShadow 覆盖。 */
+  scrollShadow: Ref<TabScrollShadowConfig>
   sessionPrefix: Ref<string>
   iframePath: Ref<string>
   eventBus: Emitter<TabEventPayloadMap>
@@ -47,8 +48,8 @@ export interface CreateStackTabsRuntimeContextOptions {
   maxTabCount?: number
   /** 内容区滚动策略：native / none / 自定义滚动组件。 */
   pageScroll?: StackTabsPageScroll
-  /** 是否允许库渲染内容区上下阴影。 */
-  scrollShadow?: boolean
+  /** 内容区上下阴影开关；boolean 同时控制两侧，对象可单独控制。 */
+  scrollShadow?: TabScrollShadowConfig
   sessionPrefix?: string
 }
 

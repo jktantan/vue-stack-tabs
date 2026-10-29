@@ -353,4 +353,87 @@ describe('pageComponentFactory scroll shadow API', () => {
     await waitFrame()
     expect(panel.classList.contains('stack-tab__shadow-inset-vertical')).toBe(true)
   })
+
+  it('全局 scrollShadow 对象可单独关闭顶部，state 仍为 both', async () => {
+    const runtimeContext = createStackTabsRuntimeContext({
+      pageScroll: 'native',
+      scrollShadow: { top: false }
+    })
+    const { factory } = createHarness(runtimeContext)
+    let shadowApi!: ReturnType<typeof useTabScrollShadow>
+
+    const Inner = defineComponent({
+      name: 'PageShadowTopDisabled',
+      setup() {
+        shadowApi = useTabScrollShadow()
+        return () => h('div', { class: 'inner' })
+      }
+    })
+
+    const page = factory.resolvePageComponent({ cacheName: 'page-shadow-top-off', tabInfo })
+    const wrapper = mountPageWithPanel(page, runtimeContext, h(Inner))
+    await nextTick()
+
+    const pageWrapper = wrapper.get('.stack-tab__cache-page-wrapper').element as HTMLElement
+    const panel = wrapper.get('.test-panel').element as HTMLElement
+    setScrollMetrics(pageWrapper, 100)
+    pageWrapper.dispatchEvent(new Event('scroll'))
+    await waitFrame()
+
+    expect(shadowApi.getState()).toBe('both')
+    expect(shadowApi.enabled.value).toBe(true)
+    expect(shadowApi.enabledSides.value).toEqual({ top: false, bottom: true })
+    expect(panel.classList.contains('stack-tab__shadow-inset-bottom')).toBe(true)
+    expect(panel.classList.contains('stack-tab__shadow-inset-top')).toBe(false)
+    expect(panel.classList.contains('stack-tab__shadow-inset-vertical')).toBe(false)
+  })
+
+  it('页面级 setEnabled 对象可单独切换某一侧，reset 后回退全局配置', async () => {
+    const runtimeContext = createStackTabsRuntimeContext({
+      pageScroll: 'native',
+      scrollShadow: true
+    })
+    const { factory } = createHarness(runtimeContext)
+    let shadowApi!: ReturnType<typeof useTabScrollShadow>
+
+    const Inner = defineComponent({
+      name: 'PageShadowDirectionalConsumer',
+      setup() {
+        shadowApi = useTabScrollShadow()
+        return () => h('div', { class: 'inner' })
+      }
+    })
+
+    const page = factory.resolvePageComponent({ cacheName: 'page-shadow-directional', tabInfo })
+    const wrapper = mountPageWithPanel(page, runtimeContext, h(Inner))
+    await nextTick()
+
+    const pageWrapper = wrapper.get('.stack-tab__cache-page-wrapper').element as HTMLElement
+    const panel = wrapper.get('.test-panel').element as HTMLElement
+    setScrollMetrics(pageWrapper, 100)
+    pageWrapper.dispatchEvent(new Event('scroll'))
+    await waitFrame()
+    expect(panel.classList.contains('stack-tab__shadow-inset-vertical')).toBe(true)
+
+    // 只保留顶部：底部阴影关闭。
+    shadowApi.setEnabled({ bottom: false })
+    await waitFrame()
+    expect(shadowApi.enabledSides.value).toEqual({ top: true, bottom: false })
+    expect(panel.classList.contains('stack-tab__shadow-inset-top')).toBe(true)
+    expect(panel.classList.contains('stack-tab__shadow-inset-bottom')).toBe(false)
+    expect(panel.classList.contains('stack-tab__shadow-inset-vertical')).toBe(false)
+
+    // 只保留底部：顶部阴影关闭。
+    shadowApi.setEnabled({ top: false })
+    await waitFrame()
+    expect(shadowApi.enabledSides.value).toEqual({ top: false, bottom: true })
+    expect(panel.classList.contains('stack-tab__shadow-inset-bottom')).toBe(true)
+    expect(panel.classList.contains('stack-tab__shadow-inset-top')).toBe(false)
+
+    // 回退全局配置（true）后恢复上下阴影。
+    shadowApi.reset()
+    await waitFrame()
+    expect(shadowApi.enabledSides.value).toEqual({ top: true, bottom: true })
+    expect(panel.classList.contains('stack-tab__shadow-inset-vertical')).toBe(true)
+  })
 })

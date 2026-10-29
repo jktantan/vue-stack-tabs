@@ -3,6 +3,7 @@ import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import { defineComponent, h, ref } from 'vue'
 import { useScrollShadow } from '@/lib/hooks/useScrollShadow'
+import type { TabScrollShadowConfig } from '@/lib/hooks/tabScrollShadowContext'
 
 const waitFrame = () =>
   new Promise<void>((resolve) => {
@@ -141,5 +142,55 @@ describe('useScrollShadow', () => {
     await waitFrame()
 
     expect(classEl.classList.contains('stack-tab__shadow-inset-vertical')).toBe(true)
+  })
+
+  it('enabled 对象可单独关闭某一侧，state 仍按真实方向计算', async () => {
+    const scroller = ref<HTMLElement | null>(null)
+    const classTarget = ref<HTMLElement | null>(null)
+    const enabled = ref<TabScrollShadowConfig>({ top: false })
+    let api!: ReturnType<typeof useScrollShadow>
+
+    const Host = defineComponent({
+      name: 'DirectionalScrollShadowHost',
+      setup() {
+        api = useScrollShadow({ target: scroller, classTarget, enabled })
+        return () =>
+          h('div', { ref: classTarget }, [h('div', { ref: scroller, 'data-test': 'scroller' })])
+      }
+    })
+
+    const wrapper = mount(Host)
+    const scrollerEl = wrapper.get('[data-test="scroller"]').element as HTMLElement
+    const classEl = wrapper.get('div').element as HTMLElement
+
+    // 上下都有内容，但顶部被单独关闭 -> 只显示底部阴影。
+    setScrollMetrics(scrollerEl, { scrollTop: 100, clientHeight: 100, scrollHeight: 300 })
+    api.sync()
+    await waitFrame()
+
+    expect(api.state.value).toBe('both')
+    expect(classEl.classList.contains('stack-tab__shadow-inset-bottom')).toBe(true)
+    expect(classEl.classList.contains('stack-tab__shadow-inset-top')).toBe(false)
+    expect(classEl.classList.contains('stack-tab__shadow-inset-vertical')).toBe(false)
+
+    // 改为关闭底部 -> 只显示顶部阴影。
+    enabled.value = { bottom: false }
+    api.sync()
+    await waitFrame()
+
+    expect(api.state.value).toBe('both')
+    expect(classEl.classList.contains('stack-tab__shadow-inset-top')).toBe(true)
+    expect(classEl.classList.contains('stack-tab__shadow-inset-bottom')).toBe(false)
+    expect(classEl.classList.contains('stack-tab__shadow-inset-vertical')).toBe(false)
+
+    // 两侧都关闭 -> 不渲染阴影，state 不变。
+    enabled.value = false
+    api.sync()
+    await waitFrame()
+
+    expect(api.state.value).toBe('both')
+    expect(classEl.classList.contains('stack-tab__shadow-inset-top')).toBe(false)
+    expect(classEl.classList.contains('stack-tab__shadow-inset-bottom')).toBe(false)
+    expect(classEl.classList.contains('stack-tab__shadow-inset-vertical')).toBe(false)
   })
 })

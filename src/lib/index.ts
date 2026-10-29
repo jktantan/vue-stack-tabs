@@ -50,7 +50,9 @@ export type {
 export type { StackTabsPageScroll, StackTabsPageScrollMode } from './model/PageScroll'
 export type { TabPageScrollController } from './hooks/tabPageScrollContext'
 export type {
+  TabScrollShadowConfig,
   TabScrollShadowController,
+  TabScrollShadowSides,
   TabScrollShadowState
 } from './hooks/tabScrollShadowContext'
 export { tabPageContextKey, resolveTabPageContext } from './hooks/tabPageContext'
