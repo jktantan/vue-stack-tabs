@@ -58,18 +58,53 @@ type StackTabsIframeReferrerPolicy =
 const emit = defineEmits(['onActive', 'onPageLoaded'])
 const props = withDefaults(
   defineProps<{
+    /** 初始标签列表，仅在组件挂载时使用 / Initial tab list, applied when the component mounts */
     defaultTabs?: ITabData[]
-    /** 固定首页：始终位于第一位、不可关闭、不可移动，其他标签也不能排到它前面。 */
+    /**
+     * 固定首页：始终位于第一位、不可关闭、不可移动，其他标签也不能排到它前面。
+     * Fixed home tab: always first, cannot be closed or moved, and other tabs cannot precede it.
+     */
     homeTab?: ITabData
+    /** 标签页最大数量，默认 20 / Maximum number of tabs (default: 20) */
     max?: number
+    /**
+     * 是否启用右键菜单，或传入自定义菜单项数组，默认 true。
+     * Enables the context menu, or pass a custom menu item array (default: true).
+     */
     contextmenu?: boolean | object
+    /**
+     * 前进时的页面切换过渡动画名称，默认 `stack-tab-swap`。
+     * Page transition name when navigating forward (default: `stack-tab-swap`).
+     */
     pageTransition?: string
+    /**
+     * 后退时的页面切换过渡动画名称，默认 `stack-tab-swap-back`。
+     * Page transition name when navigating back (default: `stack-tab-swap-back`).
+     */
     pageTransitionBack?: string
+    /**
+     * 标签切换过渡动画：可传动画名称，或完整的 TransitionProps，默认 `stack-tab-zoom`。
+     * Tab transition: an animation name or full TransitionProps (default: `stack-tab-zoom`).
+     */
     tabTransition?: string | TransitionProps
+    /**
+     * 标签栏的滚动模式（滚轮 / 按钮 / 两者都支持），默认 `TabScrollMode.BOTH`。
+     * Tab bar scroll mode (wheel / buttons / both), defaults to `TabScrollMode.BOTH`.
+     */
     tabScrollMode?: TabScrollMode
+    /** 组件容器宽度，默认 `100%` / Container width (default: `100%`) */
     width?: string
+    /** 组件容器高度，默认 `100%` / Container height (default: `100%`) */
     height?: string
+    /**
+     * 界面语言，如 `zh-CN`、`en`；不传时跟随库的默认语言。
+     * UI locale, e.g. `zh-CN` or `en`; falls back to the library default when omitted.
+     */
     i18n?: string
+    /**
+     * 标签栏滚动一次移动的距离（px），默认 300。
+     * Distance (px) the tab bar scrolls per step (default: 300).
+     */
     space?: number
     /**
      * 内容区滚动策略：
@@ -78,6 +113,13 @@ const props = withDefaults(
      * - `Component`：由传入的滚动组件接管。
      *
      * 默认 `'none'`。
+     *
+     * Content scroll strategy:
+     * - `'native'`: the internal wrapper uses native scrolling;
+     * - `'none'`: the library does not handle scrolling; the page does;
+     * - `Component`: a custom scroll component takes over.
+     *
+     * Defaults to `'none'`.
      */
     pageScroll?: StackTabsPageScroll
     /**
@@ -85,14 +127,44 @@ const props = withDefaults(
      * 传 `false` 同时关闭两侧；传对象可单独关闭某一侧，例如 `{ top: false }`。
      * 页面内组件还可以通过 `useTabScrollShadow().setEnabled()` 单独覆盖。
      * 对象需整体替换才会生效（直接修改对象属性不会触发更新）。
+     *
+     * Top/bottom shadow for the content area (default: true).
+     * Pass `false` to disable both sides, or an object to disable one side, e.g. `{ top: false }`.
+     * Components inside the page can override it via `useTabScrollShadow().setEnabled()`.
+     * The object must be replaced as a whole (mutating a property does not trigger updates).
      */
     scrollShadow?: TabScrollShadowConfig
+    /**
+     * iframe 占位页路由路径，用作 iframe 标签的渲染入口（必填）。
+     * Route path of the iframe placeholder page, used as the render entry for iframe tabs (required).
+     */
     iframePath: string
+    /**
+     * 会话存储 key 前缀，用于区分不同应用实例，默认空字符串。
+     * Prefix for session-storage keys to distinguish app instances (default: empty string).
+     */
     sessionPrefix?: string
+    /**
+     * 允许与 iframe 通过 postMessage 通信的源列表，默认不允许任何源（空数组）。
+     * Origins allowed to communicate with the iframe via postMessage (default: none).
+     */
     iframeAllowedOrigins?: string[]
+    /**
+     * iframe 的 sandbox 属性，默认 `allow-scripts allow-forms allow-popups allow-downloads allow-same-origin`。
+     * The iframe `sandbox` attribute (default: `allow-scripts allow-forms allow-popups allow-downloads allow-same-origin`).
+     */
     iframeSandbox?: string
+    /**
+     * iframe 的 referrerpolicy 属性，默认 `strict-origin-when-cross-origin`。
+     * The iframe `referrerpolicy` attribute (default: `strict-origin-when-cross-origin`).
+     */
     iframeReferrerPolicy?: StackTabsIframeReferrerPolicy
+    /** iframe 的 allow 属性（权限策略），默认空字符串 / The iframe `allow` attribute (default: empty) */
     iframeAllow?: string
+    /**
+     * iframe 加载超时时间（毫秒），超时后提示加载失败，默认 15000。
+     * Iframe load timeout in milliseconds; a failure notice is shown after it (default: 15000).
+     */
     iframeLoadTimeout?: number
   }>(),
   {

@@ -91,12 +91,19 @@ import ContextMenuItem from './ContextMenuItem.vue'
 
 const props = withDefaults(
   defineProps<{
+    /** 触发右键菜单的标签序号 / Index of the tab that triggered the context menu */
     index: number
+    /** 菜单左边界坐标（px），默认 0 / Menu left position in px (default: 0) */
     left?: number
+    /** 菜单上边界坐标（px），默认 0 / Menu top position in px (default: 0) */
     top?: number
+    /** 自定义菜单项列表，默认空数组 / Custom menu items (default: empty array) */
     contextMenu?: Array<IContextMenu>
+    /** 菜单关闭后需要恢复焦点的元素 / Element to restore focus to after the menu closes */
     restoreFocusElement?: HTMLElement | null
+    /** 当前操作的目标标签 / Target tab of the menu actions */
     tabItem: ITabItem
+    /** 标签页最大数量 / Maximum number of tabs */
     max: number
   }>(),
   {

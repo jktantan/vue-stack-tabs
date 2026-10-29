@@ -16,6 +16,7 @@ import useTabPanel from '../../hooks/useTabPanel'
 import StackCacheRenderer from './StackCacheRenderer.vue'
 
 interface StackKeepAliveProps {
+  /** 页面切换过渡动画名称，默认 `stack-tab-swap` / Page transition name (default: `stack-tab-swap`) */
   transitionName?: string
 }
 

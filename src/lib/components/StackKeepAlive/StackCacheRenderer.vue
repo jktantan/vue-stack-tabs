@@ -18,7 +18,9 @@ import useTabPanel from '../../hooks/useTabPanel'
 import { getEmptyPlaceholderComponent } from './emptyPlaceholder'
 
 interface StackCacheRendererProps {
+  /** 当前路由对象 / Current route object */
   route: RouteLocationNormalizedLoaded
+  /** 当前路由匹配到的组件 VNode，可能为空 / VNode of the component matched by the route, may be null */
   component?: VNode | null
 }
 

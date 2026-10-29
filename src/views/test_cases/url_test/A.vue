@@ -3,8 +3,8 @@ import { ref, watch } from 'vue'
 import { useTabRouter } from '@/lib'
 
 const props = defineProps<{
-  // eslint-disable-next-line vue/prop-name-casing
-  _back?: Record<string, unknown>
+  /** 接收回退参数，挂载在专用属性 _back 上 / Backward-navigation parameters, exposed via the special `_back` prop */
+  _back?: Record<string, unknown> // eslint-disable-line vue/prop-name-casing
 }>()
 
 const { forward, backward } = useTabRouter()

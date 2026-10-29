@@ -1,5 +1,6 @@
 <script setup lang="ts">
 defineProps<{
+  /** 问候语文本 / Greeting text */
   msg: string
 }>()
 </script>

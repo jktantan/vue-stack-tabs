@@ -76,7 +76,9 @@ const { t } = useI18n()
 const tabElementRef = ref<HTMLElement>()
 const dragging = ref(false)
 const props = defineProps<{
+  /** 标签数据（标题、id、图标、激活状态等） / Tab data (title, id, icon, active state, etc.) */
   item: ITabItem
+  /** 拖拽悬停时的插入位置，默认不显示 / Drop position while dragging, hidden by default */
   dropPosition?: 'before' | 'after'
 }>()
 

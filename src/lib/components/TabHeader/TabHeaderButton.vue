@@ -27,15 +27,15 @@ import { computed } from 'vue'
 
 const props = withDefaults(
   defineProps<{
-    /** 是否禁用 */
+    /** 是否禁用 / Whether the button is disabled */
     disabled?: boolean
-    /** 阴影方向，用于滚动到边界时的视觉提示 */
+    /** 阴影方向，用于滚动到边界时的视觉提示 / Shadow direction shown when scrolled to an edge */
     shadow?: 'left' | 'right' | null
-    /** 图标 class（无 slot 时使用） */
+    /** 图标 class（无 slot 时使用） / Icon class used when no slot is provided */
     iconClass?: string
-    /** 悬停提示 */
+    /** 悬停提示 / Tooltip text on hover */
     title?: string
-    /** 辅助技术标签，未传时使用 title */
+    /** 辅助技术标签，未传时使用 title / Accessible label, falls back to `title` */
     ariaLabel?: string
   }>(),
   {

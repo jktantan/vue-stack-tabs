@@ -13,11 +13,14 @@
 <script setup lang="ts">
 withDefaults(
   defineProps<{
-    /** 图标 class，如 stack-tab__icon stack-tab__icon--reload stack-tab__icon--mask */
+    /**
+     * 图标 class，如 stack-tab__icon stack-tab__icon--reload stack-tab__icon--mask
+     * Icon class, e.g. stack-tab__icon stack-tab__icon--reload stack-tab__icon--mask
+     */
     icon?: string
-    /** 显示文本 */
+    /** 显示文本 / Display text */
     title: string
-    /** 是否禁用 */
+    /** 是否禁用 / Whether the item is disabled */
     disabled?: boolean
   }>(),
   {

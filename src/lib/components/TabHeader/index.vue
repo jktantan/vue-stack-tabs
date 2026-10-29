@@ -101,10 +101,15 @@ const handleCloseContextMenu = () => {
 
 const props = withDefaults(
   defineProps<{
+    /** 标签栏滚动一次移动的距离（px），默认 300 / Scroll distance per step in px (default: 300) */
     space: number
+    /** 标签栏滚动模式，默认 `TabScrollMode.BOTH` / Tab bar scroll mode (default: `TabScrollMode.BOTH`) */
     tabScrollMode?: TabScrollMode
+    /** 标签切换过渡动画：动画名称或 TransitionProps，默认 `stack-tab-zoom` / Tab transition: name or TransitionProps (default: `stack-tab-zoom`) */
     tabTransition?: string | TransitionProps
+    /** 是否启用右键菜单，或传入自定义菜单项数组，默认 true / Enables the context menu or passes custom items (default: true) */
     contextmenu?: boolean | object
+    /** 标签页最大数量，默认 20 / Maximum number of tabs (default: 20) */
     max?: number
   }>(),
   {

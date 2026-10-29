@@ -25,7 +25,7 @@ import { getMaxZIndex, invalidateZIndexCache } from '../utils/scrollUtils'
 /** 遮罩显示时的层叠值；只在显示时计算一次，避免每次重渲染都全量扫描 DOM。 */
 const loadingZIndex = ref(0)
 const props = defineProps<{
-  /** 当前标签 id，用于过滤 PAGE_LOADING 事件 */
+  /** 当前标签 id，用于过滤 PAGE_LOADING 事件 / Current tab id, used to filter PAGE_LOADING events */
   tabId: string
 }>()
 const { t } = useI18n()

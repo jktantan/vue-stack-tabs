@@ -89,11 +89,11 @@ const hasScroller = ref<boolean>(false)
 const headerScroll = ref<HTMLElement>()
 const props = withDefaults(
   defineProps<{
-    /** 每次点击箭头或滚轮的移动距离（px） */
+    /** 每次点击箭头或滚轮的移动距离（px），默认 300 / Scroll distance per step in px (default: 300) */
     space?: number
-    /** 是否支持滚轮滚动 */
+    /** 是否支持滚轮滚动，默认 true / Whether mouse-wheel scrolling is enabled (default: true) */
     isScrollWheel?: boolean
-    /** 是否显示左右箭头 */
+    /** 是否显示左右箭头，默认 true / Whether the left/right arrow buttons are shown (default: true) */
     isScrollButton?: boolean
   }>(),
   {

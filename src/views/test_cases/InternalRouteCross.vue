@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router'
 import useTabRouter from '@/lib/hooks/useTabRouter'
 
 interface BackParams {
+  /** 回退时携带的参数集合（键值任意） / Key-value parameters carried on backward navigation */
   [key: string]: unknown
 }
 
