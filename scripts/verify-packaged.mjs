@@ -101,8 +101,8 @@ import type * as PackageBundle from 'vue-stack-tabs/dist/vue-stack-tabs.es'
 type RelativeProps = InstanceType<typeof Bundle.VueStackTabs>['$props']
 type PackageProps = InstanceType<typeof PackageBundle.VueStackTabs>['$props']
 
-const relative: RelativeProps = { iframePath: '/x', max: 20, scrollContainer: undefined }
-const fromPackage: PackageProps = { iframePath: '/x', max: 20, scrollContainer: undefined }
+const relative: RelativeProps = { iframePath: '/x', max: 20, pageScroll: 'native' }
+const fromPackage: PackageProps = { iframePath: '/x', max: 20, pageScroll: 'native' }
 
 // @ts-expect-error 不存在的 prop 必须报错
 const badRelative: RelativeProps = { iframePath: '/x', nope: 1 }
