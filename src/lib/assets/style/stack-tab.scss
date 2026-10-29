@@ -290,6 +290,7 @@
       height: 100%;
       width: 0;
       padding: 0;
+      cursor: inherit;
 
       @include button-reset;
       @include icon-button-color;
