@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.1.1 (2026-11-02)
+
+### 修复
+
+- `TabHeaderButton` 使用 `#icon` 插槽时，图标容器只有尺寸、没有居中和颜色反馈：`.stack-tab__button` 现在使用 flex 居中，按钮默认色对齐 mask 图标（`--stack-tab-mask`），hover / active 分别使用 `--stack-tab-accent` / `--stack-tab-accent-active`；反馈规则用 `:where()` 归零特异性，宿主用普通类即可覆盖。
+- Nuxt 模块现在同时注册 `<TabHeaderButton>` 全局组件，`leftButton` / `rightButton` 插槽内无需再显式 import。
+
 ## 3.1.0 (2026-10-29)
 
 ### 新增

@@ -55,6 +55,13 @@ describe('nuxt module setup', () => {
     expect(kit.addComponent).toHaveBeenCalledWith(
       expect.objectContaining({ name: 'VueStackTabs', export: 'VueStackTabs' })
     )
+    expect(kit.addComponent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: 'TabHeaderButton',
+        export: 'TabHeaderButton',
+        filePath: expect.stringContaining('vue-stack-tabs.es.js')
+      })
+    )
     expect(kit.addImports).toHaveBeenCalled()
   })
 

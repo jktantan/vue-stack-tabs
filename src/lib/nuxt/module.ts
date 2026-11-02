@@ -2,7 +2,7 @@
  * vue-stack-tabs Nuxt 模块。
  *
  * 自动注册客户端插件、注入 composables（useTabActions 等）、
- * 注册全局组件 <VueStackTabs>，并通过 runtimeConfig 传递 locale 配置。
+ * 注册全局组件 <VueStackTabs> / <TabHeaderButton>，并通过 runtimeConfig 传递 locale 配置。
  */
 import { addComponent, addImports, addPlugin, createResolver, defineNuxtModule } from 'nuxt/kit'
 import type { LocaleMessageOption } from '../i18n'
@@ -40,13 +40,23 @@ export default defineNuxtModule<ModuleOptions>({
       src: resolve('./runtime/plugin')
     })
 
-    // 自动注册全局组件 <VueStackTabs>，使用方无需在每个页面再 import。
+    // 自动注册全局组件，使用方无需在每个页面再 import。
+    // 指向发布产物（dist/vue-stack-tabs.es.js）中的命名导出；
+    // 源码入口 ../index.ts 不会被发布，Nuxt 构建时会解析失败。
+    const componentEntry = resolve('../vue-stack-tabs.es.js')
+
     addComponent({
       name: 'VueStackTabs',
       export: 'VueStackTabs',
-      // 指向发布产物（dist/vue-stack-tabs.es.js）中的命名导出；
-      // 源码入口 ../index.ts 不会被发布，Nuxt 构建时会解析失败。
-      filePath: resolve('../vue-stack-tabs.es.js')
+      filePath: componentEntry
+    })
+
+    // leftButton / rightButton 插槽推荐用 <TabHeaderButton> 包装，
+    // 与库内置的滚动箭头、最大化按钮保持同一套尺寸与交互。
+    addComponent({
+      name: 'TabHeaderButton',
+      export: 'TabHeaderButton',
+      filePath: componentEntry
     })
 
     addImports([

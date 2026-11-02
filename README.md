@@ -497,6 +497,8 @@ const stop = shadow.onStateChange((state) => {
 </VueStackTabs>
 ```
 
+`TabHeaderButton` 由包入口导出，Vue 3 项目需要显式 `import { TabHeaderButton } from 'vue-stack-tabs'`；使用 `vue-stack-tabs/nuxt` 模块时会自动注册为全局组件，可直接在模板里使用。
+
 ---
 
 ## 🖼️ iframe 标签页

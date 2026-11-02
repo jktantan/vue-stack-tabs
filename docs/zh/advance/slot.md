@@ -37,6 +37,8 @@ VueStackTabs 支持通过以下插槽个性化页签组件：
 </template>
 ```
 
+`TabHeaderButton` 已从包入口导出。Vue 3 项目按上面的方式显式导入；使用 `vue-stack-tabs/nuxt` 模块时它会被自动注册为全局组件，可以省略 import。
+
 ## 示例：iframe 占位
 
 ```vue:line-numbers

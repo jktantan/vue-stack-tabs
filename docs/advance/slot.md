@@ -38,6 +38,8 @@ VueStackTabs supports these slots:
 </template>
 ```
 
+`TabHeaderButton` is exported from the package entry. Vue 3 projects import it as shown above; with the `vue-stack-tabs/nuxt` module it is registered globally, so the import can be omitted.
+
 **Example — iframe placeholders:**
 
 ```vue:line-numbers

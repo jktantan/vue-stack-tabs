@@ -493,6 +493,8 @@ const stop = shadow.onStateChange((state) => {
 </VueStackTabs>
 ```
 
+`TabHeaderButton` is exported from the package entry, so Vue 3 projects must `import { TabHeaderButton } from 'vue-stack-tabs'`. When using the `vue-stack-tabs/nuxt` module it is registered globally and can be used in templates directly.
+
 ---
 
 ## iframe Tabs

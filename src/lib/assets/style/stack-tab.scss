@@ -52,6 +52,8 @@
   }
 
   &__button {
+    @include flex-center;
+
     height: $stack-tab-button-size;
     width: $stack-tab-button-size;
     margin: 0 5px;
@@ -76,15 +78,32 @@
       display: flex;
       align-items: center;
       padding: 0;
-      color: inherit;
+      color: $stack-tab-icon-mask;
+      transition: color 0.15s ease-in-out;
 
       @include button-reset;
+
+      // #icon 插槽图标通过 currentColor 继承按钮颜色。
+      // 默认反馈用 :where() 归零特异性，宿主用普通类即可覆盖。
+      &:where(:hover) {
+        color: $stack-tab-accent;
+      }
+
+      &:where(:active) {
+        color: $stack-tab-accent-active;
+      }
 
       // 按钮禁用样式
       &[disabled] {
         background-color: $stack-tab-surface-muted;
         box-shadow: none;
         cursor: not-allowed;
+        color: $stack-tab-text-disabled;
+
+        &:hover,
+        &:active {
+          color: $stack-tab-text-disabled;
+        }
       }
     }
   }
