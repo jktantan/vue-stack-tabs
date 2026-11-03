@@ -434,6 +434,23 @@ const registerNavigationGuards = (): Array<() => void> => {
     return isSameQueryIgnoringReserved(to.query, top.query ?? {})
   }
 
+  /**
+   * 路由组件是否已经加载过（chunk 命中缓存）。
+   *
+   * 首次访问时 record.components.default 还是 `() => import()`；
+   * vue-router 导航完成后会把它替换成已解析的组件对象。
+   * 已加载的页面不需要 loading：导航会立即提交，页面挂载也很快。
+   */
+  const isRouteComponentLoaded = (to: RouteLocationNormalized): boolean => {
+    for (const record of to.matched) {
+      const component = record.components?.default
+      if (!component) continue
+      if (typeof component === 'function') return false
+      if ((component as { __asyncLoader?: unknown }).__asyncLoader) return false
+    }
+    return true
+  }
+
   const removeBeforeEach = router.beforeEach((to, from) => {
     // 内网等快速环境可关闭加载态：既不显示遮罩，也不隐藏旧页面
     if (!props.pageLoading) return
@@ -444,6 +461,14 @@ const registerNavigationGuards = (): Array<() => void> => {
     // 页面已就绪（例如 updatePageState 写回 __tab 的 replace、切回缓存页）：
     // 不设 loading，否则页面不会重新挂载，pending 没有生命周期事件来清除。
     if (isCurrentPage(to, from, tabId)) return
+
+    // 组件已加载过（chunk 命中缓存）：导航会立即完成，不显示 loading。
+    // 同时清掉 openTab 占位时设置的 pending。
+    if (isRouteComponentLoaded(to)) {
+      if (pendingTabId === tabId) pendingTabId = ''
+      setTabPending(tabId, false)
+      return
+    }
 
     // 快速连续切到不同标签时，先撤掉上一个导航的占位，避免它一直转圈
     if (pendingTabId && pendingTabId !== tabId) setTabPending(pendingTabId, false)
