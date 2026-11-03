@@ -270,6 +270,26 @@ describe('tabStore', () => {
     expect(store.getTabs().map((tab) => tab.id)).toEqual(['t2'])
   })
 
+  it('setTabPending 切换视图上的占位标记', () => {
+    store.addTab(createTab('t1'))
+    const view = store.getTab('t1')
+
+    expect(store.setTabPending('t1', true)).toBe(true)
+    expect(store.getTab('t1')?.pending).toBe(true)
+    expect(store.getTab('t1')).toBe(view)
+    expect(store.setTabPending('missing', true)).toBe(false)
+  })
+
+  it('removeTabForce 忽略 closable 移除占位标签', () => {
+    const tab = createTab('t1')
+    tab.closable = false
+    store.addTab(tab)
+
+    expect(store.removeTab('t1').status).toBe('not-closable')
+    expect(store.removeTabForce('t1').status).toBe('removed')
+    expect(store.hasTab('t1')).toBe(false)
+  })
+
   it('页面快照深拷贝 query，replacePages 可恢复页面栈', () => {
     store.addTab(createTab('t1'))
 

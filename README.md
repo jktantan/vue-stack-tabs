@@ -285,6 +285,11 @@ const {
 | `getWrapper({ tabId?, pageId? })` | 获取页面内容容器 DOM；不传参数返回首个容器，多标签场景应传 `tabId` 或 `pageId`，避免取到错误页面 |
 | `openInNewWindow(id)`             | iframe 标签无法内嵌时在新窗口打开                                                                |
 
+> `openTab()` 采用「占位页签 + 加载态」：页签会在导航前同步创建（`pending`），
+> 目标页面 chunk 下载完成后再补进页面栈；占位期间内容区显示库内置 loading，
+> 可用 `#pageLoading` 插槽替换。导航失败会自动移除占位页签并恢复原激活标签，
+> 占位标签也不会写入 sessionStorage。
+
 > 关闭左侧 / 右侧 / 其他是标签栏右键菜单专属操作，在 `TabHeader`/`ContextMenu` 内部通过 `useTabPanel` 完成。
 
 ---
@@ -443,6 +448,7 @@ const stop = shadow.onStateChange((state) => {
 | `defaultTabs`          | `ITabData[]`                                     | `[]`                                                                       | 初始标签列表                                                                                                      |
 | `homeTab`              | `ITabData`                                       | —                                                                          | 固定首页：始终第一位、不可关闭、不可拖动；其他标签不能排到它前面；不配置时保持原行为                              |
 | `max`                  | `number`                                         | `20`                                                                       | 最大标签数量                                                                                                      |
+| `pageLoading`          | `boolean`                                        | `true`                                                                     | 导航期间是否显示页面加载态；关闭后不显示遮罩，也不隐藏旧页面（适合内网等快速环境）                                |
 | `contextmenu`          | `boolean \| object`                              | `true`                                                                     | 是否启用右键菜单                                                                                                  |
 | `pageTransition`       | `string`                                         | `'stack-tab-swap'`                                                         | 前进时的页面转场动画名                                                                                            |
 | `pageTransitionBack`   | `string`                                         | `'stack-tab-swap-back'`                                                    | 后退时的页面转场动画名                                                                                            |
@@ -484,6 +490,7 @@ const stop = shadow.onStateChange((state) => {
 | `rightButton`   | —                | 标签栏右侧按钮区                                      |
 | `iframeLoading` | `{ tab }`        | 自定义 iframe 加载中占位                              |
 | `iframeError`   | `{ tab, retry }` | 自定义 iframe 加载失败占位，调用 `retry()` 可重新加载 |
+| `pageLoading`   | `{ tab }`        | 占位页签的加载中 UI，默认使用库内置 `PageLoading`     |
 
 ```vue
 <VueStackTabs iframe-path="/iframe">

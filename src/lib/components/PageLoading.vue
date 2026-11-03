@@ -17,21 +17,33 @@
   </div>
 </template>
 <script setup lang="ts">
-import { ref, onUnmounted, watch } from 'vue'
+import { computed, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n-lite'
 import { TabEventType, useTabEmitter } from '../hooks/useTabEventBus'
 import { getMaxZIndex, invalidateZIndexCache } from '../utils/scrollUtils'
 
 /** 遮罩显示时的层叠值；只在显示时计算一次，避免每次重渲染都全量扫描 DOM。 */
 const loadingZIndex = ref(0)
-const props = defineProps<{
-  /** 当前标签 id，用于过滤 PAGE_LOADING 事件 / Current tab id, used to filter PAGE_LOADING events */
-  tabId: string
-}>()
+const props = withDefaults(
+  defineProps<{
+    /** 当前标签 id，用于过滤 PAGE_LOADING 事件 / Current tab id, used to filter PAGE_LOADING events */
+    tabId: string
+    /**
+     * 受控显示。
+     *
+     * 传入时忽略 PAGE_LOADING 事件，用于导航占位等没有页面实例的场景；
+     * 不传时保持原有事件驱动行为。
+     */
+    visible?: boolean
+  }>(),
+  { visible: undefined }
+)
 const { t } = useI18n()
 const emitter = useTabEmitter()
-/** 是否显示 loading 遮罩 */
-const isLoading = ref<boolean>(false)
+/** 页面内 useTabLoading() 驱动的状态 */
+const eventLoading = ref<boolean>(false)
+/** 是否显示 loading 遮罩：受控值优先，否则跟随事件 */
+const isLoading = computed<boolean>(() => props.visible ?? eventLoading.value)
 watch(isLoading, (loading) => {
   if (!loading) return
   // 遮罩显隐会改变 .stack-tab__cache-page-wrapper 子树层叠，先失效缓存再读取避免旧值。
@@ -40,8 +52,10 @@ watch(isLoading, (loading) => {
 })
 /** 处理 PAGE_LOADING 事件，仅当 tId 匹配时更新 */
 const handleLoadingEvent = (payload: { tId: string; value: boolean }) => {
+  // 受控模式下事件不应覆盖外部传入的状态
+  if (props.visible !== undefined) return
   if (payload.tId === props.tabId) {
-    isLoading.value = payload.value
+    eventLoading.value = payload.value
   }
 }
 emitter.on(TabEventType.PAGE_LOADING, handleLoadingEvent)

@@ -62,6 +62,13 @@ export interface ITabBase {
   iframe?: boolean
   /** iframe 刷新方式，默认 postMessage */
   iframeRefreshMode?: IframeRefreshMode
+  /**
+   * 运行时占位标记：标签已创建、目标页面尚未就绪（导航中）。
+   *
+   * 仅存在于运行时，不写入 `__tab`，也不参与 session 持久化；
+   * 页签栏据此立即渲染标签，内容区据此显示 loading。
+   */
+  pending?: boolean
 }
 /** 内部使用的标签项，含 active 状态和 pages 栈 */
 export interface ITabItem extends ITabBase {

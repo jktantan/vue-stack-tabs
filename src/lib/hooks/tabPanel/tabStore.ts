@@ -66,7 +66,11 @@ export interface TabStoreApi extends TabPanelEvictionApi {
   updateTabTitle: (id: string, title: string) => boolean
   moveTab: (id: string, targetIndex: number) => boolean
   removeTab: (id: string) => RemoveTabResult
+  /** 忽略 closable 强制移除；仅内部回滚占位标签使用 */
+  removeTabForce: (id: string) => RemoveTabResult
   removeTabs: (shouldRemove: (tab: ITabItem, index: number) => boolean) => ITabItem[]
+  /** 更新占位标记；pending 标签会在内容区显示 loading */
+  setTabPending: (id: string, pending: boolean) => boolean
 
   // ---- 页面栈写入 ----
   appendPage: (tabId: string, page: ITabPage) => void
@@ -117,6 +121,8 @@ interface TabRecord {
   url?: string
   /** 固定在标签栏最前方，不可拖动，其他标签也不能排到它前面 */
   pinned?: boolean
+  /** 占位标签：页签已出现，目标页面仍在导航中 */
+  pending?: boolean
 }
 
 interface PageStackAccess {
@@ -293,7 +299,8 @@ const createTabStore = (context: StackTabsRuntimeContext): TabStoreApi => {
     iframe: tab.iframe,
     iframeRefreshMode: tab.iframeRefreshMode,
     url: tab.url,
-    pinned: tab.pinned
+    pinned: tab.pinned,
+    pending: tab.pending
   })
 
   const registerTab = (tab: ITabItem): void => {
@@ -341,6 +348,22 @@ const createTabStore = (context: StackTabsRuntimeContext): TabStoreApi => {
     return true
   }
 
+  /**
+   * 更新标签的占位状态。
+   *
+   * pending 标签只保证页签可见，内容区由 <StackTabs> 显示 loading；
+   * 该标记不写入 __tab，也不参与 session 持久化。
+   */
+  const setTabPending = (id: string, pending: boolean): boolean => {
+    const record = tabsById.get(id)
+    if (!record) return false
+    if (Boolean(record.pending) === pending) return true
+    // 视图对象上的 pending 是 getter，改 record 即可触发内容区更新；
+    // 不要 syncTabsView()，否则标签内导航会重建整个 tabs 数组。
+    record.pending = pending
+    return true
+  }
+
   const moveTab = (id: string, targetIndex: number): boolean => {
     const order = tabOrder.value
     const sourceIndex = order.indexOf(id)
@@ -368,13 +391,19 @@ const createTabStore = (context: StackTabsRuntimeContext): TabStoreApi => {
     return true
   }
 
-  const removeTab = (id: string): RemoveTabResult => {
+  /**
+   * 移除标签的核心实现。
+   *
+   * force=true 时忽略 closable：仅用于回滚 openTab 创建的临时占位标签，
+   * 这类标签可能继承了业务传入的 closable=false，但导航失败后必须清理。
+   */
+  const removeTabCore = (id: string, force: boolean): RemoveTabResult => {
     const order = tabOrder.value
     const index = order.indexOf(id)
     if (index < 0) return { status: 'not-found', removed: null, nextActiveId: '' }
 
     const record = tabsById.get(id)
-    if (!record || !record.closable) {
+    if (!record || (!force && !record.closable)) {
       return { status: 'not-closable', removed: null, nextActiveId: id }
     }
 
@@ -404,6 +433,10 @@ const createTabStore = (context: StackTabsRuntimeContext): TabStoreApi => {
 
     return { status: 'removed', removed, nextActiveId }
   }
+
+  const removeTab = (id: string): RemoveTabResult => removeTabCore(id, false)
+  /** 忽略 closable 强制移除；仅用于回滚 openTab 创建的临时占位标签 */
+  const removeTabForce = (id: string): RemoveTabResult => removeTabCore(id, true)
 
   const removeTabs = (shouldRemove: (tab: ITabItem, index: number) => boolean): ITabItem[] => {
     const removed: ITabItem[] = []
@@ -590,7 +623,12 @@ const createTabStore = (context: StackTabsRuntimeContext): TabStoreApi => {
         active: activeTabId.value === id,
         // pages 的读写都转发给 store，本身不需要被 ref 深度代理。
         pages: markRaw(new PageStackView(id, pageAccess)),
-        pinned: record.pinned
+        pinned: record.pinned,
+        // pending 只影响内容区 loading，用 getter 读取 record 上的响应式字段：
+        // 切换 pending 不需要重建 tabs 数组（标签内导航的性能约束）。
+        get pending() {
+          return record.pending
+        }
       }
       tabViews.set(id, view)
     } else {
@@ -641,7 +679,9 @@ const createTabStore = (context: StackTabsRuntimeContext): TabStoreApi => {
     updateTabTitle,
     moveTab,
     removeTab,
+    removeTabForce,
     removeTabs,
+    setTabPending,
     appendPage,
     popPages,
     replacePages,

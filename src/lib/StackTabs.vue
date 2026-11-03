@@ -31,9 +31,14 @@ import type { StackTabsPageScroll } from './model/PageScroll'
 import type { TabScrollShadowConfig } from './hooks/tabScrollShadowContext'
 import TabHeader from './components/TabHeader/index.vue'
 import StackKeepAlive from './components/StackKeepAlive/StackKeepAlive.vue'
+import PageLoading from './components/PageLoading.vue'
 import useTabPanel from './hooks/useTabPanel'
 import useTabActions from './hooks/useTabActions'
 import { useI18n } from 'vue-i18n-lite'
+import { useRouter } from 'vue-router'
+import type { RouteLocationNormalized, Router } from 'vue-router'
+import { decodeTabInfo } from './utils/tabInfoEncoder'
+import { isSameQueryIgnoringReserved } from './utils/urlParser'
 import { TabEventType, tabEmitterKey } from './hooks/useTabEventBus'
 import {
   createStackTabsRuntimeContext,
@@ -67,6 +72,17 @@ const props = withDefaults(
     homeTab?: ITabData
     /** 标签页最大数量，默认 20 / Maximum number of tabs (default: 20) */
     max?: number
+    /**
+     * 导航期间是否显示页面加载态，默认 true。
+     *
+     * 内网等页面 chunk 加载很快的场景可以关闭：关闭后不显示 loading 遮罩，
+     * 也不会隐藏旧页面，页面在导航完成后直接切换。
+     *
+     * Whether to show the page loading state during navigation (default: true).
+     * Disable it when page chunks load fast (e.g. intranet): no loading mask and
+     * the old page stays visible until navigation completes.
+     */
+    pageLoading?: boolean
     /**
      * 是否启用右键菜单，或传入自定义菜单项数组，默认 true。
      * Enables the context menu, or pass a custom menu item array (default: true).
@@ -171,6 +187,7 @@ const props = withDefaults(
     defaultTabs: () => [],
     homeTab: undefined,
     max: 20,
+    pageLoading: true,
     contextmenu: true,
     tabTransition: 'stack-tab-zoom',
     pageTransition: 'stack-tab-swap',
@@ -239,7 +256,12 @@ const panelApi = isRuntimeContextOwner
       initialize: () => undefined,
       setMaxSize: () => undefined,
       setPageScroll: () => undefined,
-      setSessionPrefix: () => undefined
+      setSessionPrefix: () => undefined,
+      hasTab: () => false,
+      getActiveTab: () => null,
+      getTopPage: () => null,
+      getComponent: () => undefined,
+      setTabPending: () => false
     }
 const {
   tabs,
@@ -248,8 +270,14 @@ const {
   initialize,
   setMaxSize,
   setPageScroll,
-  setSessionPrefix
+  setSessionPrefix,
+  hasTab,
+  getActiveTab,
+  getTopPage,
+  getComponent,
+  setTabPending
 } = panelApi
+const router = useRouter() as Router | undefined
 const tabActions = isRuntimeContextOwner
   ? useTabActions(runtimeContext)
   : {
@@ -295,6 +323,10 @@ const onTabActive = (id: string) => {
   emit('onActive', id)
 }
 const onComponentLoaded = () => {
+  // 目标页面已挂载：撤掉导航 loading（普通标签的 pending 在这里结束）。
+  // 不能在导航完成时就撤：此时旧页面还没离场，会先回闪一下再切新页面。
+  const activeTab = getActiveTab()
+  if (activeTab) setTabPending(activeTab.id, false)
   emit('onPageLoaded')
 }
 
@@ -358,14 +390,93 @@ if (isRuntimeContextOwner) {
   emitter.on(TabEventType.REFRESH_IFRAME_POSTMESSAGE, handleRefreshIframePostMessage)
 }
 
+/**
+ * 导航级 loading：把「导航开始 → 导航结束」映射到目标标签的 pending。
+ *
+ * openTab 的占位只覆盖「新标签」；标签内前进/后退、浏览器前进/后退同样要等
+ * 页面 chunk，这里统一用全局路由守卫驱动。首屏导航发生在 <StackTabs> 挂载前，
+ * 由宿主的 SPA loading 模板负责。
+ */
+let removeNavigationGuards: Array<() => void> = []
+
+const registerNavigationGuards = (): Array<() => void> => {
+  // 单测或非路由环境可能没有安装 vue-router；此时没有可接管的导航。
+  if (!router) return []
+
+  let pendingTabId = ''
+
+  const resolveTabId = (to: RouteLocationNormalized): string => {
+    const encoded = to.query.__tab
+    if (typeof encoded === 'string') {
+      const info = decodeTabInfo(encoded)
+      if (info.id) return info.id
+    }
+    return getActiveTab()?.id ?? ''
+  }
+
+  /** 目标地址是否已经是该标签的已加载页面（页面已就绪，不需要 loading） */
+  const isCurrentPage = (
+    to: RouteLocationNormalized,
+    from: RouteLocationNormalized,
+    tabId: string
+  ): boolean => {
+    // 只是写回/修正 __tab 的 replace：地址没变，不需要 loading
+    if (to.path === from.path && isSameQueryIgnoringReserved(to.query, from.query)) {
+      return true
+    }
+
+    const top = getTopPage(tabId)
+    // 乐观页面（forward 已入栈但组件还没加载）不能算已就绪
+    if (!top || !getComponent(top.id)) return false
+
+    const path = to.path.endsWith('/') ? to.path.slice(0, -1) : to.path
+    if (top.path !== path) return false
+    return isSameQueryIgnoringReserved(to.query, top.query ?? {})
+  }
+
+  const removeBeforeEach = router.beforeEach((to, from) => {
+    // 内网等快速环境可关闭加载态：既不显示遮罩，也不隐藏旧页面
+    if (!props.pageLoading) return
+    if (to.fullPath === from.fullPath) return
+
+    const tabId = resolveTabId(to)
+    if (!tabId || !hasTab(tabId)) return
+    // 页面已就绪（例如 updatePageState 写回 __tab 的 replace、切回缓存页）：
+    // 不设 loading，否则页面不会重新挂载，pending 没有生命周期事件来清除。
+    if (isCurrentPage(to, from, tabId)) return
+
+    // 快速连续切到不同标签时，先撤掉上一个导航的占位，避免它一直转圈
+    if (pendingTabId && pendingTabId !== tabId) setTabPending(pendingTabId, false)
+
+    pendingTabId = tabId
+    setTabPending(tabId, true)
+  })
+
+  // 不在 afterEach 里撤 loading：目标页面还没挂载，提前撤会让旧页面回闪。
+  // pendingTabId 保留给 onError 清理导航失败的情况。
+  const removeErrorHandler = router.onError(() => {
+    const tabId = pendingTabId
+    pendingTabId = ''
+    if (tabId) setTabPending(tabId, false)
+  })
+
+  return [removeBeforeEach, removeErrorHandler]
+}
+
 onBeforeMount(() => {
   if (!isRuntimeContextOwner) return
   setSessionPrefix(props.sessionPrefix)
   initialize(props.defaultTabs, props.homeTab)
   window.addEventListener('message', handleMessage)
+  // SSR 没有导航；客户端挂载后再接管导航 loading
+  if (typeof window !== 'undefined') {
+    removeNavigationGuards = registerNavigationGuards()
+  }
 })
 onBeforeUnmount(() => {
   if (!isRuntimeContextOwner) return
+  for (const remove of removeNavigationGuards) remove()
+  removeNavigationGuards = []
   window.removeEventListener('message', handleMessage)
   emitter.off(TabEventType.REFRESH_IFRAME_POSTMESSAGE, handleRefreshIframePostMessage)
   emitter.off(TabEventType.FORWARD, forwardHandler)
@@ -417,7 +528,20 @@ onBeforeUnmount(() => {
           :aria-hidden="activeNonIframeTab ? undefined : 'true'"
           :hidden="!hasActiveNonIframeTab"
         >
-          <StackKeepAlive :transition-name="pageSwitch" @loaded="onComponentLoaded" />
+          <div
+            class="stack-tab__page-host"
+            :class="{ 'is-pending': pageLoading && activeNonIframeTab?.pending }"
+          >
+            <StackKeepAlive :transition-name="pageSwitch" @loaded="onComponentLoaded" />
+          </div>
+          <!-- 占位标签：页签已出现、目标页面仍在导航/加载中 -->
+          <Transition name="stack-tab-page-loading">
+            <div v-if="pageLoading && activeNonIframeTab?.pending" class="stack-tab__page-pending">
+              <slot name="pageLoading" :tab="activeNonIframeTab">
+                <PageLoading :tab-id="activeNonIframeTab.id" :visible="true" />
+              </slot>
+            </div>
+          </Transition>
         </div>
       </Transition>
       <div class="stack-tab__iframes">

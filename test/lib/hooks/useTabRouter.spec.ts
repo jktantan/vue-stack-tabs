@@ -59,6 +59,7 @@ vi.mock('@/lib/hooks/useTabPanel', () => ({
     },
     evictPageCache,
     addPageScroller: vi.fn(),
+    setTabPending: vi.fn(),
     active
   })
 }))

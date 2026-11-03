@@ -12,6 +12,10 @@ const refreshKey = { value: 0 }
 const tabs = { value: [] }
 const pages = { list: vi.fn(), clear: vi.fn(), push: vi.fn(), peek: vi.fn() }
 const rollbackRenew = vi.fn()
+const addTab = vi.fn()
+const getActiveTab = vi.fn()
+const setTabPending = vi.fn()
+const removeTabForce = vi.fn()
 const runtimeContext = {
   iframePath: { value: '/iframe' }
 }
@@ -42,12 +46,16 @@ vi.mock('@/lib/hooks/useTabPanel', () => ({
     canAddTab,
     renewTab,
     getTab,
+    getActiveTab,
     getTopPage: () => pages.peek(),
     tabs,
+    addTab,
     removeTab: vi.fn(),
+    removeTabForce,
     removeAllTabs: vi.fn(),
     refreshTab: vi.fn(),
-    refreshAllTabs: vi.fn()
+    refreshAllTabs: vi.fn(),
+    setTabPending
   })
 }))
 
@@ -69,11 +77,16 @@ describe('useTabActions', () => {
     pages.push.mockReset()
     pages.peek.mockReset()
     rollbackRenew.mockReset()
+    addTab.mockReset()
+    getActiveTab.mockReset()
+    setTabPending.mockReset()
+    removeTabForce.mockReset()
     runtimeContext.iframePath.value = '/iframe'
     refreshKey.value = 0
     push.mockResolvedValue(undefined)
     canAddTab.mockReturnValue(true)
     hasTab.mockReturnValue(false)
+    getActiveTab.mockReturnValue(undefined)
   })
 
   it('打开已存在标签时等待激活导航，NavigationFailure 应 reject', async () => {
@@ -242,6 +255,45 @@ describe('useTabActions', () => {
     expect(route.query.foo).toBe('1')
     expect(route.query.bar).toBe('2')
     expect(route.query.__tab).toEqual(expect.any(String))
+  })
+
+  it('openTab 在导航完成前先创建 pending 占位标签', async () => {
+    hasTab.mockReturnValueOnce(false).mockReturnValue(true)
+    getActiveTab.mockReturnValue({ id: 'home' })
+
+    const { default: useTabActions } = await import('@/lib/hooks/useTabActions')
+    const { openTab } = useTabActions()
+
+    await expect(openTab({ id: 'new-tab', title: '新标签', path: '/new' })).resolves.toBe('new-tab')
+
+    expect(addTab).toHaveBeenCalledTimes(1)
+    const placeholder = addTab.mock.calls[0]?.[0]
+    expect(placeholder).toMatchObject({
+      id: 'new-tab',
+      title: '新标签',
+      active: true,
+      pending: true
+    })
+    expect(placeholder.pages.list()).toEqual([])
+    // 普通标签只在这里置为 pending；loading 由 StackTabs 在页面挂载后清除
+    expect(setTabPending).toHaveBeenCalledTimes(1)
+    expect(setTabPending).toHaveBeenCalledWith('new-tab', true)
+    expect(removeTabForce).not.toHaveBeenCalled()
+  })
+
+  it('openTab 导航失败时移除占位并恢复之前的激活标签', async () => {
+    const failure = { type: 'aborted' }
+    hasTab.mockReturnValueOnce(false).mockReturnValue(true)
+    getActiveTab.mockReturnValueOnce({ id: 'home' }).mockReturnValue({ id: 'new-tab' })
+    push.mockResolvedValue(failure)
+
+    const { default: useTabActions } = await import('@/lib/hooks/useTabActions')
+    const { openTab } = useTabActions()
+
+    await expect(openTab({ id: 'new-tab', title: '新标签', path: '/new' })).rejects.toBe(failure)
+
+    expect(removeTabForce).toHaveBeenCalledWith('new-tab')
+    expect(active).toHaveBeenCalledWith('home', false)
   })
 
   it('getWrapper 可按 tabId 或 pageId 精确获取缓存容器，未传参数保持兼容行为', async () => {

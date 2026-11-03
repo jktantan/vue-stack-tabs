@@ -9,7 +9,8 @@ import {
   isAllowedTabUrl,
   omitStackTabsReservedQuery
 } from '../utils/urlParser'
-import type { ITabData, IframeRefreshMode } from '../model/TabModel'
+import { Stack } from '../model/TabModel'
+import type { ITabData, ITabItem, ITabPage, IframeRefreshMode } from '../model/TabModel'
 import { runNavigationTransaction } from './tabPanel/navigationTransaction'
 import { resolveStackTabsRuntimeContext, type StackTabsRuntimeContext } from './stackTabsContext'
 
@@ -38,13 +39,17 @@ export default function useTabActions(providedRuntimeContext?: StackTabsRuntimeC
     canAddTab,
     renewTab,
     getTab,
+    getActiveTab,
     getTopPage,
     tabs,
     moveTab,
+    addTab,
     removeTab,
+    removeTabForce,
     removeAllTabs,
     refreshTab,
-    refreshAllTabs
+    refreshAllTabs,
+    setTabPending
   } = useTabPanel(runtimeContext)
 
   /** 合并默认值，生成完整 tabInfo */
@@ -66,28 +71,36 @@ export default function useTabActions(providedRuntimeContext?: StackTabsRuntimeC
     return info
   }
 
+  /**
+   * 创建占位标签：页签先落到标签栏，页面栈留空。
+   *
+   * 目标页面由随后的路由导航补齐；补齐前 `pending` 为 true，
+   * StackTabs 会据此在内容区渲染 loading。
+   */
+  const createPendingTab = (tabInfo: ITabData): ITabItem => ({
+    id: tabInfo.id!,
+    title: tabInfo.title,
+    closable: tabInfo.closable ?? true,
+    refreshable: tabInfo.refreshable ?? true,
+    iframe: Boolean(tabInfo.iframe),
+    iframeRefreshMode: tabInfo.iframeRefreshMode,
+    url: tabInfo.iframe ? tabInfo.path : undefined,
+    active: true,
+    pages: new Stack<ITabPage>(),
+    pending: true
+  })
+
   /** 打开新标签；renew=true 时若已存在则清空该标签的页面栈后重新打开 */
   const openTab = (tab: ITabData, renew = false): Promise<string | undefined> => {
     return new Promise<string | undefined>((resolve, reject) => {
       const tabInfo = prepareTabInfo(tab)
+      const tabId = tabInfo.id!
 
       const isExistingTab = Boolean(tabInfo.id && hasTab(tabInfo.id))
 
       if (isExistingTab && !renew) {
-        Promise.resolve(active(tabInfo.id!)).then(() => resolve(tabInfo.id), reject)
+        Promise.resolve(active(tabId)).then(() => resolve(tabInfo.id), reject)
         return
-      }
-
-      let rollbackRenew: (() => void) | undefined
-      let refreshKeySnapshot: number | undefined
-
-      if (tabInfo.id && renew && isExistingTab) {
-        const currentTab = getTab(tabInfo.id!)
-        rollbackRenew = renewTab(tab)
-        if (currentTab?.active) {
-          refreshKeySnapshot = refreshKey.value
-          refreshKey.value++
-        }
       }
 
       if (!isExistingTab && !canAddTab()) {
@@ -95,9 +108,59 @@ export default function useTabActions(providedRuntimeContext?: StackTabsRuntimeC
         return
       }
 
+      // 占位标签出现前的激活项，导航失败时用它恢复
+      const previousActiveId = getActiveTab()?.id ?? ''
+
+      let rollbackRenew: (() => void) | undefined
+      let refreshKeySnapshot: number | undefined
+
+      if (renew && isExistingTab) {
+        const currentTab = getTab(tabId)
+        rollbackRenew = renewTab(tab)
+        if (currentTab?.active) {
+          refreshKeySnapshot = refreshKey.value
+          refreshKey.value++
+        }
+      } else {
+        // 先把页签落到标签栏：慢网下用户点完菜单就能看到反馈，
+        // 页面 chunk 下载完之前内容区由 StackTabs 显示 loading。
+        addTab(createPendingTab(tabInfo))
+      }
+      setTabPending(tabId, true)
+
+      /** 导航结束后的收尾：普通标签等页面挂载后撤 loading，失败移除占位 */
+      const finishPending = (succeeded: boolean) => {
+        if (!hasTab(tabId)) return
+
+        // renew（刷新）没有稳定的页面挂载事件，直接撤
+        if (isExistingTab) {
+          setTabPending(tabId, false)
+          return
+        }
+
+        if (succeeded) {
+          // 普通标签等目标页面挂载后由 StackTabs 的 onComponentLoaded 撤 loading；
+          // iframe 没有页面挂载事件，这里直接撤。
+          if (tabInfo.iframe) setTabPending(tabId, false)
+          return
+        }
+
+        // 新标签导航失败：移除占位，并把激活项还给之前的标签。
+        // 期间用户若已切到别的标签，则只清理占位，不抢回激活态。
+        const shouldRestoreActive = getActiveTab()?.id === tabId
+        removeTabForce(tabId)
+        if (shouldRestoreActive && previousActiveId) {
+          void active(previousActiveId, false)
+        }
+      }
+
       navigateToTab(tab, tabInfo, isExistingTab && renew).then(
-        () => resolve(tabInfo.id),
+        () => {
+          finishPending(true)
+          resolve(tabInfo.id)
+        },
         (error) => {
+          finishPending(false)
           rollbackRenew?.()
           if (refreshKeySnapshot !== undefined) refreshKey.value = refreshKeySnapshot
           reject(error)

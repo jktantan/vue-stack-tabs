@@ -19,6 +19,42 @@
     @include absolute-fill;
   }
 
+  // 页面宿主：占位期间淡出旧页面，避免 loading 遮罩下透出上一个页面
+  &__page-host {
+    width: 100%;
+    height: 100%;
+    transition: opacity 160ms ease;
+
+    &.is-pending {
+      opacity: 0;
+      pointer-events: none;
+    }
+  }
+
+  // 占位标签的 loading 容器：页签已出现，目标页面尚未就绪
+  &__page-pending {
+    @include absolute-fill;
+
+    z-index: 10;
+
+    // 占位遮罩要彻底盖住页面，不能沿用页面内 useTabLoading 的半透明样式
+    .stack-tab-loading__mask {
+      background-color: $stack-tab-surface;
+      opacity: 1;
+    }
+  }
+
+  // loading 与页面宿主交叉淡入淡出
+  .stack-tab-page-loading-enter-active,
+  .stack-tab-page-loading-leave-active {
+    transition: opacity 180ms ease;
+  }
+
+  .stack-tab-page-loading-enter-from,
+  .stack-tab-page-loading-leave-to {
+    opacity: 0;
+  }
+
   // 缓存页面 wrapper
   &__cache-page-wrapper {
     width: 100%;

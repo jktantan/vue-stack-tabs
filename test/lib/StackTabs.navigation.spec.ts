@@ -8,6 +8,7 @@
 import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h, nextTick, watch } from 'vue'
+import type { Component } from 'vue'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import StackTabs from '@/lib/StackTabs.vue'
 import useTabActions from '@/lib/hooks/useTabActions'
@@ -55,7 +56,8 @@ const settle = async () => {
 }
 
 const mountStackTabs = async (
-  defaultTabs: ITabData[] = [{ id: 'home', title: 'Home', path: '/' }]
+  defaultTabs: ITabData[] = [{ id: 'home', title: 'Home', path: '/' }],
+  options: { pageLoading?: boolean } = {}
 ) => {
   const router = createRouter({
     history: createMemoryHistory(),
@@ -63,6 +65,11 @@ const mountStackTabs = async (
       { path: '/', component: View('HomeView') },
       { path: '/a', component: View('AView') },
       { path: '/b', component: View('BView') },
+      {
+        path: '/slow',
+        component: () =>
+          new Promise<Component>((resolve) => setTimeout(() => resolve(View('SlowView')), 50))
+      },
       { path: '/fragment', component: FragmentView },
       { path: '/iframe', component: View('IframeView') }
     ]
@@ -93,7 +100,8 @@ const mountStackTabs = async (
       iframePath: '/iframe',
       defaultTabs,
       pageTransition: '',
-      pageTransitionBack: ''
+      pageTransitionBack: '',
+      pageLoading: options.pageLoading ?? true
     },
     global: { plugins: [router] },
     slots: { leftButton: () => h(Probe) }
@@ -113,6 +121,35 @@ const mountStackTabs = async (
 }
 
 describe('标签内导航的渲染耦合', () => {
+  it('导航期间为目标标签设置 pending，完成后清除', async () => {
+    const { router, panel } = await mountStackTabs()
+    const encodedTab = String(router.currentRoute.value.query.__tab)
+
+    const navigation = router.push({ path: '/slow', query: { __tab: encodedTab } })
+    // 目标组件的 loader 延迟 50ms：等到 beforeEach 已执行、导航尚未完成
+    await new Promise((resolve) => setTimeout(resolve, 10))
+    expect(panel().getTab('home')?.pending).toBe(true)
+
+    await navigation
+    await settle()
+    expect(panel().getTab('home')?.pending).toBeFalsy()
+  })
+
+  it('pageLoading=false 时导航期间不显示 loading，也不隐藏旧页面', async () => {
+    const { router, panel, wrapper } = await mountStackTabs(undefined, { pageLoading: false })
+    const encodedTab = String(router.currentRoute.value.query.__tab)
+
+    const navigation = router.push({ path: '/slow', query: { __tab: encodedTab } })
+    await new Promise((resolve) => setTimeout(resolve, 10))
+
+    expect(wrapper.find('.stack-tab__page-pending').exists()).toBe(false)
+    expect(wrapper.find('.stack-tab__page-host').classes()).not.toContain('is-pending')
+    expect(panel().getTab('home')?.pending).toBeFalsy()
+
+    await navigation
+    await settle()
+  })
+
   it('同一标签内连续前进不会重建 tabs 数组，页面栈正常增长', async () => {
     const { router, panel, resetReplacements, replacements } = await mountStackTabs()
     const encodedTab = String(router.currentRoute.value.query.__tab)

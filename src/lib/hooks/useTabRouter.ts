@@ -56,7 +56,8 @@ export default function useTabRouter() {
     updatePage,
     evictPageCache,
     addPageScroller,
-    active: activateTab
+    active: activateTab,
+    setTabPending
   } = useTabPanel()
 
   /**
@@ -128,6 +129,8 @@ export default function useTabRouter() {
         replacePages(tab.id, pages)
       }
     }).catch((error: unknown) => {
+      // 导航失败时页面不会挂载，onComponentLoaded 不会触发：这里兜底撤 loading
+      if (tab) setTabPending(tab.id, false)
       if (!import.meta.env.PROD) {
         console.warn('[vue-stack-tabs] forward navigation failed:', error)
       }
@@ -234,6 +237,8 @@ export default function useTabRouter() {
         }
       }
     }).catch((error: unknown) => {
+      // 导航失败时页面不会挂载，onComponentLoaded 不会触发：这里兜底撤 loading
+      setTabPending(tab.id, false)
       if (!import.meta.env.PROD) {
         console.warn('[vue-stack-tabs] backward navigation failed:', error)
       }

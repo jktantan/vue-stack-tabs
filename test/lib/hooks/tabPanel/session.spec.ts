@@ -122,4 +122,20 @@ describe('tabPanel session', () => {
 
     expect(window.sessionStorage.getItem(session.getSessionKey())).toBe(previous)
   })
+
+  it('不持久化 pending 占位标签', async () => {
+    session.saveActiveTabToSession({
+      id: 'pending-tab',
+      title: 'Pending',
+      closable: true,
+      refreshable: true,
+      iframe: false,
+      active: true,
+      pending: true,
+      pages: new Stack()
+    })
+    await new Promise<void>((resolve) => queueMicrotask(resolve))
+
+    expect(window.sessionStorage.getItem(session.getSessionKey())).toBeNull()
+  })
 })

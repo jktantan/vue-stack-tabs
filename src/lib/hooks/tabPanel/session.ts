@@ -21,7 +21,7 @@ const isRestoredTab = (value: unknown): value is ITabItem =>
 
 export interface TabPanelSessionApi {
   getSessionKey: () => string
-  saveActiveTabToSession: (tab: ITabItem) => void
+  saveActiveTabToSession: (tab: ITabItem, options?: { force?: boolean }) => void
   clearSession: () => void
   restoreActiveTabSession: (storedJson: string | null) => void
   restoreTabFromSession: (storedJson: string | null) => ITabItem | null
@@ -78,8 +78,10 @@ export const createTabPanelSession = (context: StackTabsRuntimeContext): TabPane
     pendingWrite = null
   }
 
-  const saveActiveTabToSession = (tab: ITabItem): void => {
-    if (!tab.id) return
+  const saveActiveTabToSession = (tab: ITabItem, options?: { force?: boolean }): void => {
+    // 占位标签（pending）还没有页面栈，写进去会让刷新后恢复出一个空标签；
+    // force 用于「页面栈已补齐、但 loading 还没撤」的场景。
+    if (!tab.id || (tab.pending && !options?.force)) return
     pendingWrite = { tab, version: ++writeVersion }
     if (writeScheduled) return
     writeScheduled = true
@@ -111,6 +113,8 @@ export const createTabPanelSession = (context: StackTabsRuntimeContext): TabPane
         clearSession()
         return null
       }
+      // 历史数据可能残留占位标记，恢复时一律视为已就绪
+      delete (restored as ITabItem).pending
       return restored as ITabItem
     } catch {
       clearSession()

@@ -81,7 +81,9 @@ const createTabPanelApi = (runtimeContext: StackTabsRuntimeContext) => {
     updateTabTitle: updateTabTitleInStore,
     moveTab,
     removeTab: removeTabFromStore,
+    removeTabForce,
     removeTabs: removeTabsFromStore,
+    setTabPending,
     appendPage,
     popPages,
     replacePages,
@@ -537,6 +539,9 @@ const createTabPanelApi = (runtimeContext: StackTabsRuntimeContext) => {
       activateTab(targetTab!.id)
     }
 
+    // 页面栈已补齐，但目标页面还没真正挂载：loading 保持到 StackTabs 的
+    // onComponentLoaded 再撤，避免旧页面在导航完成到页面入场之间回闪。
+
     // 首屏 URL 往往没有 __tab（用户直接打开默认路由）：把解析出的标签编码写回地址，
     // 保证 URL 始终指向当前标签；之后的导航各自会带上自己的 __tab。
     if (typeof route.query.__tab !== 'string') {
@@ -553,7 +558,7 @@ const createTabPanelApi = (runtimeContext: StackTabsRuntimeContext) => {
         })
     }
 
-    saveActiveTabToSession(targetTab!)
+    saveActiveTabToSession(targetTab!, { force: true })
     return { cacheName, tabInfo, targetTab: targetTab! }
   }
 
@@ -801,7 +806,9 @@ const createTabPanelApi = (runtimeContext: StackTabsRuntimeContext) => {
     updatePage,
     updatePages,
     removeTab,
+    removeTabForce,
     removeAllTabs,
+    setTabPending,
     removeLeftTabs,
     removeRightTabs,
     removeOtherTabs,

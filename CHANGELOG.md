@@ -1,5 +1,25 @@
 # Changelog
 
+## 3.2.0 (2026-11-03)
+
+### 新增
+
+- `openTab()` 采用「占位页签 + 加载态」：在 `router.push` 之前先同步创建占位页签（`pending`）。慢网下点击菜单/链接后页签立即出现，内容区显示内置 loading；导航完成后自动补入页面栈并撤掉 loading，导航失败则移除占位并恢复原激活标签。
+- `<VueStackTabs>` 注册全局路由守卫，把「导航开始 → 导航结束」映射到目标标签的 `pending`：标签内前进/后退、浏览器前进/后退同样会显示 loading。首屏导航发生在组件挂载前，由宿主的 SPA loading 模板负责。
+- 新增 `#pageLoading` 插槽（作用域 `{ tab }`），可替换占位页签的加载 UI；不传时使用库内置 `PageLoading`。
+- 新增 `pageLoading` prop（默认 `true`）：可关闭导航加载态。关闭后不显示 loading 遮罩，也不会隐藏旧页面，适合内网等页面 chunk 加载很快的场景。
+- `PageLoading` 新增受控 `visible` prop，可在没有页面实例的场景（如占位页签）直接显示加载遮罩。
+- `ITabBase` 新增 `pending?: boolean`，业务可据此判断「页签已出现、页面尚未就绪」。
+
+### 兼容与边界
+
+- 占位标签不写入 sessionStorage，刷新后不会恢复出空页签；历史 session 中残留的 `pending` 会在恢复时清理。
+- `removeTab` 的 `closable` 语义不变；新增内部 `removeTabForce()` 仅用于回滚占位标签。
+- `openTab()` 的 Promise 语义不变：仍然在导航完成后 resolve / reject。
+- `pending` 在视图对象上是 getter，切换状态不会重建 `tabs` 数组（保持标签内导航的渲染性能）。
+- 占位 loading 期间页面宿主淡出、loading 遮罩使用不透明背景并淡入；loading 会持续到目标页面真正挂载（`onComponentLoaded`）后再淡出，避免导航完成到页面入场之间旧页面回闪。页面实例仍保持挂载，输入内容与滚动状态不会丢失。
+- 导航失败（`onError` / `useTabRouter` 的 forward/backward 异常）会兜底清除 `pending`，不会留下一直转圈的 loading。
+
 ## 3.1.1 (2026-11-02)
 
 ### 修复
