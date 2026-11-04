@@ -44,7 +44,7 @@ Opens a new tab. If a tab with the same id exists, it is activated and the last 
 | Method           | Description                                                                                                                        |
 | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
 | `closeTab(id)`   | Close specific tab; returns the newly activated tab id (empty string if the id is unknown, the same id if the tab is not closable) |
-| `closeAllTabs()` | Close all tabs                                                                                                                     |
+| `closeAllTabs()` | Close all closable tabs (`closable: false` tabs are kept)                                                                          |
 
 Close left/right/others are available via the right-click context menu.
 
@@ -62,7 +62,7 @@ Close left/right/others are available via the right-click context menu.
 | `activeTab(id, isRoute?)`         | Activate tab; pass `isRoute=false` to switch without navigating                                                            |
 | `moveTab(id, targetIndex)`        | Move a tab to an index; the tab header also supports mouse drag-and-drop reordering                                        |
 | `updateTabTitle(id, title)`       | Update a tab title at runtime (also refreshes session and the active tab's `__tab`); returns false when the tab is missing |
-| `reset()`                         | Reset all                                                                                                                  |
+| `reset()`                         | Close all closable tabs and reset state                                                                                    |
 | `tabs`                            | Tab list (read-only)                                                                                                       |
 | `setIFramePath(path)`             | Set iframe path (internal)                                                                                                 |
 | `getWrapper({ tabId?, pageId? })` | Get a content DOM node. Omit parameters for legacy first-node behavior; use `tabId` or `pageId` when multiple tabs exist.  |

@@ -8,6 +8,7 @@ VueStackTabs supports these slots:
 | rightButton   | —                | Right side of tab bar                                                         |
 | iframeLoading | `{ tab }`        | Custom loading placeholder for an iframe tab                                  |
 | iframeError   | `{ tab, retry }` | Custom error placeholder for an iframe tab; call `retry(tab.id)` to reload it |
+| pageLoading   | `{ tab }`        | Loading UI for a pending tab; defaults to the built-in `PageLoading`          |
 
 **Example — tab bar buttons:**
 
@@ -40,6 +41,18 @@ VueStackTabs supports these slots:
 
 `TabHeaderButton` is exported from the package entry. Vue 3 projects import it as shown above; with the `vue-stack-tabs/nuxt` module it is registered globally, so the import can be omitted.
 
+### TabHeaderButton props
+
+| Prop      | Type                        | Default | Description                                             |
+| --------- | --------------------------- | ------- | ------------------------------------------------------- |
+| disabled  | `boolean`                   | `false` | Disable the button                                      |
+| shadow    | `'left' \| 'right' \| null` | `null`  | Shadow direction shown when the tab bar reaches an edge |
+| iconClass | `string`                    | `''`    | Icon class used when no `#icon` slot is provided        |
+| title     | `string`                    | `''`    | Tooltip text, also used as the default accessible label |
+| ariaLabel | `string`                    | `''`    | Accessible label; falls back to `title`                 |
+
+Pass the button content through the default slot or the `#icon` slot. The `#icon` slot uses the library's icon container (centered, with hover / active color feedback).
+
 **Example — iframe placeholders:**
 
 ```vue:line-numbers
@@ -55,3 +68,19 @@ VueStackTabs supports these slots:
   </vue-stack-tabs>
 </template>
 ```
+
+**Example — pending tab loading UI:**
+
+When `openTab()` or a route navigation creates a pending tab and the target page chunk is still loading, the content area renders `#pageLoading`. The slot prop is the pending tab:
+
+```vue:line-numbers
+<template>
+  <vue-stack-tabs iframe-path="/iframe">
+    <template #pageLoading="{ tab }">
+      <div class="my-loading">Opening {{ tab.title }}…</div>
+    </template>
+  </vue-stack-tabs>
+</template>
+```
+
+Without this slot the built-in `PageLoading` is used. This is **navigation-level** loading; for async requests inside a page use [`useTabLoading`](../more/useTabLoading.md). Set the `pageLoading` prop to `false` to disable navigation loading entirely.

@@ -32,8 +32,8 @@ export default defineNuxtConfig({
 
 模块会自动完成以下配置：
 
-- 注册 VueStackTabs 组件
-- 自动导入 `useTabActions`、`useTabRouter`、`useTabLoading` 等 composables
+- 注册全局组件 `VueStackTabs` 与 `TabHeaderButton`（无需手动 import）
+- 自动导入 `useTabActions`、`useTabRouter`、`useTabLoading` 三个 composables
 - 把 `locale` 与 `messages` 传给 vue-stack-tabs 内部 i18n 实例
 
 ## 方式二：手动引入插件

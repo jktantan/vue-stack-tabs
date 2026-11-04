@@ -49,7 +49,12 @@ app.use(VueStackTabs, [{
       restore: 'Restore',
       undefined: 'Undefined',
       loading: 'Loading',
-      openInNewWindow: 'Open in new window'
+      iframeTitle: 'Embedded tab page',
+      iframeLoadTimeout: 'IFrame loading timed out',
+      retry: 'Retry',
+      openInNewWindow: 'Open in new window',
+      scrollLeft: 'Scroll left',
+      scrollRight: 'Scroll right'
     }
   }
 }])

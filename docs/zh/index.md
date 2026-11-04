@@ -118,4 +118,4 @@ app.mount('#app')
 
 - [快速上手](./guide/) —— 从安装到第一个标签
 - [在线演示](./demo) —— 真实应用里的多标签、前进后退与 iframe
-- [API 参考](./more/useTabActions.md) —— `useTabActions`、`useTabRouter`、`useTabLoading`
+- [API 参考](./more/useTabActions.md) —— `useTabActions`、`useTabRouter`、`useTabLoading`、`useTabPageScroll`、`useTabScrollShadow`

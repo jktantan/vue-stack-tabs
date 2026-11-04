@@ -118,4 +118,4 @@ When you actually need document-level isolation — embedding a third-party site
 
 - [Getting Started](./guide/) — from install to your first tab
 - [Live Demo](./demo) — a real app with tabs, forward/backward and an iframe tab
-- [API Reference](./more/useTabActions.md) — `useTabActions`, `useTabRouter`, `useTabLoading`
+- [API Reference](./more/useTabActions.md) — `useTabActions`, `useTabRouter`, `useTabLoading`, `useTabPageScroll`, `useTabScrollShadow`

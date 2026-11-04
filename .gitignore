@@ -43,3 +43,6 @@ docs/.vitepress/dist/
 
 # pnpm store（本地缓存，不入库；pnpm-lock.yaml 与 pnpm-workspace.yaml 需要提交以保证 CI 可重现）
 /.pnpm-store/
+
+# CSDN 文章草稿（本地写作目录，不入库）
+/csdn/

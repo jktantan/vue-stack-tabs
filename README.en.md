@@ -259,6 +259,7 @@ const {
   refreshAllTabs, // () => void
   activeTab, // (id: string, isRoute?: boolean) => void
   moveTab, // (id: string, targetIndex: number) => boolean
+  updateTabTitle, // (id: string, title: string) => boolean
   reset, // () => void
   tabs, // Ref<ITabItem[]>
   setIFramePath, // (path: string) => void
@@ -276,6 +277,7 @@ const {
 | `refreshAllTabs()`                | Refresh all tabs                                                                                                                     |
 | `activeTab(id)`                   | Activate the specified tab (switch tab)                                                                                              |
 | `moveTab(id, targetIndex)`        | Move a tab to a given index; the tab bar also supports mouse drag reordering                                                         |
+| `updateTabTitle(id, title)`       | Update a tab title at runtime (also refreshes session and the active tab's `__tab`); returns false when the tab is missing           |
 | `reset()`                         | Close all tabs and reset state                                                                                                       |
 | `setIFramePath(path)`             | Set the iframe placeholder route path (called internally on mount)                                                                   |
 | `getWrapper({ tabId?, pageId? })` | Get the content container DOM node; without arguments returns the first container, pass `tabId` or `pageId` when multiple tabs exist |

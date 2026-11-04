@@ -14,6 +14,11 @@ const { openTabLoading, closeTabLoading } = useTabLoading()
 
 遮罩按页签渲染：只覆盖当前页签的页面，其它页签仍可交互，标签栏也不受影响。关闭该页签或页面卸载时遮罩会自动清除，无需手动收尾。
 
+## 与导航加载态的区别
+
+`useTabLoading()` 控制的是**页面已经挂载后**的异步操作（请求、提交等）遮罩，需要业务主动调用。
+而 `openTab()` 或路由导航在目标页面 chunk 尚未加载时显示的是**导航级占位**：由 `<VueStackTabs>` 的 `pageLoading` 属性控制，可用 [`#pageLoading` 插槽](../advance/slot.md)替换，不需要页面实例存在。两者互不覆盖，可以同时使用。
+
 ## openTabLoading
 
 显示当前页签的加载遮罩。

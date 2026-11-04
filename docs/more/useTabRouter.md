@@ -30,6 +30,20 @@ Pop or jump within the tab stack.
 | to        | number \| string        | Yes      | number: go back abs(x) steps; 0 = no-op. string: jump to the first page in the stack matching that path. Returns `false` when nothing is popped |
 | backQuery | Record<string, unknown> | No       | One-shot params for the target page; the target receives them as the `_back` prop                                                               |
 
+**Returns:** `true` after the navigation transaction is started; `false` when the tab is missing, the step count is 0, or the target path is not in the stack.
+
+The page context is provided by the cache wrapper through `tabPageContextKey`. Any component inside the page can read it directly:
+
+```typescript:line-numbers
+import { inject } from 'vue'
+import { tabPageContextKey } from 'vue-stack-tabs'
+
+const context = inject(tabPageContextKey, null)
+// { tabId, pageId } | null
+```
+
+`resolveTabPageContext()` resolves the same context with a compatibility fallback to the legacy attrs / props injection; use it in helpers that cannot call `inject` directly.
+
 ## addScrollTarget
 
 Register scroll elements for the current page.

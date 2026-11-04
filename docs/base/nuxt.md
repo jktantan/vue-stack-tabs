@@ -32,8 +32,8 @@ switching still uses `<VueStackTabs :i18n="...">` with the current locale.
 
 The module automatically:
 
-- Registers the global `VueStackTabs` component via Nuxt's `addComponent` API (no need to import manually)
-- Auto-imports composables (`useTabActions`, `useTabRouter`, `useTabLoading`)
+- Registers the global `VueStackTabs` and `TabHeaderButton` components via Nuxt's `addComponent` API (no need to import manually)
+- Auto-imports `useTabActions`, `useTabRouter` and `useTabLoading`
 - Applies the configured `locale` and `messages` to vue-stack-tabs' internal i18n instance
 
 Nuxt apps also support only one `<VueStackTabs>` instance.

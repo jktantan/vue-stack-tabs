@@ -263,6 +263,7 @@ const {
   refreshAllTabs, // () => void
   activeTab, // (id: string, isRoute?: boolean) => void
   moveTab, // (id: string, targetIndex: number) => boolean
+  updateTabTitle, // (id: string, title: string) => boolean
   reset, // () => void
   tabs, // Ref<ITabItem[]>
   setIFramePath, // (path: string) => void
@@ -280,6 +281,7 @@ const {
 | `refreshAllTabs()`                | 刷新所有标签                                                                                     |
 | `activeTab(id)`                   | 激活指定标签（切换 Tab）                                                                         |
 | `moveTab(id, targetIndex)`        | 将标签移动到指定索引；标签栏也支持鼠标拖放排序                                                   |
+| `updateTabTitle(id, title)`       | 运行时修改页签标题（同时刷新会话与当前标签的 `__tab`）；标签不存在时返回 false                   |
 | `reset()`                         | 关闭所有标签并重置状态                                                                           |
 | `setIFramePath(path)`             | 设置 iframe 占位路由路径（`<VueStackTabs>` 挂载时内部调用）                                      |
 | `getWrapper({ tabId?, pageId? })` | 获取页面内容容器 DOM；不传参数返回首个容器，多标签场景应传 `tabId` 或 `pageId`，避免取到错误页面 |

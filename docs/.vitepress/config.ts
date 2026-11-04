@@ -77,7 +77,9 @@ export default defineConfig({
               { text: 'Props', link: '/more/properties' },
               { text: 'useTabActions', link: '/more/useTabActions' },
               { text: 'useTabLoading', link: '/more/useTabLoading' },
-              { text: 'useTabRouter', link: '/more/useTabRouter' }
+              { text: 'useTabPageScroll', link: '/more/useTabPageScroll' },
+              { text: 'useTabRouter', link: '/more/useTabRouter' },
+              { text: 'useTabScrollShadow', link: '/more/useTabScrollShadow' }
             ]
           },
           { text: 'Live Demo', link: '/demo' }
@@ -131,7 +133,9 @@ export default defineConfig({
               { text: '配置属性', link: '/zh/more/properties' },
               { text: 'useTabActions', link: '/zh/more/useTabActions' },
               { text: 'useTabLoading', link: '/zh/more/useTabLoading' },
-              { text: 'useTabRouter', link: '/zh/more/useTabRouter' }
+              { text: 'useTabPageScroll', link: '/zh/more/useTabPageScroll' },
+              { text: 'useTabRouter', link: '/zh/more/useTabRouter' },
+              { text: 'useTabScrollShadow', link: '/zh/more/useTabScrollShadow' }
             ]
           },
           { text: '在线演示', link: '/zh/demo' }

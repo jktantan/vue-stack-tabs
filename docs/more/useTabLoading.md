@@ -14,6 +14,11 @@ Call it inside a page component rendered by `<VueStackTabs>`. The hook resolves 
 
 The overlay is rendered per tab: it covers the current tab's page only, other tabs stay interactive, and the tab bar keeps working. Closing the tab or unmounting the page clears it automatically, so no manual cleanup is needed.
 
+## Difference from navigation loading
+
+`useTabLoading()` covers asynchronous work **after the page is mounted** (requests, submissions) and must be driven by your code.
+When `openTab()` or a route navigation is still loading the target page chunk, `<VueStackTabs>` shows a **navigation-level pending state** controlled by the `pageLoading` prop and replaceable through the [`#pageLoading` slot](../advance/slot.md); no page instance is required. The two do not override each other and can be used together.
+
 ## openTabLoading
 
 Show the overlay above the current tab's page.
