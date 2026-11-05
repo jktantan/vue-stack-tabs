@@ -5,7 +5,7 @@
 import fs from 'node:fs'
 import { spawn } from 'node:child_process'
 import { createRequire } from 'node:module'
-import { dirname as pathDirname, join } from 'node:path'
+import { basename, dirname as pathDirname, join } from 'node:path'
 import { tmpdir } from 'node:os'
 
 const require = createRequire(import.meta.url)
@@ -234,15 +234,13 @@ async function packPackage(packDir) {
 }
 
 /**
- * GNU tar 会把 Windows 路径开头的盘符当成远程主机（`Cannot connect to C:`），
- * `--force-local` 让它按本地文件处理；bsdtar（macOS）没有该选项，故仅 Windows 添加。
+ * 用相对文件名调用 tar，避免 Windows 盘符被 GNU tar 当成远程主机；
+ * 同时兼容不支持 `--force-local` 的 bsdtar（Windows 自带 tar / macOS）。
  */
-function withTarCompat(args) {
-  return process.platform === 'win32' ? ['--force-local', ...args] : args
-}
-
 async function assertPackedFileList(tarballPath) {
-  const fileList = await runCapture('tar', withTarCompat(['-tf', tarballPath]), root)
+  const packDir = pathDirname(tarballPath)
+  const tarballName = basename(tarballPath)
+  const fileList = await runCapture('tar', ['-tf', tarballName], packDir)
   const packedFiles = new Set(fileList.trim().split(/\r?\n/).filter(Boolean))
   const requiredPackedFiles = [
     'package/package.json',
@@ -266,9 +264,16 @@ async function assertPackedFileList(tarballPath) {
 async function extractTarballForSmoke(tempProjectDir, tarballPath) {
   const packageDir = join(tempProjectDir, 'node_modules', 'vue-stack-tabs')
   fs.mkdirSync(packageDir, { recursive: true })
-  // 不用 -C：MSYS/GNU tar 在 Windows 上无法解析带盘符的 -C 目录，
-  // 改为把工作目录切到目标目录（-f 的盘符路径已由 --force-local 处理）。
-  await run('tar', withTarCompat(['-xzf', tarballPath, '--strip-components', '1']), packageDir)
+
+  // 复制到解包目录并用相对文件名调用 tar：既避开盘符路径，也不依赖 GNU tar 的 --force-local。
+  const tarballName = basename(tarballPath)
+  const localTarball = join(packageDir, tarballName)
+  fs.copyFileSync(tarballPath, localTarball)
+  try {
+    await run('tar', ['-xzf', tarballName, '--strip-components', '1'], packageDir)
+  } finally {
+    fs.rmSync(localTarball, { force: true })
+  }
   return packageDir
 }
 

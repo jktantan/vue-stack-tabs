@@ -9,6 +9,7 @@
 ### 构建
 
 - `npm publish` 通过 `prepublishOnly` 自动执行 `release:check`：ESLint / Stylelint、测试与类型检查、库构建和 tarball 验证。
+- 打包校验改用相对文件名调用 `tar`，兼容 Windows 自带的 bsdtar，不再依赖 GNU tar 的 `--force-local`。
 
 ## 3.3.0 (2026-11-05)
 
