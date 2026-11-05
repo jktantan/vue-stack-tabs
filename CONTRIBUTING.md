@@ -146,19 +146,33 @@ pnpm run test:packaged
 
 ## 脚本说明
 
-| 脚本            | 说明                                 |
-| --------------- | ------------------------------------ |
-| `dev`           | 启动示例应用（Vite）                 |
-| `build`         | 构建示例应用（含 type-check）        |
-| `lib:build`     | 构建库到 dist/                       |
-| `test`          | 单元测试                             |
-| `test:coverage` | 单元测试 + 覆盖率                    |
-| `test:prepack`  | 打包前验证（单元 + Vue + Nuxt 源码） |
-| `test:packaged` | 打包后验证（Vue + Nuxt 使用 dist）   |
-| `lint`          | ESLint 检查并修复                    |
-| `lint:style`    | Stylelint 检查并修复样式             |
-| `format`        | Prettier 格式化                      |
-| `docs:dev`      | 文档本地预览                         |
+| 脚本            | 说明                                              |
+| --------------- | ------------------------------------------------- |
+| `dev`           | 启动示例应用（Vite）                              |
+| `build`         | 构建示例应用（含 type-check）                     |
+| `lib:build`     | 构建库到 dist/                                    |
+| `test`          | 单元测试                                          |
+| `test:coverage` | 单元测试 + 覆盖率                                 |
+| `test:prepack`  | 打包前验证（单元 + Vue + Nuxt 源码）              |
+| `test:packaged` | 打包后验证（Vue + Nuxt 使用 dist）                |
+| `release:check` | 发布前完整检查与打包（`prepublishOnly` 自动执行） |
+| `lint`          | ESLint 检查并修复                                 |
+| `lint:style`    | Stylelint 检查并修复样式                          |
+| `format`        | Prettier 格式化                                   |
+| `docs:dev`      | 文档本地预览                                      |
+
+---
+
+## 发布
+
+`npm publish` 会通过 `prepublishOnly` 自动执行 `release:check`，无需手动构建或打包：
+
+1. ESLint / Stylelint
+2. `test:prepack`：单元测试 + 类型检查 + Vue 主项目构建
+3. `lib:build`：构建发布用 `dist/`
+4. `test:packaged`：用真实 tarball 验证 exports、类型与 ESM 导入
+
+任一环节失败都会中止发布。发布前请先更新 `package.json` 版本和 `CHANGELOG.md`。
 
 ---
 

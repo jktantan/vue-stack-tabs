@@ -98,7 +98,11 @@
     "lib:build": "vite --config vite.config.lib.ts build && vite --config vite.config.iframe-bridge.ts build && vite --config vite.config.nuxt.ts build && node scripts/write-entry-dts.mjs && node -e \"const fs=require('fs');fs.rmSync('dist/src',{recursive:true,force:true});\"",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "test:prepack": "node scripts/verify-prepack.mjs",
+    "test:packaged": "node scripts/verify-packaged.mjs",
+    "release:check": "pnpm run lint:check && pnpm run lint:style:check && pnpm run test:prepack && pnpm run lib:build && pnpm run test:packaged",
+    "prepublishOnly": "pnpm run release:check"
   },
   "dependencies": {
     "defu": "^6.1.7",
