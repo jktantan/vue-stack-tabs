@@ -8,7 +8,7 @@ Vue Stack Tabs is a route-based tab component for Vue 3 and Vue Router, designed
 - [x] Mouse wheel scroll when too many tabs
 - [x] Tab operations: open, switch, close, refresh, reset — see [Tab Operations](../base/tab.md)
 - [x] Embed external sites via iframe tabs
-- [x] Customization: [transitions](../advance/transition.md), right-click context menu
+- [x] Customization: [transitions](../advance/transition.md), right-click context menu, [theme variables](../advance/theme.md), [custom slots (including the background layer)](../advance/slot.md)
 - [x] [i18n](../advance/language.md)
 - [x] Tab-level loading overlay — see [useTabLoading](../more/useTabLoading.md)
 - [x] Stack-based caching

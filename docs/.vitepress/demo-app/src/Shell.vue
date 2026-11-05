@@ -28,6 +28,8 @@ const { openTab, closeAllTabs, refreshTab, refreshAllTabs, tabs } = useTabAction
 const theme = ref<DemoTheme>(resolveInitialTheme())
 const accent = ref<DemoAccent>(resolveInitialAccent())
 const size = ref<DemoSize>(resolveInitialSize())
+/** 是否展示 #background 插槽示例（默认关闭，避免影响演示初始观感） */
+const backgroundEnabled = ref(false)
 
 const themeOptions = computed<{ value: DemoTheme; label: string }[]>(() => [
   { value: 'light', label: t('Demo.console.themeLight') },
@@ -117,7 +119,12 @@ const refreshActive = () => {
       :max="12"
       page-scroll="native"
       session-prefix="docs-demo"
-    />
+    >
+      <!-- #background 插槽示例：背景层位于容器背景之上、页签头与内容之下 -->
+      <template #background>
+        <div v-if="backgroundEnabled" class="demo-backdrop" />
+      </template>
+    </vue-stack-tabs>
 
     <section class="demo-console">
       <div class="demo-console__head">
@@ -187,6 +194,16 @@ const refreshActive = () => {
             {{ item.label }}
           </button>
 
+          <button
+            class="demo-btn"
+            :class="{ 'demo-btn--active': backgroundEnabled }"
+            type="button"
+            :aria-pressed="backgroundEnabled"
+            @click="backgroundEnabled = !backgroundEnabled"
+          >
+            {{ t('Demo.console.background') }}
+          </button>
+
           <span class="demo-console__label demo-console__label--accent">
             {{ t('Demo.console.accentGroup') }}
           </span>
@@ -234,6 +251,24 @@ const refreshActive = () => {
 .demo-app :deep(.stack-tab) {
   flex: 1 1 auto;
   min-height: 0;
+}
+
+/* #background 插槽示例：渐变铺满容器，随演示主题色/明暗切换 */
+.demo-backdrop {
+  width: 100%;
+  height: 100%;
+  background:
+    radial-gradient(
+      circle at 18% 20%,
+      color-mix(in srgb, var(--demo-brand) 24%, transparent),
+      transparent 48%
+    ),
+    radial-gradient(
+      circle at 82% 80%,
+      color-mix(in srgb, var(--demo-accent) 18%, transparent),
+      transparent 52%
+    ),
+    linear-gradient(180deg, var(--demo-bg), var(--demo-surface));
 }
 
 .demo-console {

@@ -3,7 +3,8 @@
 // ============================================================
 // 主题令牌默认值（浅色）
 //
-// 所有默认值都等于改造前的硬编码值，保证升级后浅色外观零变化。
+// 除本次新增的页签栏滚动区内边距、图标按钮边框与悬停底色外，
+// 其余默认值等于改造前的硬编码值，升级后浅色外观基本不变。
 // 宿主在 :root 或任意作用域覆盖这些变量即可换肤，无需覆盖内部类名。
 //
 // 所有主题块都用 :where() 包裹，特异性归零（:where() 内部权重不参与比较），
@@ -22,6 +23,7 @@
   /* surface */
   --stack-tab-surface: #{$stack-tab-background-color-base};
   --stack-tab-surface-muted: #{$stack-tab-background-color-inactive};
+  --stack-tab-header-background: transparent;
   --stack-tab-overlay: #{$stack-tab-loading-mask-color};
 
   /* border */
@@ -76,6 +78,8 @@
 
   /* layout */
   --stack-tab-head-height: #{$stack-tab-head-height};
+  --stack-tab-scroll-padding: #{$stack-tab-scroll-padding};
+  --stack-tab-button-border-radius: 4px;
   --stack-tab-context-menu-item-height: 30px;
   --stack-tab-context-menu-padding: 8px;
 

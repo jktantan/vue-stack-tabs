@@ -21,7 +21,7 @@
 - **Session persistence** — restore last active tabs after browser refresh
 - **Scroll position memory** — automatically restore scroll position when switching tabs
 - **Context menu** — built-in close/refresh actions
-- **Slots** — tab bar left/right buttons, custom iframe loading/error placeholders
+- **Slots** — tab bar left/right buttons, background layer, and custom iframe loading/error/pending placeholders
 - **i18n** — built-in Chinese & English, extensible
 - **Nuxt 3/4 module** — works out of the box
 
@@ -442,6 +442,7 @@ const stop = shadow.onStateChange((state) => {
 | `homeTab`              | `ITabData`                                       | —                                                                          | Pinned home tab: always first, non-closable and non-draggable; other tabs cannot move before it. Omit to keep the previous behavior.                                                  |
 | `max`                  | `number`                                         | `20`                                                                       | Maximum number of tabs                                                                                                                                                                |
 | `contextmenu`          | `boolean \| object`                              | `true`                                                                     | Enable context menu                                                                                                                                                                   |
+| `pageLoading`          | `boolean`                                        | `true`                                                                     | Show page loading during navigation; when disabled no overlay is shown and the old page stays visible (useful for fast intranet environments)                                         |
 | `pageTransition`       | `string`                                         | `'stack-tab-swap'`                                                         | Page transition animation name for forward navigation                                                                                                                                 |
 | `pageTransitionBack`   | `string`                                         | `'stack-tab-swap-back'`                                                    | Page transition animation name for backward navigation                                                                                                                                |
 | `tabTransition`        | `string \| TransitionProps`                      | `'stack-tab-zoom'`                                                         | Transition effect for tab add/remove                                                                                                                                                  |
@@ -449,6 +450,7 @@ const stop = shadow.onStateChange((state) => {
 | `space`                | `number`                                         | `300`                                                                      | Pixel distance scrolled per tab bar step                                                                                                                                              |
 | `width`                | `string`                                         | `'100%'`                                                                   | Container width                                                                                                                                                                       |
 | `height`               | `string`                                         | `'100%'`                                                                   | Container height                                                                                                                                                                      |
+| `background`           | `string`                                         | `''`                                                                       | Container background; accepts color, gradient or image. Use the `#background` slot for components; defaults to white via `--stack-tab-background`                                     |
 | `i18n`                 | `string`                                         | `'zh-CN'`                                                                  | i18n locale, built-in `'zh-CN'` / `'en'`                                                                                                                                              |
 | `pageScroll`           | `'native' \| 'none' \| Component`                | `'none'`                                                                   | Content scroll strategy: library wrapper native scroll / page-managed / custom scroll component                                                                                       |
 | `scrollShadow`         | `boolean \| { top?: boolean; bottom?: boolean }` | `true`                                                                     | Top/bottom content shadow switch; `false` disables both sides, an object disables one side; per-page override via `useTabScrollShadow`                                                |
@@ -476,12 +478,14 @@ const stop = shadow.onStateChange((state) => {
 
 ## Slots
 
-| Slot            | Slot props       | Description                                                          |
-| --------------- | ---------------- | -------------------------------------------------------------------- |
-| `leftButton`    | —                | Left area of the tab bar, usually with `TabHeaderButton`             |
-| `rightButton`   | —                | Right area of the tab bar                                            |
-| `iframeLoading` | `{ tab }`        | Custom loading placeholder for an iframe tab                         |
-| `iframeError`   | `{ tab, retry }` | Custom error placeholder for an iframe tab; call `retry()` to reload |
+| Slot            | Slot props       | Description                                                                        |
+| --------------- | ---------------- | ---------------------------------------------------------------------------------- |
+| `background`    | —                | Background layer for a component; fills the container below the header and content |
+| `leftButton`    | —                | Left area of the tab bar, usually with `TabHeaderButton`                           |
+| `rightButton`   | —                | Right area of the tab bar                                                          |
+| `iframeLoading` | `{ tab }`        | Custom loading placeholder for an iframe tab                                       |
+| `iframeError`   | `{ tab, retry }` | Custom error placeholder for an iframe tab; call `retry()` to reload               |
+| `pageLoading`   | `{ tab }`        | Loading UI for a pending tab; defaults to the built-in `PageLoading`               |
 
 ```vue
 <VueStackTabs iframe-path="/iframe">
@@ -585,7 +589,7 @@ You can specify refresh behavior via `iframeRefreshMode` when calling `openTab`:
 
 ## Theming
 
-Every color and shadow is controlled by CSS variables. Light-theme defaults match the previous release, so no change is needed after upgrading. Re-skin by overriding variables:
+Every color and shadow is controlled by CSS variables. Apart from the tab-strip horizontal padding and the icon-button border/hover background, light-theme defaults match the previous release. Re-skin by overriding variables:
 
 ```css
 :root {
@@ -594,6 +598,8 @@ Every color and shadow is controlled by CSS variables. Light-theme defaults matc
   --stack-tab-accent-contrast: #fff;
 }
 ```
+
+Container backgrounds can also be set with the `background` prop (CSS color/gradient/image) or the `#background` slot (a background component). See the [theming guide](https://jktantan.github.io/vue-stack-tabs/advance/theme) and [slots guide](https://jktantan.github.io/vue-stack-tabs/advance/slot) for the full variable list, layering and overrides.
 
 A dark palette is built in and activates via `<html class="dark">`, `<html data-theme="dark">` or any `[data-theme="dark"]` container. See the [theming guide](https://jktantan.github.io/vue-stack-tabs/advance/theme) for the full variable list and scoped overrides.
 

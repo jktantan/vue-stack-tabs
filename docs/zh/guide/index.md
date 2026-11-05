@@ -8,7 +8,7 @@ Vue Stack Tabs 是基于 Vue 3 与 Vue Router 的路由页签组件，用于实�
 - [x] 页签过多鼠标滚轮滚动
 - [x] 支持页签打开、切换、关闭、刷新、重置等[操作](../base/tab.md)
 - [x] Iframe 页签嵌入外部网站
-- [x] 组件个性化设置：[过渡效果](../advance/transition.md)、页签右键菜单
+- [x] 组件个性化设置：[过渡效果](../advance/transition.md)、页签右键菜单、[主题变量](../advance/theme.md)、[自定义插槽（含背景层）](../advance/slot.md)
 - [x] [多语言支持](../advance/language.md)
 - [x] [页签级加载遮罩](../more/useTabLoading.md)，只遮挡当前页签
 - [x] 栈式缓存

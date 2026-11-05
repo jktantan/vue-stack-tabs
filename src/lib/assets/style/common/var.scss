@@ -76,6 +76,9 @@ $stack-tab-head-invalid-height: $stack-tab-head-height - 3px !default;
 $stack-tab-scroll-height: 6px !default;
 $stack-tab-scroll-border-radius: $stack-tab-scroll-height !default;
 
+// 标签栏滚动区域左右内边距（页签列表与左右箭头之间的留白）
+$stack-tab-scroll-padding: 8px !default;
+
 // ============================================================
 // 动效
 // ============================================================
@@ -116,7 +119,10 @@ $stack-tab-loading-duration: 1s !default;
 // ============================================================
 // 主题令牌（运行时 CSS 变量）
 //
-// 规则统一消费这一组变量；默认值定义在 theme.scss 的 :root 中。
+// 规则统一消费这一组变量；基础默认值定义在 theme.scss 的 :root 中。
+// 派生变量（tab 背景、按钮边框/悬停底色等）以 var() fallback 引用
+// surface / accent / border，不在 :root 预声明：这样局部覆盖上游变量时，
+// 派生值也会同步变化；直接覆盖派生变量同样生效。
 // var() 的 fallback 使用上面的编译期变量，保证单独编译的 scoped
 // 样式或未加载主题入口时仍有正确颜色，同时保留 SCSS 变量定制能力。
 // ============================================================
@@ -144,6 +150,19 @@ $stack-tab-surface-muted: var(
 ) !default;
 $stack-tab-overlay: var(--stack-tab-overlay, #{$stack-tab-loading-mask-color}) !default;
 
+// 组件容器背景：默认跟随 surface（白色），可单独覆盖而不影响页签、按钮等表面
+$stack-tab-background: var(--stack-tab-background, #{$stack-tab-surface}) !default;
+
+// 页签头背景：默认透明，透出容器背景
+$stack-tab-header-background: var(--stack-tab-header-background, transparent) !default;
+
+// 页签头图标按钮背景：默认跟随 surface，可单独设为 transparent 透出背景层
+$stack-tab-header-button-bg: var(--stack-tab-header-button-bg, #{$stack-tab-surface}) !default;
+
+// tab 背景：默认跟随 surface 系列变量，因此局部覆盖 surface 时无需重复配置
+$stack-tab-tab-active-bg: var(--stack-tab-tab-active-bg, #{$stack-tab-surface}) !default;
+$stack-tab-tab-inactive-bg: var(--stack-tab-tab-inactive-bg, #{$stack-tab-surface-muted}) !default;
+
 // text / icon
 $stack-tab-text: var(--stack-tab-text, #{$stack-tab-text-color}) !default;
 $stack-tab-text-strong: var(--stack-tab-text-strong, #{$stack-tab-color-black}) !default;
@@ -158,6 +177,14 @@ $stack-tab-scrollbar: var(--stack-tab-scrollbar, #{$stack-tab-color-scrollbar}) 
 $stack-tab-border-color-token: var(--stack-tab-border, #{$stack-tab-border-color}) !default;
 $stack-tab-border-token: 1px solid $stack-tab-border-color-token !default;
 $stack-tab-divider: var(--stack-tab-divider, #{$stack-tab-color-divider}) !default;
+
+// header 图标按钮：默认带边框，悬停叠加主色半透明底色
+$stack-tab-button-border: var(--stack-tab-button-border, #{$stack-tab-border-token}) !default;
+$stack-tab-button-border-radius: var(--stack-tab-button-border-radius, 4px) !default;
+$stack-tab-button-hover-bg: var(
+  --stack-tab-button-hover-bg,
+  color-mix(in srgb, #{$stack-tab-accent} 12%, transparent)
+) !default;
 
 // shadow：颜色层
 $stack-tab-shadow-color-token: var(--stack-tab-shadow-color, #{$stack-tab-shadow-color}) !default;
@@ -202,6 +229,12 @@ $stack-tab-shadow-inset-vertical: var(
   --stack-tab-shadow-inset-vertical,
   #{$stack-tab-shadow-top-inset},
   #{$stack-tab-shadow-bottom-inset}
+) !default;
+
+// layout
+$stack-tab-scroll-padding-token: var(
+  --stack-tab-scroll-padding,
+  #{$stack-tab-scroll-padding}
 ) !default;
 
 // badge

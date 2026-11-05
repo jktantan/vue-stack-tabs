@@ -113,6 +113,14 @@ const props = withDefaults(
     /** 组件容器高度，默认 `100%` / Container height (default: `100%`) */
     height?: string
     /**
+     * 组件容器背景，可传任意 CSS background 值（颜色、渐变、图片等），默认白色。
+     * 优先级高于 `--stack-tab-background` 变量；不传时由 CSS 变量控制。
+     *
+     * Container background. Accepts any CSS background value (color, gradient, image...).
+     * Defaults to white. Takes precedence over the `--stack-tab-background` variable.
+     */
+    background?: string
+    /**
      * 界面语言，如 `zh-CN`、`en`；不传时跟随库的默认语言。
      * UI locale, e.g. `zh-CN` or `en`; falls back to the library default when omitted.
      */
@@ -195,6 +203,7 @@ const props = withDefaults(
     tabScrollMode: TabScrollMode.BOTH,
     width: '100%',
     height: '100%',
+    background: '',
     i18n: undefined,
     space: 300,
     pageScroll: 'none',
@@ -520,10 +529,15 @@ onBeforeUnmount(() => {
     :style="{
       width: width,
       height: height,
+      background: background || undefined,
       'z-index': maximumZIndex
     }"
     :class="{ 'stack-tab--maximum': maximum }"
   >
+    <!-- 背景插槽：可传入背景组件（WebGL / Canvas / 图片 / 渐变等由组件自行绘制），铺在容器背景之上、页签头与内容之下 -->
+    <div v-if="$slots.background" class="stack-tab__background" aria-hidden="true">
+      <slot name="background" />
+    </div>
     <tab-header
       :space="space"
       :tab-transition="tabTransition"

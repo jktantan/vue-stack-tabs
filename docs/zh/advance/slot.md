@@ -4,11 +4,28 @@ VueStackTabs 支持通过以下插槽个性化页签组件：
 
 | 插槽名称      | 插槽参数         | 说明                                                      |
 | ------------- | ---------------- | --------------------------------------------------------- |
+| background    | —                | 背景层，可传入背景组件；铺满容器并位于页签头与内容之下    |
 | leftButton    | —                | 页签栏左边按钮位                                          |
 | rightButton   | —                | 页签栏右边按钮位                                          |
 | iframeLoading | `{ tab }`        | 自定义 iframe 加载中占位                                  |
 | iframeError   | `{ tab, retry }` | 自定义 iframe 加载失败占位，调用 `retry(tab.id)` 重新加载 |
 | pageLoading   | `{ tab }`        | 占位页签的加载中 UI，默认使用库内置 `PageLoading`         |
+
+## 示例：背景层
+
+纯颜色、渐变或图片可以直接用 `background` 属性或 `--stack-tab-background`；需要 WebGL、Canvas、动态氛围等组件化背景时，使用 `#background` 插槽（示例假设 `AppAmbientBackdrop` 已局部导入或由 Nuxt 自动导入）：
+
+```vue:line-numbers
+<template>
+  <vue-stack-tabs iframe-path="/iframe">
+    <template #background>
+      <AppAmbientBackdrop />
+    </template>
+  </vue-stack-tabs>
+</template>
+```
+
+背景层绝对定位铺满容器，层级为：容器 CSS 背景（`background` 属性 / `--stack-tab-background`）→ `#background` 插槽 → 页签头与内容。默认 `pointer-events: none`，不会影响页签和页面交互；需要交互的背景组件可在自身样式里恢复 `pointer-events: auto`。该层带 `aria-hidden="true"`，请仅用于装饰性背景。
 
 ## 示例：页签栏按钮
 

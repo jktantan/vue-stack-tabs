@@ -1,6 +1,6 @@
 # Theming
 
-Every UI color and shadow in the library is controlled by CSS variables. The light-theme defaults are identical to the previous hard-coded values, so upgrading requires no configuration. To re-skin the component, override the variables instead of patching internal class names.
+Every UI color and shadow in the library is controlled by CSS variables. Apart from the tab-strip horizontal padding and the icon-button border/hover background introduced below, light-theme defaults match the previous hard-coded values. To re-skin the component, override the variables instead of patching internal class names.
 
 ## Quick re-skin
 
@@ -14,7 +14,7 @@ Override variables at the document root or in any scope:
 }
 ```
 
-Changing the accent alone updates tab hover, the drag indicator, the scrollbar thumb, the primary badge and context-menu hover.
+Changing the accent alone updates tab hover, header icon-button hover backgrounds, the drag indicator, the scrollbar thumb, the primary badge and context-menu hover.
 
 ## Dark theme
 
@@ -67,13 +67,37 @@ Every theme block (light defaults, size presets, dark) is wrapped in `:where()`,
 
 ### Surfaces and borders
 
-| Variable                    | Light default | Used for                                                              |
-| --------------------------- | ------------- | --------------------------------------------------------------------- |
-| `--stack-tab-surface`       | `#fff`        | Content area, active tab, header buttons, context menu, retry buttons |
-| `--stack-tab-surface-muted` | `#fafafa`     | Inactive tabs, disabled buttons                                       |
-| `--stack-tab-overlay`       | `#fff`        | Global loading overlay                                                |
-| `--stack-tab-border`        | `#f0f0f0`     | Header bottom border, tab/menu/button borders                         |
-| `--stack-tab-divider`       | `#a9a9a9`     | Context-menu divider                                                  |
+| Variable                        | Light default                 | Used for                                                                                      |
+| ------------------------------- | ----------------------------- | --------------------------------------------------------------------------------------------- |
+| `--stack-tab-surface`           | `#fff`                        | Content area, header buttons, context menu, retry buttons                                     |
+| `--stack-tab-surface-muted`     | `#fafafa`                     | Disabled buttons                                                                              |
+| `--stack-tab-background`        | Follows `--stack-tab-surface` | Container CSS background; use the `#background` slot for components, or the `background` prop |
+| `--stack-tab-header-background` | `transparent`                 | Tab header background (the background layer shows through by default)                         |
+| `--stack-tab-header-button-bg`  | Follows `--stack-tab-surface` | Header icon-button background; set to `transparent` to show the background layer              |
+| `--stack-tab-overlay`           | `#fff`                        | Global loading overlay                                                                        |
+| `--stack-tab-border`            | `#f0f0f0`                     | Header bottom border, tab/menu/button borders                                                 |
+| `--stack-tab-divider`           | `#a9a9a9`                     | Context-menu divider                                                                          |
+
+### Tabs and header buttons
+
+| Variable                           | Default                             | Used for                                           |
+| ---------------------------------- | ----------------------------------- | -------------------------------------------------- |
+| `--stack-tab-tab-active-bg`        | Follows `--stack-tab-surface`       | Active tab background (including bottom border)    |
+| `--stack-tab-tab-inactive-bg`      | Follows `--stack-tab-surface-muted` | Inactive tab background                            |
+| `--stack-tab-button-border`        | `1px solid var(--stack-tab-border)` | Header icon-button border; set to `none` to remove |
+| `--stack-tab-button-border-radius` | `4px`                               | Header icon-button radius                          |
+| `--stack-tab-button-hover-bg`      | Accent at 12% opacity               | Header icon-button hover background                |
+
+Tab backgrounds follow the surface variables by default, so overriding only `--stack-tab-surface` / `--stack-tab-surface-muted` also updates active and inactive tabs. Override the dedicated variables when tabs need to differ from the surfaces:
+
+```css
+:root {
+  --stack-tab-tab-active-bg: #fff;
+  --stack-tab-tab-inactive-bg: #f5f7fa;
+  --stack-tab-button-border: 1px solid #dcdfe6;
+  --stack-tab-button-hover-bg: rgb(64 158 255 / 0.12);
+}
+```
 
 ### Text and icons
 
@@ -125,6 +149,7 @@ The `.stack-tab__shadow-inset-*` utilities consume the matching `--stack-tab-sha
 | -------------------------------------- | ------- | -------------------------------------- |
 | `--stack-tab-font-size`                | `14px`  | Tab, context-menu and iframe text size |
 | `--stack-tab-head-height`              | `40px`  | Tab header height                      |
+| `--stack-tab-scroll-padding`           | `8px`   | Tab-strip horizontal padding           |
 | `--stack-tab-context-menu-item-height` | `30px`  | Context-menu item height               |
 | `--stack-tab-context-menu-padding`     | `8px`   | Context-menu padding                   |
 
@@ -153,9 +178,11 @@ Variables are declared on `:where(:root)` (zero specificity); overriding them in
 }
 ```
 
+Some derived variables (`--stack-tab-background`, `--stack-tab-header-button-bg`, `--stack-tab-tab-active-bg`, `--stack-tab-tab-inactive-bg`, `--stack-tab-button-border`, `--stack-tab-button-hover-bg`) reference `--stack-tab-surface`, `--stack-tab-accent` or `--stack-tab-border` through `var()` fallbacks instead of being redeclared on `:root`. Overriding a derived variable directly still works, and overriding only the upstream variable updates the derived value as well.
+
 ## Notes
 
-- Light-theme defaults match the old hard-coded values, so the visual result is unchanged after upgrading.
+- Light-theme defaults mostly match the old hard-coded values; the tab-strip horizontal padding and the icon-button border/hover background are new defaults. To restore the previous look, override `--stack-tab-scroll-padding: 0`, `--stack-tab-button-border: none` and `--stack-tab-button-hover-bg: transparent`.
 - Dark backgrounds swallow black shadows, so the dark theme uses an outline + accent glow + top highlight instead, and raises `--stack-tab-border` to `#334155`. Override `--stack-tab-shadow-tab` / `--stack-tab-shadow-menu` to make the shadows stronger or softer.
 - These variables are a public API from `2.4.0` on: they are only added, never renamed.
 - Theme selectors use `:where()` for zero specificity, so a plain `:root` override applies in both light and dark mode; avoid high-specificity workarounds such as `:root:root`. `:where()` is supported in Chrome 88+ / Safari 14+ / Firefox 78+, which is not an extra restriction given the `color-mix()` (Chrome 111+) already used by the library.

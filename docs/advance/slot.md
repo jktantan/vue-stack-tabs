@@ -2,13 +2,30 @@
 
 VueStackTabs supports these slots:
 
-| Slot          | Slot props       | Description                                                                   |
-| ------------- | ---------------- | ----------------------------------------------------------------------------- |
-| leftButton    | —                | Left side of tab bar                                                          |
-| rightButton   | —                | Right side of tab bar                                                         |
-| iframeLoading | `{ tab }`        | Custom loading placeholder for an iframe tab                                  |
-| iframeError   | `{ tab, retry }` | Custom error placeholder for an iframe tab; call `retry(tab.id)` to reload it |
-| pageLoading   | `{ tab }`        | Loading UI for a pending tab; defaults to the built-in `PageLoading`          |
+| Slot          | Slot props       | Description                                                                                   |
+| ------------- | ---------------- | --------------------------------------------------------------------------------------------- |
+| background    | —                | Background layer for a background component; fills the container below the header and content |
+| leftButton    | —                | Left side of tab bar                                                                          |
+| rightButton   | —                | Right side of tab bar                                                                         |
+| iframeLoading | `{ tab }`        | Custom loading placeholder for an iframe tab                                                  |
+| iframeError   | `{ tab, retry }` | Custom error placeholder for an iframe tab; call `retry(tab.id)` to reload it                 |
+| pageLoading   | `{ tab }`        | Loading UI for a pending tab; defaults to the built-in `PageLoading`                          |
+
+**Example — background layer:**
+
+Use the `background` prop or `--stack-tab-background` for plain colors, gradients and images. For component-based backgrounds (WebGL, canvas, animated ambience), use the `#background` slot (the example assumes `AppAmbientBackdrop` is imported locally or auto-imported by Nuxt):
+
+```vue:line-numbers
+<template>
+  <vue-stack-tabs iframe-path="/iframe">
+    <template #background>
+      <AppAmbientBackdrop />
+    </template>
+  </vue-stack-tabs>
+</template>
+```
+
+The background layer absolutely fills the container. Stacking order: container CSS background (`background` prop / `--stack-tab-background`) → `#background` slot → header and content. It defaults to `pointer-events: none`, so tabs and page interactions are unaffected; a background component that needs interaction can restore `pointer-events: auto` in its own styles. The layer is `aria-hidden="true"`, so use it for decorative backgrounds only.
 
 **Example — tab bar buttons:**
 

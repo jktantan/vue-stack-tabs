@@ -18,19 +18,22 @@ The demo above is a **real Vue 3 application** — its own Vue Router, its own t
 6. **iframe tab** — click _打开 iframe 标签_: the page inside the iframe can ask the parent to open a new tab via `postMessage`.
 7. **Page loading overlay** — click _Open the loading demo_ and run the simulated request: the overlay covers that tab only; switch tabs while it runs and the others stay usable.
 8. **Shadow state from an outer component** — open _Shadow state_ from the console and scroll the page: the sticky bar reads `useTabScrollShadow()` from a component that wraps the page. `state` is `none` / `top` / `bottom` / `both`, meaning which side still has content, not the scroll direction. Press _Disable library shadows_ and keep scrolling: the library stops rendering shadows, but `state` keeps updating.
+9. **Component background layer** — press _Background_ in the console: the gradient rendered by the `#background` slot sits above the container background and below the header and content, following the accent and light/dark theme.
 
 ## What each control covers
 
-| Capability                       | How to see it                                                                        | API                             |
-| -------------------------------- | ------------------------------------------------------------------------------------ | ------------------------------- |
-| Open / switch / close tabs       | Console buttons and right-click menu on the tab bar                                  | `useTabActions`                 |
-| Tab bar drag & drop reordering   | Drag one tab over another                                                            | `moveTab`                       |
-| Forward / backward inside a tab  | Reports → detail → back (with `_back` params)                                        | `useTabRouter`                  |
-| Independent cache per tab        | Three report tabs on the same route                                                  | per-page keep-alive cache       |
-| Form state preserved             | Form tab, switch away and back                                                       | keep-alive caching              |
-| Scroll position memory           | Long list, switch away and back                                                      | `addScrollTarget`               |
-| iframe tabs + postMessage bridge | iframe tab, then its in-page button                                                  | `IFrame`, `postOpenTab`         |
-| Page loading overlay             | Console: _Open the loading demo_, then simulate a request                            | `useTabLoading`                 |
-| Content shadow state             | Console: _Shadow state_; scroll and toggle; watch `none` / `top` / `bottom` / `both` | `useTabScrollShadow`            |
-| Refresh single / all tabs        | Console: _刷新当前 / 刷新全部_                                                       | `refreshTab`, `refreshAllTabs`  |
-| Session restore                  | Reload the demo page — previously open tabs come back                                | `sessionPrefix`, sessionStorage |
+| Capability                       | How to see it                                                                        | API                                          |
+| -------------------------------- | ------------------------------------------------------------------------------------ | -------------------------------------------- |
+| Open / switch / close tabs       | Console buttons and right-click menu on the tab bar                                  | `useTabActions`                              |
+| Tab bar drag & drop reordering   | Drag one tab over another                                                            | `moveTab`                                    |
+| Forward / backward inside a tab  | Reports → detail → back (with `_back` params)                                        | `useTabRouter`                               |
+| Independent cache per tab        | Three report tabs on the same route                                                  | per-page keep-alive cache                    |
+| Form state preserved             | Form tab, switch away and back                                                       | keep-alive caching                           |
+| Scroll position memory           | Long list, switch away and back                                                      | `addScrollTarget`                            |
+| iframe tabs + postMessage bridge | iframe tab, then its in-page button                                                  | `IFrame`, `postOpenTab`                      |
+| Page loading overlay             | Console: _Open the loading demo_, then simulate a request                            | `useTabLoading`                              |
+| Content shadow state             | Console: _Shadow state_; scroll and toggle; watch `none` / `top` / `bottom` / `both` | `useTabScrollShadow`                         |
+| Refresh single / all tabs        | Console: _刷新当前 / 刷新全部_                                                       | `refreshTab`, `refreshAllTabs`               |
+| Session restore                  | Reload the demo page — previously open tabs come back                                | `sessionPrefix`, sessionStorage              |
+| Theme / size switching           | Light/dark, accent and size controls at the bottom right of the console              | `data-stack-tab-size`, `--stack-tab-*`       |
+| Component background layer       | Console "Background" button; renders a gradient through the `#background` slot       | `#background` slot, `--stack-tab-background` |

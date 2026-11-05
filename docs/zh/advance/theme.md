@@ -1,6 +1,6 @@
 # 主题定制
 
-组件内所有界面颜色与阴影都通过 CSS 变量控制。浅色模式的默认值与旧版硬编码值完全一致，升级后无需任何配置；需要换肤时，覆盖变量即可，不需要覆盖内部类名。
+组件内所有界面颜色与阴影都通过 CSS 变量控制。浅色模式下，除页签栏滚动区内边距、图标按钮边框/悬停底色外，其余默认值与旧版硬编码值一致；需要换肤时，覆盖变量即可，不需要覆盖内部类名。
 
 ## 快速换肤
 
@@ -14,7 +14,7 @@
 }
 ```
 
-只改主色即可同时影响页签 hover、拖拽指示条、滚动条拖拽、badge 主色和右键菜单悬停态。
+只改主色即可同时影响页签 hover、页签头按钮悬停底色、拖拽指示条、滚动条拖拽、badge 主色和右键菜单悬停态。
 
 ## 深色主题
 
@@ -67,13 +67,37 @@
 
 ### 表面与边框
 
-| 变量                        | 浅色默认值 | 用途                                             |
-| --------------------------- | ---------- | ------------------------------------------------ |
-| `--stack-tab-surface`       | `#fff`     | 内容区、激活页签、页签头按钮、右键菜单、重试按钮 |
-| `--stack-tab-surface-muted` | `#fafafa`  | 非激活页签、禁用按钮                             |
-| `--stack-tab-overlay`       | `#fff`     | 全局 loading 遮罩                                |
-| `--stack-tab-border`        | `#f0f0f0`  | 页签头下边框、页签/菜单/按钮边框                 |
-| `--stack-tab-divider`       | `#a9a9a9`  | 右键菜单分隔线                                   |
+| 变量                            | 浅色默认值                 | 用途                                                                   |
+| ------------------------------- | -------------------------- | ---------------------------------------------------------------------- |
+| `--stack-tab-surface`           | `#fff`                     | 内容区、页签头按钮、右键菜单、重试按钮                                 |
+| `--stack-tab-surface-muted`     | `#fafafa`                  | 禁用按钮                                                               |
+| `--stack-tab-background`        | 跟随 `--stack-tab-surface` | 容器 CSS 背景；组件背景用 `#background` 插槽，也可用 `background` prop |
+| `--stack-tab-header-background` | `transparent`              | 页签头背景（默认透出背景层）                                           |
+| `--stack-tab-header-button-bg`  | 跟随 `--stack-tab-surface` | 页签头图标按钮背景；设为 `transparent` 可透出背景层                    |
+| `--stack-tab-overlay`           | `#fff`                     | 全局 loading 遮罩                                                      |
+| `--stack-tab-border`            | `#f0f0f0`                  | 页签头下边框、页签/菜单/按钮边框                                       |
+| `--stack-tab-divider`           | `#a9a9a9`                  | 右键菜单分隔线                                                         |
+
+### 页签与页签头按钮
+
+| 变量                               | 默认值                              | 用途                                   |
+| ---------------------------------- | ----------------------------------- | -------------------------------------- |
+| `--stack-tab-tab-active-bg`        | 跟随 `--stack-tab-surface`          | 激活页签背景（含底边框）               |
+| `--stack-tab-tab-inactive-bg`      | 跟随 `--stack-tab-surface-muted`    | 非激活页签背景                         |
+| `--stack-tab-button-border`        | `1px solid var(--stack-tab-border)` | 页签头图标按钮边框；设为 `none` 可关闭 |
+| `--stack-tab-button-border-radius` | `4px`                               | 页签头图标按钮圆角                     |
+| `--stack-tab-button-hover-bg`      | 主色 12% 透明                       | 页签头图标按钮悬停背景                 |
+
+页签背景默认跟随表面色变量，因此只覆盖 `--stack-tab-surface` / `--stack-tab-surface-muted` 时，激活与非激活页签会同步变化；需要单独区分页签时再覆盖这两个变量：
+
+```css
+:root {
+  --stack-tab-tab-active-bg: #fff;
+  --stack-tab-tab-inactive-bg: #f5f7fa;
+  --stack-tab-button-border: 1px solid #dcdfe6;
+  --stack-tab-button-hover-bg: rgb(64 158 255 / 0.12);
+}
+```
 
 ### 文字与图标
 
@@ -125,6 +149,7 @@
 | -------------------------------------- | ------ | ------------------------------- |
 | `--stack-tab-font-size`                | `14px` | 页签、右键菜单、iframe 文本字号 |
 | `--stack-tab-head-height`              | `40px` | 页签头高度                      |
+| `--stack-tab-scroll-padding`           | `8px`  | 页签栏滚动区域左右内边距        |
 | `--stack-tab-context-menu-item-height` | `30px` | 右键菜单项高度                  |
 | `--stack-tab-context-menu-padding`     | `8px`  | 右键菜单内边距                  |
 
@@ -153,9 +178,11 @@
 }
 ```
 
+部分派生变量（`--stack-tab-background`、`--stack-tab-header-button-bg`、`--stack-tab-tab-active-bg`、`--stack-tab-tab-inactive-bg`、`--stack-tab-button-border`、`--stack-tab-button-hover-bg`）通过 `var()` 回退引用 `--stack-tab-surface`、`--stack-tab-accent`、`--stack-tab-border`，因此不会在 `:root` 中重复声明。直接覆盖派生变量依然有效；只覆盖上游变量时，派生值也会同步变化。
+
 ## 注意事项
 
-- 浅色模式的变量默认值等于旧版硬编码值，升级后视觉不变。
+- 浅色模式的变量默认值与旧版硬编码值基本一致；页签栏滚动区内边距、图标按钮边框与悬停底色为新增默认样式，如需还原旧观感可覆盖 `--stack-tab-scroll-padding: 0`、`--stack-tab-button-border: none`、`--stack-tab-button-hover-bg: transparent`。
 - 深色背景会吞掉纯黑阴影，因此深色默认改用“描边 + 主色光晕 + 顶部高光”表达层次，并把 `--stack-tab-border` 调亮到 `#334155`。需要更强或更弱的阴影时，覆盖 `--stack-tab-shadow-tab` / `--stack-tab-shadow-menu` 即可。
 - 这些变量从 `2.4.0` 起视为公开 API：只新增，不重命名。
 - 主题选择器使用 `:where()` 归零特异性，宿主普通 `:root` 覆盖在浅色与深色下都生效；请勿再使用 `:root:root` 之类的高特异性写法。`:where()` 支持 Chrome 88+ / Safari 14+ / Firefox 78+，与库内已使用的 `color-mix()`（Chrome 111+）相比不构成额外限制。

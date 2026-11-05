@@ -4,10 +4,26 @@
 
 .stack-tab {
   display: flex;
+  position: relative;
   min-height: 300px;
-  background-color: $stack-tab-surface;
+  background-color: $stack-tab-background;
   flex-direction: column;
   gap: 5px;
+
+  // 背景插槽层：位于容器背景色之上、页签头与内容之下。
+  // 绝对定位脱离 flex 布局；默认不拦截交互，需要交互的背景组件可在内部设置 pointer-events: auto。
+  &__background {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
+
+    > * {
+      width: 100%;
+      height: 100%;
+    }
+  }
 
   &__container {
     flex: 1 1 0;
@@ -100,6 +116,7 @@
     display: flex;
     width: 100%;
     height: $stack-tab-head-height-token;
+    background-color: $stack-tab-header-background;
     border-bottom: 1px solid $stack-tab-border-color-token;
     box-sizing: border-box;
 
@@ -109,20 +126,28 @@
       height: $stack-tab-head-height-token;
       width: fit-content;
       overflow: hidden;
-      background-color: $stack-tab-surface;
+      background-color: $stack-tab-header-button-bg;
       cursor: pointer;
       display: flex;
       align-items: center;
       padding: 0;
       color: $stack-tab-icon-mask;
-      transition: color 0.15s ease-in-out;
+      transition:
+        color 0.15s ease-in-out,
+        background-color 0.15s ease-in-out;
 
       @include button-reset;
+
+      // 默认描边，可用 --stack-tab-button-border: none 关闭
+      border: $stack-tab-button-border;
+      border-radius: $stack-tab-button-border-radius;
+      box-sizing: border-box;
 
       // #icon 插槽图标通过 currentColor 继承按钮颜色。
       // 默认反馈用 :where() 归零特异性，宿主用普通类即可覆盖。
       &:where(:hover) {
         color: $stack-tab-accent;
+        background-color: $stack-tab-button-hover-bg;
       }
 
       &:where(:active) {
@@ -150,6 +175,8 @@
     flex: 1 1 0;
     height: $stack-tab-head-height-token;
     overflow: hidden;
+    padding: 0 $stack-tab-scroll-padding-token;
+    box-sizing: border-box;
 
     &-container {
       width: 100%;
@@ -170,9 +197,9 @@
 
   &__scrollbar {
     position: absolute;
-    right: 0;
+    right: $stack-tab-scroll-padding-token;
     bottom: 0;
-    left: 0;
+    left: $stack-tab-scroll-padding-token;
     height: $stack-tab-scroll-height;
     background-color: $stack-tab-scrollbar;
     border-radius: $stack-tab-scroll-border-radius;
@@ -231,7 +258,7 @@
     font-size: $stack-tab-font-size-token;
     color: $stack-tab-text;
     cursor: pointer;
-    background-color: $stack-tab-surface-muted;
+    background-color: $stack-tab-tab-inactive-bg;
     border: $stack-tab-border-token;
     border-left: none;
     border-radius: $stack-tab-tab-radius;
@@ -280,8 +307,8 @@
     // 激活的页签
     &--active {
       z-index: 1;
-      background-color: $stack-tab-surface;
-      border-bottom-color: $stack-tab-surface;
+      background-color: $stack-tab-tab-active-bg;
+      border-bottom-color: $stack-tab-tab-active-bg;
       box-shadow: $stack-tab-shadow-tab;
       margin-top: unset;
     }

@@ -1,5 +1,25 @@
 # Changelog
 
+## 3.3.0 (2026-11-05)
+
+### 新增
+
+- 新增 `#background` 插槽与 `background` 属性：容器背景除 CSS 颜色、渐变、图片外，也可传入 WebGL、Canvas 等背景组件；背景层铺满容器，位于容器背景之上、页签头与内容之下。
+- 新增 `--stack-tab-background`（默认跟随 `--stack-tab-surface`）与 `--stack-tab-header-background`（默认 `transparent`）。
+- 新增 `--stack-tab-header-button-bg`（默认跟随 `--stack-tab-surface`），页签头按钮可设为 `transparent` 透出背景层。
+- 新增页签背景变量 `--stack-tab-tab-active-bg` / `--stack-tab-tab-inactive-bg`，默认分别跟随 `--stack-tab-surface` / `--stack-tab-surface-muted`。
+- 新增页签头按钮变量 `--stack-tab-button-border`、`--stack-tab-button-border-radius`、`--stack-tab-button-hover-bg`。
+- 新增 `--stack-tab-scroll-padding`，控制页签栏滚动区域左右内边距，默认 `8px`。
+
+### 样式调整
+
+- 页签头图标按钮默认带边框，悬停时叠加主色半透明背景。
+- 页签栏滚动区域左右默认留白 `8px`，滚动条轨道同步内缩。
+
+### 兼容
+
+- 覆盖 `--stack-tab-surface` / `--stack-tab-surface-muted` 仍会联动页签与容器背景；如需还原旧观感，可设置 `--stack-tab-scroll-padding: 0`、`--stack-tab-button-border: none`、`--stack-tab-button-hover-bg: transparent`。
+
 ## 3.2.1 (2026-11-03)
 
 ### 修复

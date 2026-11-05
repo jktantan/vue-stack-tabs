@@ -25,7 +25,7 @@
 - 💾 **Session 持久化** — 浏览器刷新后恢复上次激活的标签
 - 📜 **滚动位置记忆** — 切换标签后自动恢复上次滚动位置
 - 🎨 **右键菜单** — 内置关闭/刷新操作
-- 🧩 **自定义插槽** — 标签栏左右按钮位、iframe 加载/失败占位
+- 🧩 **自定义插槽** — 标签栏左右按钮位、背景层、iframe 加载/失败/占位页签加载 UI
 - 🌍 **国际化** — 内置中英文，可扩展
 - 📦 **Nuxt 3/4 模块** — 开箱即用
 
@@ -440,30 +440,31 @@ const stop = shadow.onStateChange((state) => {
 
 `<VueStackTabs>` 组件属性：
 
-| Prop                   | 类型                                             | 默认值                                                                     | 说明                                                                                                              |
-| ---------------------- | ------------------------------------------------ | -------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `iframePath`           | `string`                                         | **必填**                                                                   | iframe 占位路由的路径                                                                                             |
-| `iframeSandbox`        | `string`                                         | `allow-scripts allow-forms allow-popups allow-downloads allow-same-origin` | iframe sandbox 策略；默认兼容优先不是强隔离，强隔离请移除 `allow-same-origin`；传空字符串可关闭 sandbox（不推荐） |
-| `iframeReferrerPolicy` | `ReferrerPolicy`                                 | `strict-origin-when-cross-origin`                                          | iframe referrerpolicy 属性                                                                                        |
-| `iframeAllow`          | `string`                                         | `''`                                                                       | iframe allow 属性，例如 `fullscreen`                                                                              |
-| `iframeLoadTimeout`    | `number`                                         | `15000`                                                                    | iframe 加载超时时间，单位 ms                                                                                      |
-| `defaultTabs`          | `ITabData[]`                                     | `[]`                                                                       | 初始标签列表                                                                                                      |
-| `homeTab`              | `ITabData`                                       | —                                                                          | 固定首页：始终第一位、不可关闭、不可拖动；其他标签不能排到它前面；不配置时保持原行为                              |
-| `max`                  | `number`                                         | `20`                                                                       | 最大标签数量                                                                                                      |
-| `pageLoading`          | `boolean`                                        | `true`                                                                     | 导航期间是否显示页面加载态；关闭后不显示遮罩，也不隐藏旧页面（适合内网等快速环境）                                |
-| `contextmenu`          | `boolean \| object`                              | `true`                                                                     | 是否启用右键菜单                                                                                                  |
-| `pageTransition`       | `string`                                         | `'stack-tab-swap'`                                                         | 前进时的页面转场动画名                                                                                            |
-| `pageTransitionBack`   | `string`                                         | `'stack-tab-swap-back'`                                                    | 后退时的页面转场动画名                                                                                            |
-| `tabTransition`        | `string \| TransitionProps`                      | `'stack-tab-zoom'`                                                         | 标签增删时的过渡效果                                                                                              |
-| `tabScrollMode`        | `TabScrollMode`                                  | `'both'`                                                                   | 标签栏滚动方式：`'wheel'` / `'button'` / `'both'`                                                                 |
-| `space`                | `number`                                         | `300`                                                                      | 标签栏滚动一步的像素距离                                                                                          |
-| `width`                | `string`                                         | `'100%'`                                                                   | 容器宽度                                                                                                          |
-| `height`               | `string`                                         | `'100%'`                                                                   | 容器高度                                                                                                          |
-| `i18n`                 | `string`                                         | `'zh-CN'`                                                                  | 国际化语言，内置 `'zh-CN'` / `'en'`                                                                               |
-| `pageScroll`           | `'native' \| 'none' \| Component`                | `'none'`                                                                   | 内容区滚动策略：库内 wrapper 原生滚动 / 页面自行处理 / 自定义滚动组件                                             |
-| `scrollShadow`         | `boolean \| { top?: boolean; bottom?: boolean }` | `true`                                                                     | 内容区上下阴影开关；`false` 关闭两侧，对象可单独关闭某一侧；页面内可用 `useTabScrollShadow` 覆盖                  |
-| `sessionPrefix`        | `string`                                         | `''`                                                                       | sessionStorage 键前缀；同一 origin 多实例时用于隔离                                                               |
-| `iframeAllowedOrigins` | `string[]`                                       | `[]`（叠加当前 origin）                                                    | 允许 iframe postMessage 调用 openTab 的来源列表                                                                   |
+| Prop                   | 类型                                             | 默认值                                                                     | 说明                                                                                                                |
+| ---------------------- | ------------------------------------------------ | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `iframePath`           | `string`                                         | **必填**                                                                   | iframe 占位路由的路径                                                                                               |
+| `iframeSandbox`        | `string`                                         | `allow-scripts allow-forms allow-popups allow-downloads allow-same-origin` | iframe sandbox 策略；默认兼容优先不是强隔离，强隔离请移除 `allow-same-origin`；传空字符串可关闭 sandbox（不推荐）   |
+| `iframeReferrerPolicy` | `ReferrerPolicy`                                 | `strict-origin-when-cross-origin`                                          | iframe referrerpolicy 属性                                                                                          |
+| `iframeAllow`          | `string`                                         | `''`                                                                       | iframe allow 属性，例如 `fullscreen`                                                                                |
+| `iframeLoadTimeout`    | `number`                                         | `15000`                                                                    | iframe 加载超时时间，单位 ms                                                                                        |
+| `defaultTabs`          | `ITabData[]`                                     | `[]`                                                                       | 初始标签列表                                                                                                        |
+| `homeTab`              | `ITabData`                                       | —                                                                          | 固定首页：始终第一位、不可关闭、不可拖动；其他标签不能排到它前面；不配置时保持原行为                                |
+| `max`                  | `number`                                         | `20`                                                                       | 最大标签数量                                                                                                        |
+| `pageLoading`          | `boolean`                                        | `true`                                                                     | 导航期间是否显示页面加载态；关闭后不显示遮罩，也不隐藏旧页面（适合内网等快速环境）                                  |
+| `contextmenu`          | `boolean \| object`                              | `true`                                                                     | 是否启用右键菜单                                                                                                    |
+| `pageTransition`       | `string`                                         | `'stack-tab-swap'`                                                         | 前进时的页面转场动画名                                                                                              |
+| `pageTransitionBack`   | `string`                                         | `'stack-tab-swap-back'`                                                    | 后退时的页面转场动画名                                                                                              |
+| `tabTransition`        | `string \| TransitionProps`                      | `'stack-tab-zoom'`                                                         | 标签增删时的过渡效果                                                                                                |
+| `tabScrollMode`        | `TabScrollMode`                                  | `'both'`                                                                   | 标签栏滚动方式：`'wheel'` / `'button'` / `'both'`                                                                   |
+| `space`                | `number`                                         | `300`                                                                      | 标签栏滚动一步的像素距离                                                                                            |
+| `width`                | `string`                                         | `'100%'`                                                                   | 容器宽度                                                                                                            |
+| `height`               | `string`                                         | `'100%'`                                                                   | 容器高度                                                                                                            |
+| `background`           | `string`                                         | `''`                                                                       | 容器背景，可传颜色、渐变或图片；组件背景请用 `#background` 插槽；不传时由 `--stack-tab-background` 控制（默认白色） |
+| `i18n`                 | `string`                                         | `'zh-CN'`                                                                  | 国际化语言，内置 `'zh-CN'` / `'en'`                                                                                 |
+| `pageScroll`           | `'native' \| 'none' \| Component`                | `'none'`                                                                   | 内容区滚动策略：库内 wrapper 原生滚动 / 页面自行处理 / 自定义滚动组件                                               |
+| `scrollShadow`         | `boolean \| { top?: boolean; bottom?: boolean }` | `true`                                                                     | 内容区上下阴影开关；`false` 关闭两侧，对象可单独关闭某一侧；页面内可用 `useTabScrollShadow` 覆盖                    |
+| `sessionPrefix`        | `string`                                         | `''`                                                                       | sessionStorage 键前缀；同一 origin 多实例时用于隔离                                                                 |
+| `iframeAllowedOrigins` | `string[]`                                       | `[]`（叠加当前 origin）                                                    | 允许 iframe postMessage 调用 openTab 的来源列表                                                                     |
 
 ---
 
@@ -486,13 +487,14 @@ const stop = shadow.onStateChange((state) => {
 
 ## 🧩 自定义插槽
 
-| 插槽            | 作用域参数       | 说明                                                  |
-| --------------- | ---------------- | ----------------------------------------------------- |
-| `leftButton`    | —                | 标签栏左侧按钮区，配合 `TabHeaderButton` 使用         |
-| `rightButton`   | —                | 标签栏右侧按钮区                                      |
-| `iframeLoading` | `{ tab }`        | 自定义 iframe 加载中占位                              |
-| `iframeError`   | `{ tab, retry }` | 自定义 iframe 加载失败占位，调用 `retry()` 可重新加载 |
-| `pageLoading`   | `{ tab }`        | 占位页签的加载中 UI，默认使用库内置 `PageLoading`     |
+| 插槽            | 作用域参数       | 说明                                                   |
+| --------------- | ---------------- | ------------------------------------------------------ |
+| `background`    | —                | 背景层，可传入背景组件；铺满容器并位于页签头与内容之下 |
+| `leftButton`    | —                | 标签栏左侧按钮区，配合 `TabHeaderButton` 使用          |
+| `rightButton`   | —                | 标签栏右侧按钮区                                       |
+| `iframeLoading` | `{ tab }`        | 自定义 iframe 加载中占位                               |
+| `iframeError`   | `{ tab, retry }` | 自定义 iframe 加载失败占位，调用 `retry()` 可重新加载  |
+| `pageLoading`   | `{ tab }`        | 占位页签的加载中 UI，默认使用库内置 `PageLoading`      |
 
 ```vue
 <VueStackTabs iframe-path="/iframe">
@@ -596,7 +598,7 @@ window.addEventListener('message', (ev) => {
 
 ## 🎨 主题定制
 
-组件颜色与阴影全部由 CSS 变量控制，浅色默认值与旧版完全一致，升级后无需改动。直接覆盖变量即可换肤：
+组件颜色与阴影全部由 CSS 变量控制。除页签栏滚动区内边距、图标按钮边框与悬停底色外，浅色默认值与旧版一致；直接覆盖变量即可换肤：
 
 ```css
 :root {
@@ -605,6 +607,8 @@ window.addEventListener('message', (ev) => {
   --stack-tab-accent-contrast: #fff;
 }
 ```
+
+容器背景还可通过 `background` 属性传 CSS 颜色/渐变/图片，或用 `#background` 插槽传入背景组件；完整变量清单、背景层与覆盖方式见[主题定制文档](https://jktantan.github.io/vue-stack-tabs/zh/advance/theme)和[自定义插槽文档](https://jktantan.github.io/vue-stack-tabs/zh/advance/slot)。
 
 深色主题内置，支持 `<html class="dark">`、`<html data-theme="dark">` 或任意 `[data-theme="dark"]` 容器。完整变量清单与覆盖方式见[主题定制文档](https://jktantan.github.io/vue-stack-tabs/zh/advance/theme)。
 
