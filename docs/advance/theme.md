@@ -145,13 +145,13 @@ The `.stack-tab__shadow-inset-*` utilities consume the matching `--stack-tab-sha
 
 ### Layout and size
 
-| Variable                               | Default | Used for                               |
-| -------------------------------------- | ------- | -------------------------------------- |
-| `--stack-tab-font-size`                | `14px`  | Tab, context-menu and iframe text size |
-| `--stack-tab-head-height`              | `40px`  | Tab header height                      |
-| `--stack-tab-scroll-padding`           | `8px`   | Tab-strip horizontal padding           |
-| `--stack-tab-context-menu-item-height` | `30px`  | Context-menu item height               |
-| `--stack-tab-context-menu-padding`     | `8px`   | Context-menu padding                   |
+| Variable                               | Default | Used for                                      |
+| -------------------------------------- | ------- | --------------------------------------------- |
+| `--stack-tab-font-size`                | `14px`  | Tab, context-menu and iframe text size        |
+| `--stack-tab-head-height`              | `40px`  | Tab header height                             |
+| `--stack-tab-scroll-padding`           | `8px`   | Tab-strip scroll container horizontal padding |
+| `--stack-tab-context-menu-item-height` | `30px`  | Context-menu item height                      |
+| `--stack-tab-context-menu-padding`     | `8px`   | Context-menu padding                          |
 
 Three size presets are built in and activated with `data-stack-tab-size` (scoped containers work too):
 

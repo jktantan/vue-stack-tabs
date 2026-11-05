@@ -175,12 +175,14 @@
     flex: 1 1 0;
     height: $stack-tab-head-height-token;
     overflow: hidden;
-    padding: 0 $stack-tab-scroll-padding-token;
-    box-sizing: border-box;
 
     &-container {
       width: 100%;
       height: 100%;
+
+      // 左右留白放在滚动容器上，滚动内容与滚动区边缘保持间距
+      padding: 0 $stack-tab-scroll-padding-token;
+      box-sizing: border-box;
 
       // 使用原生横向滚动以保留触摸/触控板惯性与手感；
       // 原生滚动条隐藏，视觉上仍由下方自绘滚动条呈现。
@@ -197,9 +199,9 @@
 
   &__scrollbar {
     position: absolute;
-    right: $stack-tab-scroll-padding-token;
+    right: 0;
     bottom: 0;
-    left: $stack-tab-scroll-padding-token;
+    left: 0;
     height: $stack-tab-scroll-height;
     background-color: $stack-tab-scrollbar;
     border-radius: $stack-tab-scroll-border-radius;

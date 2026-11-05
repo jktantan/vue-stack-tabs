@@ -149,7 +149,7 @@
 | -------------------------------------- | ------ | ------------------------------- |
 | `--stack-tab-font-size`                | `14px` | 页签、右键菜单、iframe 文本字号 |
 | `--stack-tab-head-height`              | `40px` | 页签头高度                      |
-| `--stack-tab-scroll-padding`           | `8px`  | 页签栏滚动区域左右内边距        |
+| `--stack-tab-scroll-padding`           | `8px`  | 页签栏滚动容器左右内边距        |
 | `--stack-tab-context-menu-item-height` | `30px` | 右键菜单项高度                  |
 | `--stack-tab-context-menu-padding`     | `8px`  | 右键菜单内边距                  |
 
