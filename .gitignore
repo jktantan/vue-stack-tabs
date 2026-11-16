@@ -46,3 +46,9 @@ docs/.vitepress/dist/
 
 # CSDN 文章草稿（本地写作目录，不入库）
 /csdn/
+
+# 本地工具产物（不入库）
+# .codegraph/：codegraph 索引；.dsh-meow/：本地记忆库；.tmp-*：临时验证目录
+.codegraph/
+.dsh-meow/
+.tmp-*/
