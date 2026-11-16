@@ -18,7 +18,7 @@
 - **Stack-based in-tab navigation** — forward / backward within a tab, similar to browser history stack
 - **Tab refresh** — refresh single or all tabs with full component instance rebuild
 - **iframe tabs** — embed iframe pages with postMessage communication
-- **Session persistence** — restore last active tabs after browser refresh
+- **Session persistence** — restore the last active tab after browser refresh
 - **Scroll position memory** — automatically restore scroll position when switching tabs
 - **Context menu** — built-in close/refresh actions
 - **Slots** — tab bar left/right buttons, background layer, and custom iframe loading/error/pending placeholders

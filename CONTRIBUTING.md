@@ -6,7 +6,7 @@
 
 ## 环境要求
 
-- **Node.js** 18+
+- **Node.js** `^20.19.0 || >=22.12.0`（Vite 8 要求）
 - **pnpm** 10+
 
 ```bash
@@ -72,17 +72,17 @@ export default defineNuxtConfig({
 ├── src/
 │   ├── lib/                 # 核心库（发布内容）
 │   │   ├── index.ts         # 入口与导出
-│   │   ├── hooks/           # useTabPanel、useTabActions、useTabRouter 等
-│   │   ├── hooks/tabPanel/  # state、evict、scroll、session
-│   │   ├── components/      # TabHeader、ContextMenu、PageLoading
-│   │   ├── utils/           # tabInfoEncoder、urlParser、scrollUtils、iframeBridge
-│   │   ├── model/           # TabModel、Stack
+│   │   ├── hooks/           # useTabPanel(.tsx)、useTabActions、useTabRouter、useTabLoading、useTabPageScroll、useTabScrollShadow 等
+│   │   ├── hooks/tabPanel/  # state、tabStore、evict、refresh、scroll、session、navigationTransaction、pageComponentFactory.tsx
+│   │   ├── components/      # TabHeader/、ContextMenu/、PageLoading.vue、StackKeepAlive/
+│   │   ├── utils/           # tabInfoEncoder、urlParser、scrollUtils、iframeBridge、stackTabsMessage、stackTabsA11y、typeGuards
+│   │   ├── model/           # TabModel（含 Stack 类）、ScrollAdapter、PageScroll
 │   │   ├── nuxt/            # Nuxt 模块
 │   │   └── assets/style/    # SCSS 样式
 │   ├── router/              # 示例路由
 │   ├── views/               # 示例页面
 │   └── components/          # 示例布局
-├── scripts/                 # 验证脚本
+├── scripts/                 # 构建后处理（fix-dts-extensions）与打包前/后验证脚本
 ├── docs/                    # VitePress 文档
 └── dist/                    # 构建输出（lib:build）
 ```
@@ -126,8 +126,11 @@ pnpm run test
 pnpm run lint
 pnpm run lint:style
 
-# 4. 库构建
+# 4. 库构建（含 dist 声明文件扩展名自动修正）
 pnpm run lib:build
+
+# 5. 声明文件扩展名复检
+pnpm run dts:check
 ```
 
 **完整验证（推荐）：**
@@ -136,8 +139,11 @@ pnpm run lib:build
 # 打包前全覆盖：单元测试 + Vue 主项目 + Nuxt 源码构建
 pnpm run test:prepack
 
-# 打包后验证：Vue + Nuxt 使用 dist 构建
+# 打包后验证：Vue + Nuxt 使用 dist 构建（Bundler 与 NodeNext 两套类型检查）
 pnpm run test:packaged
+
+# 发布前一条龙：lint + test:prepack + lib:build + dts:check + test:packaged
+pnpm run release:check
 ```
 
 全部通过后再提交。
@@ -150,7 +156,8 @@ pnpm run test:packaged
 | --------------- | ------------------------------------------------- |
 | `dev`           | 启动示例应用（Vite）                              |
 | `build`         | 构建示例应用（含 type-check）                     |
-| `lib:build`     | 构建库到 dist/                                    |
+| `lib:build`     | 构建库到 dist/（末尾自动修正声明文件扩展名）      |
+| `dts:check`     | 校验 dist 声明文件中的相对导入均带 .js 扩展名     |
 | `test`          | 单元测试                                          |
 | `test:coverage` | 单元测试 + 覆盖率                                 |
 | `test:prepack`  | 打包前验证（单元 + Vue + Nuxt 源码）              |
@@ -169,8 +176,9 @@ pnpm run test:packaged
 
 1. ESLint / Stylelint
 2. `test:prepack`：单元测试 + 类型检查 + Vue 主项目构建
-3. `lib:build`：构建发布用 `dist/`
-4. `test:packaged`：用真实 tarball 验证 exports、类型与 ESM 导入
+3. `lib:build`：构建发布用 `dist/`（含声明文件扩展名修正）
+4. `dts:check`：校验 dist 声明文件扩展名，防止 node16/nodenext 类型回归
+5. `test:packaged`：用真实 tarball 验证 exports、类型（Bundler + NodeNext）与 ESM 导入
 
 任一环节失败都会中止发布。发布前请先更新 `package.json` 版本和 `CHANGELOG.md`。
 
@@ -179,8 +187,8 @@ pnpm run test:packaged
 ## 文档
 
 - **在线文档**：`pnpm run docs:dev` 启动 VitePress 预览
-- **文档源文件**：`docs/zh/`
-- **分析文档**：`docs/OPTIMIZATION_TODO.md`、`docs/SUBROUTE_ANALYSIS.md`、`docs/SUBROUTE_EXPERIMENTAL.md`
+- **文档源文件**：英文在 `docs/` 根目录、中文在 `docs/zh/`；新增页面需两份都写，并同步 `docs/.vitepress/config.ts` 的侧边栏
+- **分析文档**：`docs/OPTIMIZATION_TODO.md`、`docs/SUBROUTE_ANALYSIS.md`、`docs/SUBROUTE_EXPERIMENTAL.md`（内部分析类 md 已被 `srcExclude` 排除，不参与站点构建）
 
 ---
 
@@ -189,7 +197,7 @@ pnpm run test:packaged
 1. Fork 仓库
 2. 创建分支（如 `feat/xxx`、`fix/xxx`、`docs/xxx`）
 3. 修改代码，确保 `type-check`、`test`、`lint`、`lint:style` 通过
-4. 若有重大改动，建议执行 `test:prepack` 和 `test:packaged`
+4. 若有重大改动，建议执行 `pnpm run release:check`（test:prepack + lib:build + dts:check + test:packaged）
 5. 提交 PR，描述修改内容与动机
 
 ---

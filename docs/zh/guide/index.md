@@ -13,6 +13,6 @@ Vue Stack Tabs 是基于 Vue 3 与 Vue Router 的路由页签组件，用于实�
 - [x] [页签级加载遮罩](../more/useTabLoading.md)，只遮挡当前页签
 - [x] 栈式缓存
 - [x] [初始页签数据](../advance/initial.md)，进入页面时默认显示的页签
-- [x] 页签刷新还原，在浏览器刷新后恢复页签
+- [x] 页签刷新还原，浏览器刷新后恢复上次激活的页签及其页面栈
 - [x] [Nuxt 支持](../base/nuxt.md)
 - [x] 页签切换后[保留滚动位置](../advance/scroll.md)

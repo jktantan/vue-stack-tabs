@@ -13,6 +13,6 @@ Vue Stack Tabs is a route-based tab component for Vue 3 and Vue Router, designed
 - [x] Tab-level loading overlay — see [useTabLoading](../more/useTabLoading.md)
 - [x] Stack-based caching
 - [x] [Initial tabs](../advance/initial.md) — default tabs on first load
-- [x] Tab recovery on browser refresh
+- [x] The last active tab is restored on browser refresh
 - [x] [Nuxt support](../base/nuxt.md)
 - [x] [Scroll position](../advance/scroll.md) restoration when switching tabs

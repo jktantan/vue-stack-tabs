@@ -7,6 +7,14 @@ const base = '/vue-stack-tabs/'
 
 export default defineConfig({
   base,
+  // 只发布用户文档：内部分析/计划类 md 不参与构建（否则会进线上产物与本地搜索索引）
+  srcExclude: [
+    'DIAGNOSTIC_REPORT.md',
+    'OPTIMIZATION_TODO.md',
+    'SUBROUTE_*.md',
+    'DEPLOY.md',
+    'superpowers/**'
+  ],
   vite: {
     server: {
       // 固定端口，与演示应用的 18080 区分开；端口被占用时先执行 `pnpm run clean:ports`
@@ -56,7 +64,8 @@ export default defineConfig({
               { text: 'Getting Started', link: '/base/introduction' },
               { text: 'Nuxt', link: '/base/nuxt' },
               { text: 'Tab Operations', link: '/base/tab' },
-              { text: 'In-Tab Operations', link: '/base/operator' }
+              { text: 'In-Tab Operations', link: '/base/operator' },
+              { text: 'Troubleshooting', link: '/base/troubleshooting' }
             ]
           },
           {
@@ -112,7 +121,8 @@ export default defineConfig({
               { text: '入门', link: '/zh/base/introduction' },
               { text: 'Nuxt', link: '/zh/base/nuxt' },
               { text: '页签操作', link: '/zh/base/tab' },
-              { text: '签内操作', link: '/zh/base/operator' }
+              { text: '签内操作', link: '/zh/base/operator' },
+              { text: '常见问题', link: '/zh/base/troubleshooting' }
             ]
           },
           {

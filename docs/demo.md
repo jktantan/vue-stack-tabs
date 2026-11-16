@@ -34,6 +34,6 @@ The demo above is a **real Vue 3 application** — its own Vue Router, its own t
 | Page loading overlay             | Console: _Open the loading demo_, then simulate a request                            | `useTabLoading`                              |
 | Content shadow state             | Console: _Shadow state_; scroll and toggle; watch `none` / `top` / `bottom` / `both` | `useTabScrollShadow`                         |
 | Refresh single / all tabs        | Console: _刷新当前 / 刷新全部_                                                       | `refreshTab`, `refreshAllTabs`               |
-| Session restore                  | Reload the demo page — previously open tabs come back                                | `sessionPrefix`, sessionStorage              |
+| Session restore                  | Reload the demo page — the last active tab and its page stack come back              | `sessionPrefix`, sessionStorage              |
 | Theme / size switching           | Light/dark, accent and size controls at the bottom right of the console              | `data-stack-tab-size`, `--stack-tab-*`       |
 | Component background layer       | Console "Background" button; renders a gradient through the `#background` slot       | `#background` slot, `--stack-tab-background` |
