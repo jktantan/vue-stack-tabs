@@ -1,6 +1,10 @@
 #!/usr/bin/env node
 /**
  * 打包后验证：先检查 dist 入口，再用真实 pnpm pack tarball 验证 package exports。
+ *
+ * 类型侧同时覆盖两种消费者解析模式：
+ * - `Bundler`：Vite / Vue 项目常见配置；
+ * - `NodeNext` + `skipLibCheck: false`：Node ESM 项目常见配置，相对导入必须带扩展名。
  */
 import fs from 'node:fs'
 import { spawn } from 'node:child_process'
@@ -114,6 +118,85 @@ export { relative, fromPackage, badRelative, badPackage }
   )
 }
 
+/**
+ * NodeNext 消费者烟测：真实 Node ESM 项目里相对导入必须带扩展名。
+ *
+ * 未补扩展名时有两种失败形态：
+ * - skipLibCheck: false → dist/**\/*.d.ts 内部报 TS2834；
+ * - 默认 skipLibCheck: true → 声明解析失败被静默吞掉，
+ *   `export * from './model/TabModel'` 一个名字都导不出来（TS2614），具名导入退化成 any。
+ *
+ * 因此这里关闭 skipLibCheck，并用 `@ts-expect-error` 探针证明类型没有退化成 any
+ * （探针若失效会报 TS2578，同样让校验失败）。
+ */
+function writeNodeNextTypeSmokeProject(tempProjectDir) {
+  fs.writeFileSync(
+    join(tempProjectDir, 'nodenext-consumer.ts'),
+    `
+import {
+  Stack,
+  TabScrollMode,
+  useTabActions,
+  type ITabData,
+  type ITabItem,
+  type ITabPage
+} from 'vue-stack-tabs'
+import type * as PackageBundle from 'vue-stack-tabs/dist/vue-stack-tabs.es'
+import { postOpenTab } from 'vue-stack-tabs/iframe-bridge'
+import type { ModuleOptions } from 'vue-stack-tabs/nuxt'
+
+// TabModel 的 re-export 必须真实存在（解析失败时 export * 什么都不导出）
+const mode: TabScrollMode = TabScrollMode.BOTH
+const tab: ITabData = { title: 'Home', path: '/' }
+const pages: ITabPage[] = []
+const item: ITabItem | undefined = undefined
+
+// @ts-expect-error ITabData.path 必填；类型退化为 any 时该指令失效并报 TS2578
+const missingPath: ITabData = { title: 'Home' }
+// @ts-expect-error 不存在的枚举成员
+const badMode = TabScrollMode.NOPE
+
+const stack = new Stack<number>()
+stack.push(1)
+// @ts-expect-error 栈元素类型为 number
+stack.push('x')
+
+const actions = useTabActions()
+// @ts-expect-error openTab 缺少必填的 path
+actions.openTab({ title: 'x' })
+// @ts-expect-error postOpenTab 缺少必填的 path
+postOpenTab({ title: 'x' })
+
+const locale: ModuleOptions['locale'] = 'zh-CN'
+type PackageProps = InstanceType<typeof PackageBundle.VueStackTabs>['$props']
+const props: PackageProps = { iframePath: '/x', max: 20 }
+// @ts-expect-error 不存在的 prop 必须报错
+const badProps: PackageProps = { iframePath: '/x', nope: 1 }
+
+export { mode, tab, pages, item, missingPath, badMode, stack, actions, locale, props, badProps }
+`
+  )
+  fs.writeFileSync(
+    join(tempProjectDir, 'tsconfig.nodenext.json'),
+    JSON.stringify(
+      {
+        compilerOptions: {
+          target: 'ES2022',
+          module: 'NodeNext',
+          moduleResolution: 'NodeNext',
+          strict: true,
+          skipLibCheck: false,
+          types: [],
+          noEmit: true
+        },
+        include: ['nodenext-consumer.ts']
+      },
+      null,
+      2
+    )
+  )
+}
+
 function writeNuxtSmokeStubs(tempProjectDir) {
   const nuxtDir = join(tempProjectDir, 'node_modules', 'nuxt')
   fs.mkdirSync(join(nuxtDir, 'kit'), { recursive: true })
@@ -122,7 +205,11 @@ function writeNuxtSmokeStubs(tempProjectDir) {
     join(nuxtDir, 'package.json'),
     JSON.stringify({
       type: 'module',
-      exports: { './kit': './kit/index.js', './app': './app/index.js' }
+      exports: {
+        './kit': './kit/index.js',
+        './app': './app/index.js',
+        './schema': { types: './schema.d.ts' }
+      }
     })
   )
   fs.writeFileSync(
@@ -138,6 +225,19 @@ export const defineNuxtModule = (moduleDefinition) => () => moduleDefinition
     join(nuxtDir, 'app', 'index.js'),
     `export const defineNuxtPlugin = (plugin) => plugin
 export const useRuntimeConfig = () => ({ public: { vueStackTabs: { locale: 'zh-CN' } } })
+`
+  )
+  fs.writeFileSync(
+    join(nuxtDir, 'schema.d.ts'),
+    `export interface NuxtModule<
+  TOptions = Record<string, unknown>,
+  TResolvedOptions = TOptions,
+  TSetup extends boolean = false
+> {
+  setup?: (options: TOptions) => void
+  readonly _resolvedOptions?: TResolvedOptions
+  readonly _setup?: TSetup
+}
 `
   )
 }
@@ -210,11 +310,13 @@ function assertRootEntryTypes() {
   if (!fs.existsSync(indexTypesPath)) {
     throw new Error(`入口声明的转发目标不存在：${indexTypesPath}`)
   }
-  if (!/export \* from '\.\/index'/.test(source)) {
-    throw new Error('入口声明未转发 dist/index.d.ts 的类型')
+  // 必须带 .js 扩展名：发布包的 "type": "module" 会让 node16/nodenext 消费者
+  // 把无扩展名的相对导入判为 TS2834（详见 scripts/fix-dts-extensions.mjs）。
+  if (!/export \* from '\.\/index\.js'/.test(source)) {
+    throw new Error('入口声明未以 .js 扩展名转发 dist/index.d.ts 的类型')
   }
-  if (!/export \{ default \} from '\.\/index'/.test(source)) {
-    throw new Error('入口声明未转发 dist/index.d.ts 的默认导出')
+  if (!/export \{ default \} from '\.\/index\.js'/.test(source)) {
+    throw new Error('入口声明未以 .js 扩展名转发 dist/index.d.ts 的默认导出')
   }
 }
 
@@ -303,8 +405,14 @@ async function verifyPackageExportsFromTarball(tarballPath) {
     writeIframeBridgeTypeSmokeProject(tempProjectDir)
     writeRootEntryTypeSmokeProject(tempProjectDir)
     writeNuxtSmokeStubs(tempProjectDir)
+    writeNodeNextTypeSmokeProject(tempProjectDir)
 
     await run('pnpm', ['exec', 'tsc', '--noEmit', '--pretty', 'false'], tempProjectDir)
+    await run(
+      'pnpm',
+      ['exec', 'tsc', '-p', 'tsconfig.nodenext.json', '--pretty', 'false'],
+      tempProjectDir
+    )
 
     await runNodeScript(
       `

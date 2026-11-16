@@ -1,5 +1,16 @@
 # Changelog
 
+## 3.3.3 (2026-11-17)
+
+### 修复
+
+- 发布的 `dist` 声明文件改用带 `.js` 扩展名的相对导入，修复 `moduleResolution: node16` / `nodenext` 的消费者项目里类型整体失效的问题：`skipLibCheck: true` 时 `export *` 解析失败导致导出类型缺失（TS2614）、具名导入静默退化为 `any`；`skipLibCheck: false` 时报 TS2834。同时修复组件 slot 类型中 `import(".")` 自引用在 nodenext 下的 TS2307。
+
+### 构建
+
+- 新增 `scripts/fix-dts-extensions.mjs`：用 TypeScript 编译器 API 只改写声明文件里的模块说明符，在 `lib:build` 末尾执行且幂等；`pnpm dts:check` 只校验不写入，并纳入 `release:check`。
+- tarball 验证新增 NodeNext + `skipLibCheck: false` 的消费端类型编译，入口断言由「不允许扩展名」反转为「必须带 `.js`」。
+
 ## 3.3.1 (2026-11-05)
 
 ### 修复

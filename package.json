@@ -1,6 +1,6 @@
 {
   "name": "vue-stack-tabs",
-  "version": "3.3.2",
+  "version": "3.3.3",
   "private": false,
   "type": "module",
   "description": "Vue 3 multi-tab manager built on Vue Router with iframe-like tab isolation: per-tab component scope, stack-based forward/backward navigation, keep-alive page caching, scroll position memory, i18n and a Nuxt 3/4 module.",
@@ -95,13 +95,14 @@
     "lint:style:check": "stylelint \"src/**/*.{css,scss,vue}\" \"docs/.vitepress/**/*.{css,scss,vue}\"",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "lib:build": "vite --config vite.config.lib.ts build && vite --config vite.config.iframe-bridge.ts build && vite --config vite.config.nuxt.ts build && node scripts/write-entry-dts.mjs && node -e \"const fs=require('fs');fs.rmSync('dist/src',{recursive:true,force:true});\"",
+    "lib:build": "vite --config vite.config.lib.ts build && vite --config vite.config.iframe-bridge.ts build && vite --config vite.config.nuxt.ts build && node scripts/write-entry-dts.mjs && node -e \"const fs=require('fs');fs.rmSync('dist/src',{recursive:true,force:true});\" && node scripts/fix-dts-extensions.mjs",
+    "dts:check": "node scripts/fix-dts-extensions.mjs --check",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:prepack": "node scripts/verify-prepack.mjs",
     "test:packaged": "node scripts/verify-packaged.mjs",
-    "release:check": "pnpm run lint:check && pnpm run lint:style:check && pnpm run test:prepack && pnpm run lib:build && pnpm run test:packaged",
+    "release:check": "pnpm run lint:check && pnpm run lint:style:check && pnpm run test:prepack && pnpm run lib:build && pnpm run dts:check && pnpm run test:packaged",
     "prepublishOnly": "pnpm run release:check"
   },
   "dependencies": {
