@@ -117,7 +117,7 @@
     width: 100%;
     height: $stack-tab-head-height-token;
     background-color: $stack-tab-header-background;
-    border-bottom: 1px solid $stack-tab-border-color-token;
+    box-shadow: inset 0 -1px 0 $stack-tab-border-color-token;
     box-sizing: border-box;
 
     // tab header 上面的按钮
@@ -240,6 +240,7 @@
     }
   }
 
+  // 普通绘制可避免 content-visibility:auto 影响缩放下 1px 页签边框。
   // 页签导航
   &__nav {
     position: relative;
@@ -249,7 +250,6 @@
     margin: 0;
     list-style: none;
     flex-wrap: nowrap;
-    content-visibility: auto;
   }
 
   // 页签项
@@ -269,7 +269,6 @@
     flex: none;
     align-items: center;
     transform-origin: left bottom;
-    content-visibility: auto;
     margin-top: 5px;
 
     &:first-child {

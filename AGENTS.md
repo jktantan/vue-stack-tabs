@@ -1,7 +1,7 @@
 # vue-stack-tabs — AI 助手项目指南
 
 > 供 AI 助手理解项目结构、修改代码和运行验证。仅提供原则与大纲，具体实现需分析代码库获取。
-> 最后更新：2026-11-17（声明文件扩展名修复 3.3.3、文档与代码对齐审计后）。
+> 最后更新：2026-11-22（页签缩放下边框修复并升级至 3.3.4 后）。
 
 ---
 
@@ -128,4 +128,4 @@ pnpm run release:check
 - 子路由分析：`docs/SUBROUTE_ANALYSIS.md`、`docs/SUBROUTE_EXPERIMENTAL.md`
 - 贡献指南：`CONTRIBUTING.md`
 - 用户文档：`docs/base/`、`docs/advance/`、`docs/more/`（英文根目录 + `docs/zh/` 中文）；排障页 `docs/base/troubleshooting.md`
-- 版本与变更：`package.json`（3.3.3）+ `CHANGELOG.md`
+- 版本与变更：`package.json`（3.3.4）+ `CHANGELOG.md`

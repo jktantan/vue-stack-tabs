@@ -1,5 +1,13 @@
 # Changelog
 
+## 未发布
+
+## 3.3.4 (2026-11-22)
+
+### 修复
+
+- 修复浏览器缩放下 inactive 页签底边可能不绘制的问题：移除导航容器与页签项上的 `content-visibility: auto`，保留原有边框颜色与 active 底边规则；header 分隔线使用 inset box-shadow，不占用 40px 布局高度。
+
 ## 3.3.3 (2026-11-17)
 
 ### 修复
