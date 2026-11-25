@@ -2,6 +2,13 @@
 
 ## 未发布
 
+## 3.4.0 (2026-11-25)
+
+### 新增
+
+- 新增 `pageResolver` 属性与 `StackTabsPageResolver` 类型：按当前路由决定页签内实际渲染的页面。返回组件或 VNode 时只替换渲染内容，路由、URL、页签与页面栈都保持不变；返回 `null` / `undefined`（未配置）时使用路由匹配页面，行为与旧版本一致。适合权限拒绝（403）、维护页等「地址要保留、内容要替换」的场景。
+- 文档：`docs/more/properties.md` 与 `docs/zh/more/properties.md` 的 Props 表补充 `pageResolver`。
+
 ## 3.3.4 (2026-11-22)
 
 ### 修复

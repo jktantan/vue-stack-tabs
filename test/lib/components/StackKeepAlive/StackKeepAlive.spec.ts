@@ -5,6 +5,7 @@ import { defineComponent, h, nextTick, ref } from 'vue'
 import type { Component, VNode } from 'vue'
 import type { RouteLocationNormalizedLoaded } from 'vue-router'
 import StackKeepAlive from '@/lib/components/StackKeepAlive/StackKeepAlive.vue'
+import type { StackTabsPageResolver } from '@/lib/model/PageResolver'
 
 const caches = ref<string[]>([])
 const refreshKey = ref(0)
@@ -45,9 +46,12 @@ function makeRoute(path = '/dashboard'): RouteLocationNormalizedLoaded {
   }
 }
 
+let pageMountedCount = 0
+
 const PageComponent = defineComponent({
   name: 'PageComponent',
   setup() {
+    pageMountedCount += 1
     return () => h('section', { 'data-test': 'page-component' }, 'page')
   }
 })
@@ -78,6 +82,39 @@ const WrappedPage = defineComponent({
         },
         'wrapped'
       )
+  }
+})
+
+const WrappedPageRendering = defineComponent({
+  name: 'WrappedCachePageRendering',
+  props: {
+    vnode: {
+      type: Object,
+      required: false,
+      default: undefined
+    }
+  },
+  setup(props) {
+    return () =>
+      h(
+        'article',
+        { 'data-test': 'wrapped-page-rendered' },
+        props.vnode ? [props.vnode as VNode] : []
+      )
+  }
+})
+
+const FallbackPage = defineComponent({
+  name: 'FallbackPage',
+  props: {
+    route: {
+      type: Object,
+      required: false,
+      default: undefined
+    }
+  },
+  setup() {
+    return () => h('p', { 'data-test': 'page-fallback' }, 'forbidden')
   }
 })
 
@@ -115,10 +152,11 @@ const RouterViewStub = defineComponent({
   }
 })
 
-function mountKeepAlive(transitionName = 'stack-tab-swap') {
+function mountKeepAlive(transitionName = 'stack-tab-swap', pageResolver?: StackTabsPageResolver) {
   return mount(StackKeepAlive, {
     props: {
-      transitionName
+      transitionName,
+      ...(pageResolver ? { pageResolver } : {})
     },
     global: {
       stubs: {
@@ -137,6 +175,7 @@ beforeEach(() => {
   activePageRefreshVersion.value = 0
   addPageMock.mockReset()
   wrappedInstanceId = 0
+  pageMountedCount = 0
   addPageMock.mockReturnValue(WrappedPage as Component)
 })
 
@@ -199,6 +238,28 @@ describe('StackKeepAlive', () => {
     await wrapper.find('[data-test="wrapped-page"]').trigger('click')
 
     expect(wrapper.emitted('loaded')).toHaveLength(1)
+  })
+
+  it('pageResolver 返回组件时替换渲染内容，不实例化路由页面', async () => {
+    addPageMock.mockReturnValue(WrappedPageRendering as Component)
+    const pageResolver = vi.fn(() => FallbackPage)
+    const wrapper = mountKeepAlive('stack-tab-swap', pageResolver)
+    await nextTick()
+
+    expect(pageResolver).toHaveBeenCalledWith(expect.objectContaining({ path: '/dashboard' }))
+    expect(wrapper.find('[data-test="page-fallback"]').exists()).toBe(true)
+    expect(wrapper.find('[data-test="page-component"]').exists()).toBe(false)
+    expect(pageMountedCount).toBe(0)
+  })
+
+  it('pageResolver 返回空时继续渲染路由匹配页面', async () => {
+    addPageMock.mockReturnValue(WrappedPageRendering as Component)
+    const wrapper = mountKeepAlive('stack-tab-swap', () => null)
+    await nextTick()
+
+    expect(wrapper.find('[data-test="page-component"]').exists()).toBe(true)
+    expect(wrapper.find('[data-test="page-fallback"]').exists()).toBe(false)
+    expect(pageMountedCount).toBe(1)
   })
 
   it('把页面转场配置传给 transition', () => {

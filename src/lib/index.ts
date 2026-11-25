@@ -48,6 +48,7 @@ export type {
   StackTabsScrollPosition
 } from './model/ScrollAdapter'
 export type { StackTabsPageScroll, StackTabsPageScrollMode } from './model/PageScroll'
+export type { StackTabsPageResolver } from './model/PageResolver'
 export type { TabPageScrollController } from './hooks/tabPageScrollContext'
 export type {
   TabScrollShadowConfig,

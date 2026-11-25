@@ -1,7 +1,7 @@
 # vue-stack-tabs — AI 助手项目指南
 
 > 供 AI 助手理解项目结构、修改代码和运行验证。仅提供原则与大纲，具体实现需分析代码库获取。
-> 最后更新：2026-11-22（页签缩放下边框修复并升级至 3.3.4 后）。
+> 最后更新：2026-11-25（新增 pageResolver 并升级至 3.4.0 后）。
 
 ---
 
@@ -29,7 +29,7 @@ Vue 3 多标签页管理库，基于 Vue Router。设计思想：用 Vue 作用�
 | `src/lib/hooks/tabPanel/` | 内部子模块（8）：`state`（共享响应式）、`tabStore`（标签/缓存数据层，不依赖 vue-router）、`evict`（缓存驱逐）、`refresh`（单页/全量刷新）、`scroll`（滚动位置）、`session`（SSR 安全持久化）、`navigationTransaction`（apply/rollback/cleanupStale）、`pageComponentFactory.tsx`（cacheComponent 工厂）                                                                                           |
 | `src/lib/components/`     | UI 组件（10）：`TabHeader/`（`index.vue`、`TabHeaderItem`、`TabHeaderButton`、`TabHeaderScroll`）、`ContextMenu/`（`index.vue`、`ContextMenuItem`）、`PageLoading.vue`、`StackKeepAlive/`（`StackKeepAlive.vue`、`StackCacheRenderer.vue`、共享 `emptyPlaceholder.tsx`）                                                                                                                          |
 | `src/lib/utils/`          | 工具函数（7）：`tabInfoEncoder`（`__tab` 编解码 + UUID）、`urlParser`（URL 解析与安全校验）、`scrollUtils`（DOM 滚动 + z-index 缓存）、`iframeBridge`（iframe postMessage 桥）、`stackTabsMessage`（消息校验）、`stackTabsA11y`（ARIA id）、`typeGuards`                                                                                                                                          |
-| `src/lib/model/`          | 类型定义（3）：`TabModel.ts`（`TabScrollMode`、`ITabData` 等 + `Stack<T>` 类）、`ScrollAdapter.ts`（滚动适配器契约）、`PageScroll.ts`（页级滚动模式）                                                                                                                                                                                                                                             |
+| `src/lib/model/`          | 类型定义（4）：`TabModel.ts`（`TabScrollMode`、`ITabData` 等 + `Stack<T>` 类）、`ScrollAdapter.ts`（滚动适配器契约）、`PageScroll.ts`（页级滚动模式）、`PageResolver.ts`（页签内容解析器契约）                                                                                                                                                                                                    |
 | `src/lib/nuxt/`           | Nuxt 模块（`vue-stack-tabs/nuxt`）：`module.ts`（自动注册 `VueStackTabs` 全局组件、自动导入 hooks）+ `runtime/plugin.ts`（locale 透传）                                                                                                                                                                                                                                                           |
 | `src/lib/assets/style/`   | SCSS 样式，变量和 mixins 在 `common/`                                                                                                                                                                                                                                                                                                                                                             |
 | `scripts/`                | 构建/验证脚本（4）：`fix-dts-extensions.mjs`（用 TS 编译器 API 把 dist 内相对说明符补 `.js`，`--check` 只校验）、`write-entry-dts.mjs`（手写入口声明）、`verify-prepack.mjs`（打包前全覆盖）、`verify-packaged.mjs`（tarball + Bundler/NodeNext 双模式类型验证）                                                                                                                                  |
@@ -128,4 +128,4 @@ pnpm run release:check
 - 子路由分析：`docs/SUBROUTE_ANALYSIS.md`、`docs/SUBROUTE_EXPERIMENTAL.md`
 - 贡献指南：`CONTRIBUTING.md`
 - 用户文档：`docs/base/`、`docs/advance/`、`docs/more/`（英文根目录 + `docs/zh/` 中文）；排障页 `docs/base/troubleshooting.md`
-- 版本与变更：`package.json`（3.3.4）+ `CHANGELOG.md`
+- 版本与变更：`package.json`（3.4.0）+ `CHANGELOG.md`

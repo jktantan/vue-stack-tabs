@@ -28,6 +28,7 @@ import { isAllowedTabUrl } from './utils/urlParser'
 import { applyStackTabsLocale } from './i18n/stackTabsLocale'
 import { type ITabData, TabScrollMode } from './model/TabModel'
 import type { StackTabsPageScroll } from './model/PageScroll'
+import type { StackTabsPageResolver } from './model/PageResolver'
 import type { TabScrollShadowConfig } from './hooks/tabScrollShadowContext'
 import TabHeader from './components/TabHeader/index.vue'
 import StackKeepAlive from './components/StackKeepAlive/StackKeepAlive.vue'
@@ -83,6 +84,17 @@ const props = withDefaults(
      * the old page stays visible until navigation completes.
      */
     pageLoading?: boolean
+    /**
+     * 页面解析器：按当前路由决定页签内实际渲染的页面组件。
+     * 返回空时渲染路由匹配到的页面；返回组件或 VNode 时只替换渲染内容，
+     * 路由、URL、页签与页面栈都不变，适合权限拒绝（403）、维护页等场景。
+     *
+     * Page resolver: decides what the tab content renders for the current route.
+     * Return nothing to render the matched route component; return a component or VNode
+     * to override only the rendered content. Route, URL, tab and page stack stay intact,
+     * which fits permission denials (403), maintenance pages, etc.
+     */
+    pageResolver?: StackTabsPageResolver
     /**
      * 是否启用右键菜单，或传入自定义菜单项数组，默认 true。
      * Enables the context menu, or pass a custom menu item array (default: true).
@@ -196,6 +208,7 @@ const props = withDefaults(
     homeTab: undefined,
     max: 20,
     pageLoading: true,
+    pageResolver: undefined,
     contextmenu: true,
     tabTransition: 'stack-tab-zoom',
     pageTransition: 'stack-tab-swap',
@@ -571,7 +584,11 @@ onBeforeUnmount(() => {
             class="stack-tab__page-host"
             :class="{ 'is-pending': pageLoading && activeNonIframeTab?.pending }"
           >
-            <StackKeepAlive :transition-name="pageSwitch" @loaded="onComponentLoaded" />
+            <StackKeepAlive
+              :transition-name="pageSwitch"
+              :page-resolver="pageResolver"
+              @loaded="onComponentLoaded"
+            />
           </div>
           <!-- 占位标签：页签已出现、目标页面仍在导航/加载中 -->
           <Transition name="stack-tab-page-loading">
